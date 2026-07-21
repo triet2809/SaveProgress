@@ -1,0 +1,108 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.submissionList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.submissionCard {
+  border: 1px solid var(--cf-border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  border-radius: var(--cf-radius-lg);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.submissionCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.projectInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.teamAndProject {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.submissionDetails {
+  font-size: 0.8rem;
+  color: var(--cf-text-secondary);
+}
+
+.statusBadge {
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--cf-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.statusPending {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.statusReviewed {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.actionRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.viewBtn {
+  background-color: white;
+  border: 1px solid var(--cf-border-color);
+  color: var(--cf-text-primary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 1.25rem;
+}
+
+.viewBtn:hover {
+  background-color: var(--cf-bg-main);
+  color: var(--cf-text-primary);
+  border-color: var(--cf-border-color);
+}
+
+.feedbackBtn {
+  background-color: #a855f7;
+  border: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 1.25rem;
+  color: white;
+}
+
+.feedbackBtn:hover {
+  background-color: #9333ea;
+  color: white;
+}

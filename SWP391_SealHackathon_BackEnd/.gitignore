@@ -1,0 +1,16 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Build output
+target/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store

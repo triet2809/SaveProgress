@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: seal-hackathon-backend
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/seal_hackathon}
+    username: ${DB_USERNAME:postgres}
+    password: 12345
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+    show-sql: false
+
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: UTC
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+  error:
+    include-message: always
+    include-binding-errors: always
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:change-this-to-a-very-long-random-secret-key-min-256-bits-for-hs256-algorithm-please}
+      access-token-expiration-minutes: 60
+      refresh-token-expiration-days: 7
+      issuer: seal-hackathon
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://127.0.0.1:5173
+      - http://192.168.100.214:5173
+      - http://localhost:3000
+  invitation:
+    expose-link: ${APP_INVITATION_EXPOSE_LINK:false}
+    frontend-base-url: ${APP_FRONTEND_BASE_URL:http://localhost:5173}
+    token-expiration-minutes: ${APP_INVITATION_TOKEN_EXPIRATION_MINUTES:60}
+  legal:
+    terms-version: ${APP_TERMS_VERSION:2026-01}
+    privacy-version: ${APP_PRIVACY_VERSION:2026-01}
+    terms-url: ${APP_TERMS_URL:https://example.invalid/terms}
+    privacy-url: ${APP_PRIVACY_URL:https://example.invalid/privacy}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    root: INFO
+    vn.edu.fpt.seal: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO

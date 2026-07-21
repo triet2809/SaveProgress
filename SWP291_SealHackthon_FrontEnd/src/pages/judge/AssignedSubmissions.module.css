@@ -1,0 +1,145 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.tableCard {
+  border: 1px solid var(--cf-border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  border-radius: var(--cf-radius-lg);
+  background-color: white;
+  overflow: hidden;
+}
+
+.judgeTable {
+  margin-bottom: 0;
+}
+
+.judgeTable th {
+  color: var(--cf-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--cf-border-color);
+  padding: 1rem 1.5rem;
+  background-color: white;
+}
+
+.judgeTable td {
+  padding: 1rem 1.5rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--cf-border-color);
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.judgeTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.judgeTable tbody tr {
+  transition: background-color 0.2s;
+}
+
+.judgeTable tbody tr:hover {
+  background-color: var(--cf-bg-main);
+}
+
+.teamCell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.teamAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Avatar styling based on mockup colors (green for most, light green/purple) */
+.avatarBg {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.teamName {
+  font-weight: 600;
+  color: var(--cf-text-primary);
+}
+
+.categoryBadge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--cf-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: #e0e7ff;
+  color: #4f46e5;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--cf-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.statusPending {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.statusCompleted {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.scoreDash {
+  color: var(--cf-text-secondary);
+}
+
+.scoreValue {
+  font-weight: 700;
+  color: #ea580c; /* Orange-red color for score text */
+}
+
+.actionEvaluate {
+  color: #3b82f6;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.actionEvaluate:hover {
+  text-decoration: underline;
+}
+
+.actionView {
+  color: #3b82f6;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.actionView:hover {
+  text-decoration: underline;
+}

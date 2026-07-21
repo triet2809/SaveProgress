@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --cf-brand-blue: #1d4ed8;
+  --cf-brand-blue-hover: #1e40af;
+  --cf-brand-blue-light: #eff6ff;
+  
+  --cf-bg-main: #f8fafc;
+  --cf-bg-surface: #ffffff;
+  
+  --cf-text-primary: #0f172a;
+  --cf-text-secondary: #64748b;
+  --cf-text-muted: #94a3b8;
+  
+  --cf-border-color: #e2e8f0;
+  
+  /* Status Colors */
+  --cf-status-success: #10b981;
+  --cf-status-warning: #f59e0b;
+  --cf-status-danger: #ef4444;
+  --cf-status-info: #3b82f6;
+
+  --cf-status-success-bg: #d1fae5;
+  --cf-status-warning-bg: #fef3c7;
+  --cf-status-danger-bg: #fee2e2;
+  --cf-status-info-bg: #dbeafe;
+
+  /* Typography */
+  --cf-font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  
+  /* Shadows */
+  --cf-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --cf-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --cf-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Border Radius */
+  --cf-radius-sm: 0.375rem;
+  --cf-radius-md: 0.5rem;
+  --cf-radius-lg: 0.75rem;
+  --cf-radius-xl: 1rem;
+}
+
+[data-theme='dark'] {
+  /* Colors */
+  --cf-brand-blue: #3b82f6;
+  --cf-brand-blue-hover: #60a5fa;
+  --cf-brand-blue-light: #1e3a8a;
+  
+  --cf-bg-main: #0f172a;
+  --cf-bg-surface: #1e293b;
+  
+  --cf-text-primary: #f8fafc;
+  --cf-text-secondary: #cbd5e1;
+  --cf-text-muted: #64748b;
+  
+  --cf-border-color: #334155;
+  
+  /* Status Colors (Slightly adjusted for dark mode visibility) */
+  --cf-status-success: #34d399;
+  --cf-status-warning: #fbbf24;
+  --cf-status-danger: #f87171;
+  --cf-status-info: #60a5fa;
+
+  --cf-status-success-bg: rgba(16, 185, 129, 0.2);
+  --cf-status-warning-bg: rgba(245, 158, 11, 0.2);
+  --cf-status-danger-bg: rgba(239, 68, 68, 0.2);
+  --cf-status-info-bg: rgba(59, 130, 246, 0.2);
+}

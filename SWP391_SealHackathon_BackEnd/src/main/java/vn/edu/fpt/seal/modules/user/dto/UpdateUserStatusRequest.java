@@ -1,0 +1,1 @@
+package vn.edu.fpt.seal.modules.user.dto; import jakarta.validation.constraints.NotNull; import vn.edu.fpt.seal.common.enums.AccountStatus; public record UpdateUserStatusRequest(@NotNull AccountStatus status) {}

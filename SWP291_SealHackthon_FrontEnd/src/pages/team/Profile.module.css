@@ -1,0 +1,102 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.profileCard {
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: var(--cf-radius-lg);
+}
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--cf-border-color);
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.1rem;
+}
+
+.teamRole {
+  font-size: 0.875rem;
+  color: var(--cf-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.roleBadge {
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--cf-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+  width: fit-content;
+}
+
+.formLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--cf-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.formControl {
+  border-color: var(--cf-border-color);
+  font-size: 0.875rem;
+  color: var(--cf-text-primary);
+  padding: 0.6rem 0.75rem;
+}
+
+.formControl:focus {
+  border-color: var(--cf-brand-blue);
+  box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.1);
+}
+
+.saveBtn {
+  background-color: var(--cf-brand-blue);
+  border: none;
+  font-weight: 500;
+  padding: 0.6rem 1.5rem;
+  font-size: 0.875rem;
+}
+
+.saveBtn:hover {
+  background-color: var(--cf-brand-blue-dark);
+}

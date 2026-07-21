@@ -1,0 +1,180 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import './variables.css';
+
+/* Global Resets and Base Styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--cf-font-family);
+  background-color: var(--cf-bg-main);
+  color: var(--cf-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--cf-text-primary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+a {
+  color: var(--cf-brand-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--cf-brand-blue-hover);
+  text-decoration: underline;
+}
+
+p {
+  color: var(--cf-text-secondary);
+}
+
+/* React Bootstrap Overrides */
+
+/* Cards */
+.card {
+  background-color: var(--cf-bg-surface);
+  border: 1px solid var(--cf-border-color);
+  border-radius: var(--cf-radius-lg);
+  box-shadow: var(--cf-shadow-sm);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: var(--cf-shadow-md);
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--cf-brand-blue);
+  border-color: var(--cf-brand-blue);
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: var(--cf-radius-md);
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: var(--cf-brand-blue-hover) !important;
+  border-color: var(--cf-brand-blue-hover) !important;
+  box-shadow: none !important;
+}
+
+.btn-outline-primary {
+  color: var(--cf-brand-blue);
+  border-color: var(--cf-brand-blue);
+  font-weight: 500;
+  border-radius: var(--cf-radius-md);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue-hover);
+  border-color: var(--cf-brand-blue-hover);
+}
+
+/* Forms */
+.form-control, .form-select {
+  border-radius: var(--cf-radius-md);
+  border: 1px solid var(--cf-border-color);
+  padding: 0.6rem 1rem;
+  color: var(--cf-text-primary);
+  background-color: transparent;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--cf-brand-blue);
+  box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.25);
+  background-color: transparent;
+  color: var(--cf-text-primary);
+}
+
+.form-control:disabled, .form-select:disabled, .form-control[readonly] {
+  background-color: var(--cf-border-color);
+  opacity: 0.7;
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+/* Badges */
+.badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+  border-radius: var(--cf-radius-md);
+}
+
+/* Progress Bars */
+.progress {
+  border-radius: 999px;
+  height: 0.5rem;
+  background-color: var(--cf-border-color);
+}
+
+.progress-bar {
+  background-color: var(--cf-status-success);
+  border-radius: 999px;
+}
+
+/* Tables */
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--cf-text-primary);
+  --bs-table-striped-bg: rgba(0, 0, 0, 0.02);
+  --bs-table-striped-color: var(--cf-text-primary);
+  --bs-table-active-bg: rgba(0, 0, 0, 0.04);
+  --bs-table-active-color: var(--cf-text-primary);
+  --bs-table-hover-bg: rgba(100, 116, 139, 0.05);
+  --bs-table-hover-color: var(--cf-text-primary);
+  color: var(--cf-text-primary);
+  border-color: var(--cf-border-color);
+}
+
+.table th, .table td {
+  border-color: var(--cf-border-color);
+  background-color: transparent !important;
+  color: var(--cf-text-secondary);
+}
+
+.table th {
+  color: var(--cf-text-primary);
+  font-weight: 600;
+}
+
+.modal-content {
+  background-color: var(--cf-bg-surface);
+  color: var(--cf-text-primary);
+  border: 1px solid var(--cf-border-color);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--cf-border-color);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--cf-border-color);
+}
+
+.modal-title {
+  color: var(--cf-text-primary);
+}
+
+.form-control,
+.form-select {
+  background-color: var(--cf-bg-surface) !important;
+  color: var(--cf-text-primary) !important;
+  border-color: var(--cf-border-color) !important;
+}
+
+.form-control::placeholder {
+  color: var(--cf-text-muted);
+}

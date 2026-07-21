@@ -1,0 +1,140 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.timelineCard {
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: var(--cf-radius-lg);
+  padding: 1.5rem 1rem;
+}
+
+.timeline {
+  position: relative;
+  padding: 1rem;
+}
+
+/* The vertical connecting line */
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 1rem;
+  bottom: 1rem;
+  left: 33px; /* 1rem padding + 17px (half of 34px circle) */
+  width: 2px;
+  background-color: var(--cf-border-color);
+  z-index: 0;
+}
+
+.timelineItem {
+  position: relative;
+  display: flex;
+  margin-bottom: 2.5rem;
+  z-index: 1;
+}
+
+.timelineItem:last-child {
+  margin-bottom: 0;
+}
+
+.timelineIndicator {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-right: 1.5rem;
+  background-color: #f3f4f6; /* default gray */
+  color: var(--cf-text-secondary);
+  border: 4px solid white; /* to cut out the vertical line behind it */
+  box-sizing: content-box;
+}
+
+/* Dynamic styling classes for indicators */
+.indicatorActive {
+  background-color: var(--cf-brand-blue);
+  color: white;
+}
+
+.indicatorDanger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.indicatorSuccess {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.timelineContent {
+  flex-grow: 1;
+  padding-top: 0.5rem; /* align text with center of circle */
+}
+
+.timelineHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.timelineDate {
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  font-size: 0.95rem;
+}
+
+.timelineDay {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.statusBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--cf-radius-sm);
+}
+
+.badgeActive {
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue);
+}
+
+.badgeDanger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.badgeSuccess {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.eventList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eventItem {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}

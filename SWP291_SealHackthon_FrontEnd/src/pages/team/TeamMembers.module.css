@@ -1,0 +1,83 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.tableCard {
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: var(--cf-radius-lg);
+  overflow: hidden;
+}
+
+.tableHeader {
+  color: var(--cf-text-secondary);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 1rem 1.5rem !important;
+  border-bottom: 1px solid var(--cf-border-color);
+  background-color: var(--cf-bg-surface);
+}
+
+.tableRow {
+  vertical-align: middle;
+}
+
+.tableCell {
+  padding: 1rem 1.5rem !important;
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--cf-border-color);
+}
+
+.memberCell {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.memberAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.memberName {
+  font-weight: 600;
+  color: var(--cf-text-primary);
+}
+
+.skillTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.skillBadge {
+  background-color: var(--cf-bg-main);
+  color: var(--cf-text-secondary);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--cf-radius-sm);
+  font-size: 0.7rem;
+  font-weight: 500;
+}

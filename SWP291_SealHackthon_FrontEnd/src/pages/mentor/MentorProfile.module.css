@@ -1,0 +1,109 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.profileCard {
+  border: 1px solid var(--cf-border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  border-radius: var(--cf-radius-lg);
+  background-color: var(--cf-bg-surface);
+}
+
+/* Header Section */
+.profileHeaderInfo {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--cf-border-color);
+}
+
+.avatarLarge {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #f3e8ff;
+  color: #9333ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.userSpecialty {
+  font-size: 0.875rem;
+  color: var(--cf-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.roleBadge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background-color: #f3e8ff;
+  color: #9333ea;
+  border-radius: var(--cf-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: max-content;
+}
+
+/* Form Section */
+.formLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.formControl {
+  border-color: var(--cf-border-color);
+  font-size: 0.875rem;
+  color: var(--cf-text-primary);
+  padding: 0.6rem 0.75rem;
+}
+
+.formControl:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 0.2rem rgba(168, 85, 247, 0.15);
+}
+
+.saveBtn {
+  background-color: #a855f7;
+  border: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.6rem 1.5rem;
+  color: white;
+  margin-top: 1rem;
+}
+
+.saveBtn:hover {
+  background-color: #9333ea;
+  color: white;
+}
