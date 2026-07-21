@@ -1,0 +1,223 @@
+.loginPage {
+  background-color: var(--cf-bg-surface);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.heroSection {
+  background-color: var(--cf-brand-blue);
+  color: white;
+  padding: 2rem !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 10;
+  max-width: 500px;
+  width: 100%;
+}
+
+.brandBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.15);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--cf-radius-md);
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.heroTitle {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.heroDescription {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.statsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.statIcon {
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: var(--cf-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.roleTags {
+  display: flex;
+  gap: 1rem;
+}
+
+.roleTag {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.05);
+  z-index: 1;
+}
+
+.circle1 {
+  width: 600px;
+  height: 600px;
+  bottom: -200px;
+  left: -200px;
+}
+
+.circle2 {
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -100px;
+}
+
+.formSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.formContainer {
+  width: 100%;
+  max-width: 420px;
+}
+
+.formTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.formSubtitle {
+  color: var(--cf-text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.form {
+  margin-bottom: 0.75rem;
+}
+
+.demoSection {
+  margin-top: 0.5rem;
+}
+
+.demoDivider {
+  position: relative;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.demoDivider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: var(--cf-border-color);
+  z-index: 1;
+}
+
+.demoDivider span {
+  position: relative;
+  z-index: 2;
+  background-color: var(--cf-bg-surface);
+  padding: 0 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cf-text-muted);
+  letter-spacing: 0.05em;
+}
+
+.demoCards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.demoCard {
+  cursor: pointer;
+  transition: all 0.2s;
+  border-color: var(--cf-border-color);
+}
+
+.demoCard:hover {
+  border-color: var(--cf-brand-blue);
+  box-shadow: var(--cf-shadow-sm);
+  transform: translateY(-2px);
+}
+
+.demoAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.demoAvatar[data-role="team"] {
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue);
+}
+
+.demoAvatar[data-role="mentor"] {
+  background-color: #f3e8ff; /* purple-100 */
+  color: #a855f7; /* purple-500 */
+}
+
+.demoAvatar[data-role="judge"] {
+  background-color: #d1fae5; /* green-100 */
+  color: #10b981; /* green-500 */
+}
+
+.demoName {
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  font-size: 0.875rem;
+}
+
+.demoRole {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+}

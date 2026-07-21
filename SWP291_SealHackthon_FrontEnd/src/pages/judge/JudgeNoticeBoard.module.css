@@ -1,0 +1,209 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.postBtn {
+  font-weight: 500;
+  padding: 0.6rem 1.5rem;
+  font-size: 0.875rem;
+  background-color: #3b82f6; /* Judge specific blue */
+  color: white;
+  border: none;
+  border-radius: var(--cf-radius-md);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.postBtn:hover {
+  background-color: #2563eb;
+  color: white;
+}
+
+/* Post Notice Form */
+.postCard {
+  border: 1px solid var(--cf-border-color);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-radius: var(--cf-radius-lg);
+  background-color: var(--cf-bg-surface);
+  margin-bottom: 2rem;
+}
+
+.formLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.formControl {
+  border-color: var(--cf-border-color);
+  font-size: 0.875rem;
+  color: var(--cf-text-primary);
+}
+
+.formControl:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+}
+
+.submitBtn {
+  background-color: #3b82f6;
+  border: none;
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+}
+
+.submitBtn:hover {
+  background-color: #2563eb;
+}
+
+/* Notice Cards */
+.noticeCard {
+  border: 1px solid var(--cf-border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  border-radius: var(--cf-radius-lg);
+  background-color: var(--cf-bg-surface);
+  margin-bottom: 1rem;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.noticeCard:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e1;
+}
+
+.noticeImportant {
+  border-left: 4px solid var(--cf-status-danger) !important;
+  background-color: var(--cf-status-danger-bg) !important;
+}
+
+.noticeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.noticeTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.priorityBadge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-radius: var(--cf-radius-sm);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-left: 0.75rem;
+  vertical-align: middle;
+}
+
+.noticeMeta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.authorInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Base Avatar Style */
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+/* Role Specific Avatars */
+.avatarAdmin {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+.avatarJudge {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+.avatarMentor {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+
+.authorName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cf-text-secondary);
+}
+
+.authorRole {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.25rem;
+}
+
+/* Role Specific Badges */
+.roleAdmin {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+.roleJudge {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+.roleMentor {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+
+.targetBadge {
+  font-size: 0.75rem;
+  color: #4b5563;
+  background-color: #f3f4f6;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.noticeDate {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.noticeContent {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}

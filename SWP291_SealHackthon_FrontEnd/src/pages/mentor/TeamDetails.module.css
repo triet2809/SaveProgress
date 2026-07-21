@@ -1,0 +1,182 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.teamSection {
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px dashed var(--cf-border-color);
+}
+
+.teamSection:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.sectionHeader {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sectionCategory {
+  color: var(--cf-text-secondary);
+  font-weight: 400;
+}
+
+.detailCard {
+  border: 1px solid var(--cf-border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  border-radius: var(--cf-radius-lg);
+  height: 100%;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  margin-bottom: 1.25rem;
+}
+
+.projectTitleLabel {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.projectTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.2rem;
+}
+
+.projectSubtitle {
+  font-size: 0.8rem;
+  color: var(--cf-brand-blue);
+  margin-bottom: 1rem;
+}
+
+.projectDescriptionLabel {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.projectDescription {
+  font-size: 0.875rem;
+  color: var(--cf-text-primary);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.techTag {
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--cf-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.progressLabel {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+}
+
+.progressStatus {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.statusGreen { color: #10b981; }
+.statusOrange { color: #f59e0b; }
+.statusRed { color: #ef4444; }
+
+.progressBarContainer {
+  height: 6px;
+  background-color: var(--cf-bg-main);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.bgGreen { background-color: #10b981; }
+.bgOrange { background-color: #f59e0b; }
+.bgRed { background-color: #ef4444; }
+
+.rosterList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.rosterItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.memberAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.memberInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.memberName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+}
+
+.memberRole {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+}

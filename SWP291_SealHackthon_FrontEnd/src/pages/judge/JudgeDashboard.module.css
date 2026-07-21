@@ -1,0 +1,178 @@
+.greeting {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0;
+  color: var(--cf-text-primary);
+}
+
+.pendingBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cf-status-danger);
+  background-color: var(--cf-status-danger-bg);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--cf-radius-md);
+}
+
+/* Submission Queue */
+.submissionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.submissionItem {
+  display: flex;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--cf-border-color);
+  gap: 1rem;
+}
+
+.submissionItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.submissionInfo {
+  flex: 1;
+}
+
+.teamName {
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  font-size: 0.875rem;
+}
+
+.projectName {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+}
+
+.submissionTags {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.reviewBtn {
+  background: none;
+  border: none;
+  color: var(--cf-brand-blue);
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.2s;
+}
+
+.reviewBtn:hover {
+  color: var(--cf-brand-blue-hover);
+  text-decoration: underline;
+}
+
+/* Evaluation Progress */
+.progressHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.progressValue {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--cf-text-primary);
+  line-height: 1;
+}
+
+.progressTotal {
+  font-size: 1.25rem;
+  color: var(--cf-text-muted);
+}
+
+.progressSubtitle {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+  margin-top: 0.5rem;
+}
+
+.progressStats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.statLabel {
+  color: var(--cf-text-secondary);
+}
+
+.statValueSuccess {
+  font-weight: 600;
+  color: var(--cf-status-success);
+}
+
+.statValueDanger {
+  font-weight: 600;
+  color: var(--cf-status-danger);
+}
+
+.statValueInfo {
+  font-weight: 600;
+  color: var(--cf-brand-blue);
+}
+
+/* Scoring Summary */
+.scoringList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.scoringItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--cf-border-color);
+  font-size: 0.875rem;
+}
+
+.scoringItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.scoringLabel {
+  color: var(--cf-text-secondary);
+}
+
+.scoringValue {
+  font-weight: 600;
+  color: var(--cf-text-primary);
+}
+
+.scoringValueSuccess {
+  font-weight: 600;
+  color: var(--cf-status-success);
+}
+
+.scoringValueDanger {
+  font-weight: 600;
+  color: var(--cf-status-danger);
+}

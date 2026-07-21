@@ -1,0 +1,61 @@
+package vn.edu.fpt.seal.modules.team.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import vn.edu.fpt.seal.common.entity.BaseEntity;
+import vn.edu.fpt.seal.common.enums.TeamStatus;
+import vn.edu.fpt.seal.modules.track.entity.Track;
+import vn.edu.fpt.seal.modules.teamprofile.entity.TeamProfile;
+import vn.edu.fpt.seal.modules.user.entity.User;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "teams")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Team extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "team_profile_id", nullable = false)
+    private TeamProfile teamProfile;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "track_id", nullable = false)
+    private Track track;
+
+    @Column(name = "name", nullable = false, length = 255)
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "status", nullable = false, columnDefinition = "team_status")
+    @Builder.Default
+    private TeamStatus status = TeamStatus.active;
+
+    @Column(name = "disqualified_reason", columnDefinition = "text")
+    private String disqualifiedReason;
+
+    /** Short human-friendly invite code (6 chars) used to join the team. */
+    @Column(name = "invite_code", length = 12, unique = true)
+    private String inviteCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_team_id")
+    private Team sourceTeam;
+
+    @Column(name = "activated_from_profile_at")
+    private LocalDateTime activatedFromProfileAt;
+
+    @Column(name = "roster_confirmed_at")
+    private LocalDateTime rosterConfirmedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "roster_confirmed_by")
+    private User rosterConfirmedBy;
+}

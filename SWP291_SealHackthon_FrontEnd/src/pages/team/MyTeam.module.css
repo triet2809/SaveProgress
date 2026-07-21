@@ -1,0 +1,134 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--cf-text-primary);
+}
+
+.projectTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.projectSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.projectDescription {
+  color: var(--cf-text-primary);
+  line-height: 1.6;
+  font-size: 0.875rem;
+  margin-bottom: 2rem;
+}
+
+.techStack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.techBadge {
+  background-color: var(--cf-bg-main);
+  color: var(--cf-text-secondary);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--cf-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.techBadge.primary {
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue);
+}
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: var(--cf-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.progressValue {
+  font-weight: 600;
+  color: var(--cf-text-primary);
+}
+
+.resourcesList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.resourceLink {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--cf-brand-blue);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.resourceLink:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+.divider {
+  border-top: 1px solid var(--cf-border-color);
+  margin: 1.5rem 0;
+}
+
+.mentorCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mentorAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f3e8ff; /* purple-100 */
+  color: #a855f7; /* purple-500 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.mentorName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+}
+
+.mentorRole {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+}

@@ -1,0 +1,91 @@
+.topbar {
+  height: 64px;
+  background-color: var(--cf-bg-surface);
+  border-bottom: 1px solid var(--cf-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.breadcrumbRole {
+  color: var(--cf-text-secondary);
+}
+
+.breadcrumbSeparator {
+  color: var(--cf-text-muted);
+}
+
+.breadcrumbPage {
+  color: var(--cf-text-primary);
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.searchContainer {
+  position: relative;
+  width: 250px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--cf-text-muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  padding-left: 2.25rem !important;
+  font-size: 0.875rem;
+  background-color: var(--cf-bg-main) !important;
+  border-color: transparent !important;
+}
+
+.searchInput:focus {
+  background-color: var(--cf-bg-surface) !important;
+  border-color: var(--cf-brand-blue) !important;
+}
+
+.notificationBtn {
+  background: none;
+  border: none;
+  color: var(--cf-text-secondary);
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+}
+
+.notificationBtn:hover {
+  color: var(--cf-text-primary);
+}
+
+.notificationDot {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background-color: var(--cf-status-danger);
+  border-radius: 50%;
+  border: 1px solid var(--cf-bg-surface);
+}

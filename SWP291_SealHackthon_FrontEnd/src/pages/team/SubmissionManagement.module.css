@@ -1,0 +1,127 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.formCard {
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: var(--cf-radius-lg);
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--cf-text-primary);
+}
+
+.draftAlert {
+  background-color: var(--cf-status-warning-bg);
+  border: 1px solid var(--cf-status-warning);
+  color: var(--cf-text-primary);
+  border-radius: var(--cf-radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  margin-bottom: 2rem;
+}
+
+.draftAlertIcon {
+  color: #f59e0b;
+}
+
+.formLabel {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.formControl {
+  border: 1px solid var(--cf-border-color);
+  border-radius: var(--cf-radius-md);
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  color: var(--cf-text-primary);
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.formControl:focus {
+  border-color: var(--cf-brand-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background-color: transparent;
+}
+
+.dropzone {
+  border: 2px dashed var(--cf-text-secondary);
+  border-radius: var(--cf-radius-md);
+  padding: 3rem 1rem;
+  text-align: center;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 2rem;
+  opacity: 0.7;
+}
+
+.dropzone:hover {
+  opacity: 1;
+  border-color: var(--cf-text-primary);
+}
+
+.dropzoneIcon {
+  color: var(--cf-text-secondary);
+  margin-bottom: 1rem;
+}
+
+.dropzoneTitle {
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.dropzoneSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.75rem;
+}
+
+.buttonContainer {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btnSave {
+  background-color: white;
+  border: 1px solid var(--cf-border-color);
+  color: var(--cf-text-primary);
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--cf-radius-md);
+}
+
+.btnSave:hover {
+  background-color: var(--cf-bg-main);
+}
+
+.btnSubmit {
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--cf-radius-md);
+}

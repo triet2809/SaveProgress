@@ -1,0 +1,2 @@
+package vn.edu.fpt.seal.modules.audit.dto; import jakarta.validation.constraints.*; import vn.edu.fpt.seal.common.enums.AuditAction; import java.util.UUID;
+public record CreateAuditLogRequest(UUID userId,UUID teamId,UUID incidentId,@NotNull AuditAction action,@NotBlank @Size(max=100) String targetType,@NotNull UUID targetId,@Size(max=10000) String oldValue,@Size(max=10000) String newValue,@Size(max=10000) String details) {}

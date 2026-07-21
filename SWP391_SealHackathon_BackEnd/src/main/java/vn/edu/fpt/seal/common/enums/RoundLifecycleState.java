@@ -1,0 +1,2 @@
+package vn.edu.fpt.seal.common.enums;
+public enum RoundLifecycleState { SCORING, APPEAL_WINDOW_OPEN, PAUSED_FOR_APPEAL, AWAITING_RECALCULATION, READY_TO_ADVANCE, ADVANCED, READY_FOR_AWARDS }

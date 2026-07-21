@@ -1,0 +1,6 @@
+package vn.edu.fpt.seal.modules.timeline;
+
+public enum TimelineSourceType {
+    EVENT, EVENT_STATUS, TEAM, ROUND, RESULT_VERSION, SUBMISSION, APPEAL, INCIDENT,
+    SUPPORT_TICKET, EVENT_FINALIZATION, PRIZE, SEED_ASSIGNMENT, RECOGNITION
+}

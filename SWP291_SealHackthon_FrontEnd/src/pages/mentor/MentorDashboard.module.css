@@ -1,0 +1,149 @@
+.greeting {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0;
+  color: var(--cf-text-primary);
+}
+
+.teamsCountBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a855f7;
+  background-color: #f3e8ff;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--cf-radius-md);
+}
+
+/* Team Progress */
+.teamProgressList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.teamProgressItem {
+  display: flex;
+  gap: 1rem;
+}
+
+.teamInfo {
+  flex: 1;
+}
+
+.teamName {
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  font-size: 0.875rem;
+}
+
+.projectName {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.progressTrack {
+  height: 6px;
+  background-color: var(--cf-border-color);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.progressText {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+}
+
+/* Specific Bootstrap color overrides for bars */
+:global(.bg-success) { background-color: var(--cf-status-success) !important; }
+:global(.bg-warning) { background-color: var(--cf-status-warning) !important; }
+:global(.bg-danger) { background-color: var(--cf-status-danger) !important; }
+
+/* Upcoming Sessions */
+.sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.sessionItem {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--cf-border-color);
+}
+
+.sessionItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.sessionTeam {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--cf-text-primary);
+}
+
+.sessionTime {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.sessionType {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a855f7;
+  background-color: #f3e8ff;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--cf-radius-sm);
+}
+
+.sessionTypeSession2 {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a855f7;
+  background-color: #f3e8ff;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--cf-radius-sm);
+}
+
+.sessionTypeSession3 {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a855f7;
+  background-color: #f3e8ff;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--cf-radius-sm);
+}
+
+/* Recent Feedback */
+.feedbackList {
+  margin-top: 1rem;
+}
+
+.feedbackTeam {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.feedbackTime {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+}

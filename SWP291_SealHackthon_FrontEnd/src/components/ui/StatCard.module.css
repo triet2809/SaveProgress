@@ -1,0 +1,35 @@
+.statCard {
+  border-radius: var(--cf-radius-lg);
+  border: 1px solid var(--cf-border-color);
+  box-shadow: none; /* Removing shadow for these specific flat cards if we follow the design exactly, but let's keep a very subtle one */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.iconContainer {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--cf-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.25rem;
+  line-height: 1;
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+  margin-top: 0.25rem;
+}

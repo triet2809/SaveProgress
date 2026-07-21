@@ -1,0 +1,129 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.categoryCard {
+  border: 1px solid var(--cf-border-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  border-radius: var(--cf-radius-lg);
+  height: 100%;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.categoryCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.iconWrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--cf-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.iconBlue {
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue);
+}
+
+.iconPurple {
+  background-color: #f3e8ff;
+  color: #9333ea;
+}
+
+.categoryName {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.categoryDesc {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.statBox {
+  background-color: var(--cf-bg-main);
+  padding: 1rem;
+  border-radius: var(--cf-radius-md);
+  display: flex;
+  flex-direction: column;
+}
+
+.statValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.2rem;
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  color: var(--cf-text-secondary);
+  text-transform: capitalize;
+}
+
+.progressSection {
+  margin-top: auto;
+}
+
+.progressBarContainer {
+  height: 6px;
+  background-color: var(--cf-bg-main);
+  border-radius: 3px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.fillBlue {
+  background-color: var(--cf-brand-blue);
+}
+
+.fillPurple {
+  background-color: #9333ea;
+}
+
+.progressLabel {
+  font-size: 0.7rem;
+  color: var(--cf-text-secondary);
+  margin: 0;
+}
