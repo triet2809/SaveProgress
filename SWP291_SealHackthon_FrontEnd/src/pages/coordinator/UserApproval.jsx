@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, Table, Button, Badge, Modal, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
 import { Check, X, Eye, Search } from 'lucide-react';
 import { getPendingUsers, approveUser, rejectUser } from '../../api/userApi';
@@ -37,6 +37,7 @@ const UserApproval = () => {
         name: u.fullName || u.email,
         email: u.email,
         type: userType(u),
+        campus: u.campusName || '—',
         requestedRole: roleLabel(u.roles),
         date: fmtDate(u.createdAt),
       }));
@@ -48,7 +49,10 @@ const UserApproval = () => {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, []);
 
   const handleApprove = async (id) => {
     setBusyId(id);
@@ -117,6 +121,7 @@ const UserApproval = () => {
                 <th className="border-top-0 border-bottom">Name</th>
                 <th className="border-top-0 border-bottom">Email</th>
                 <th className="border-top-0 border-bottom">User Type</th>
+                <th className="border-top-0 border-bottom">Campus</th>
                 <th className="border-top-0 border-bottom">Requested Role</th>
                 <th className="border-top-0 border-bottom">Date</th>
                 <th className="border-top-0 border-bottom text-end">Actions</th>
@@ -124,10 +129,10 @@ const UserApproval = () => {
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={6} className="text-center py-4"><Spinner animation="border" size="sm" /></td></tr>
+                <tr><td colSpan={7} className="text-center py-4"><Spinner animation="border" size="sm" /></td></tr>
               )}
               {!loading && filteredUsers.length === 0 && (
-                <tr><td colSpan={6} className="text-center py-4 text-muted">No pending requests.</td></tr>
+                <tr><td colSpan={7} className="text-center py-4 text-muted">No pending requests.</td></tr>
               )}
               {!loading && filteredUsers.map((user) => (
                 <tr key={user.id}>
@@ -136,6 +141,7 @@ const UserApproval = () => {
                   <td className="py-3">
                     <Badge bg="secondary" className="bg-opacity-25 text-secondary border">{user.type}</Badge>
                   </td>
+                  <td className="py-3">{user.campus}</td>
                   <td className="py-3 fw-medium">{user.requestedRole}</td>
                   <td className="py-3">{user.date}</td>
                   <td className="py-3 text-end">
@@ -181,6 +187,11 @@ const UserApproval = () => {
               <p>
                 <strong>User Type:</strong>{' '}
                 {selectedUser.type}
+              </p>
+
+              <p>
+                <strong>Campus:</strong>{' '}
+                {selectedUser.campus}
               </p>
 
               <p>

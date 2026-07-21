@@ -51,13 +51,13 @@ public class TeamTransferService {
                 excluded.add(new TeamTransferDtos.ExcludedTeam(id, null, "Team not found"));
                 continue;
             }
-            if (!team.getTrack().getEvent().getId().equals(target.getEvent().getId())) {
+            if (!team.getEvent().getId().equals(target.getEvent().getId())) {
                 excluded.add(excluded(team, "Team belongs to another event"));
                 continue;
             }
             String reason = ineligibleReason(team);
             if (reason != null) excluded.add(excluded(team, reason));
-            else if (!team.getTrack().getId().equals(target.getId())
+            else if ((team.getTrack() == null || !team.getTrack().getId().equals(target.getId()))
                     && teams.existsByTrackIdAndNameIgnoreCase(target.getId(), team.getName())) {
                 excluded.add(excluded(team, "Team name already exists in target track"));
             }
@@ -69,8 +69,8 @@ public class TeamTransferService {
         List<TeamTransferDtos.TeamMove> moves = new ArrayList<>();
         for (UUID id : request.teamIds()) {
             Team team = selected.get(id);
-            UUID current = team.getTrack().getId();
-            if (!current.equals(target.getId())) {
+            UUID current = team.getTrack() == null ? null : team.getTrack().getId();
+            if (!target.getId().equals(current)) {
                 team.setTrack(target);
                 moves.add(new TeamTransferDtos.TeamMove(team.getId(), team.getName(), current, target.getId()));
             }
@@ -92,15 +92,15 @@ public class TeamTransferService {
         eligible.sort(Comparator.comparing(team -> team.getId().toString()));
         if (request.randomSeed() != null) Collections.shuffle(eligible, new Random(request.randomSeed()));
 
-        Map<UUID, Long> before = eventTeams.stream().collect(Collectors.groupingBy(
+        Map<UUID, Long> before = eventTeams.stream().filter(team -> team.getTrack() != null).collect(Collectors.groupingBy(
                 team -> team.getTrack().getId(), Collectors.counting()));
         Map<UUID, Long> after = new LinkedHashMap<>();
         Map<UUID, Set<String>> names = new HashMap<>();
         for (Track track : targetTracks) {
             after.put(track.getId(), eventTeams.stream()
-                    .filter(team -> team.getTrack().getId().equals(track.getId()) && !eligible.contains(team)).count());
+                    .filter(team -> team.getTrack() != null && team.getTrack().getId().equals(track.getId()) && !eligible.contains(team)).count());
             names.put(track.getId(), eventTeams.stream()
-                    .filter(team -> team.getTrack().getId().equals(track.getId()) && !eligible.contains(team))
+                    .filter(team -> team.getTrack() != null && team.getTrack().getId().equals(track.getId()) && !eligible.contains(team))
                     .map(team -> team.getName().toLowerCase(Locale.ROOT)).collect(Collectors.toSet()));
         }
         List<TeamTransferDtos.TeamMove> moves = new ArrayList<>();
@@ -111,8 +111,8 @@ public class TeamTransferService {
                     .orElse(null);
             if (target == null) {
                 excluded.add(excluded(team, "No target track can accept the team name without conflict"));
-                UUID currentTrackId = team.getTrack().getId();
-                if (after.containsKey(currentTrackId)) {
+                UUID currentTrackId = team.getTrack() == null ? null : team.getTrack().getId();
+                if (currentTrackId != null && after.containsKey(currentTrackId)) {
                     after.put(currentTrackId, after.get(currentTrackId) + 1);
                 }
                 continue;
@@ -120,7 +120,7 @@ public class TeamTransferService {
             names.get(target.getId()).add(team.getName().toLowerCase(Locale.ROOT));
             after.put(target.getId(), after.get(target.getId()) + 1);
             moves.add(new TeamTransferDtos.TeamMove(team.getId(), team.getName(),
-                    team.getTrack().getId(), target.getId()));
+                    team.getTrack() == null ? null : team.getTrack().getId(), target.getId()));
         }
         List<TeamTransferDtos.TrackCount> trackCounts = targetTracks.stream()
                 .map(track -> new TeamTransferDtos.TrackCount(track.getId(), track.getName(),
@@ -137,7 +137,7 @@ public class TeamTransferService {
         Map<UUID, Track> trackById = targetTracks(eventId, request.targetTrackIds()).stream()
                 .collect(Collectors.toMap(Track::getId, Function.identity()));
         for (TeamTransferDtos.TeamMove move : preview.moves()) {
-            if (!move.currentTrackId().equals(move.proposedTrackId())) {
+            if (!move.proposedTrackId().equals(move.currentTrackId())) {
                 byId.get(move.teamId()).setTrack(trackById.get(move.proposedTrackId()));
             }
         }
@@ -159,14 +159,14 @@ public class TeamTransferService {
 
     private String ineligibleReason(Team team) {
         if (team.getStatus() != TeamStatus.active) return "Team is not active";
-        EventStatus status = team.getTrack().getEvent().getStatus();
+        EventStatus status = team.getEvent().getStatus();
         if (status != EventStatus.draft && status != EventStatus.published) return "Event lifecycle locks team transfers";
         if (submissions.existsByTeamId(team.getId())) return "Team has submissions";
         if (participants.existsByTeamId(team.getId())) return "Team participates in a round";
         if (rankings.existsByTeamId(team.getId())) return "Team has ranking data";
         if (resultEntries.existsByTeamId(team.getId())) return "Team has published result data";
         if (finishes.existsByTeamId(team.getId())) return "Team has finalized historical results";
-        if (seeds.existsByEventIdAndTeamId(team.getTrack().getEvent().getId(), team.getId())) return "Team has seed metadata";
+        if (seeds.existsByEventIdAndTeamId(team.getEvent().getId(), team.getId())) return "Team has seed metadata";
         return null;
     }
 
@@ -183,6 +183,7 @@ public class TeamTransferService {
 
     private List<TeamTransferDtos.TrackCount> counts(UUID eventId, List<Track> selectedTracks) {
         Map<UUID, Long> count = teams.findByTrackEventId(eventId).stream()
+                .filter(team -> team.getTrack() != null)
                 .collect(Collectors.groupingBy(team -> team.getTrack().getId(), Collectors.counting()));
         return selectedTracks.stream().map(track -> new TeamTransferDtos.TrackCount(track.getId(), track.getName(),
                 count.getOrDefault(track.getId(), 0L), count.getOrDefault(track.getId(), 0L))).toList();

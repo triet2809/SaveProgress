@@ -1,18 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Button, Form, Row, Col, Alert, Badge, Spinner } from 'react-bootstrap';
 import { Plus, Trash2, Users, Save, AlertTriangle, Key, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getEvents, getTracks, createTeam, getEventRules, acceptEventRules } from '../../api/hackathonApi';
+import { getEvents, createTeam, getEventRules, acceptEventRules } from '../../api/hackathonApi';
 import { getStoredUser } from '../../utils/authUser';
 
 const MAX_MEMBERS = 5; // leader + up to 4 teammates
 const MAX_EMAIL_SLOTS = MAX_MEMBERS - 1; // 4 email slots
-
-const trackIsFull = (t) => t.maxTeams != null && (t.teamCount ?? 0) >= t.maxTeams;
-const trackLabel = (t) => {
-  const cap = t.maxTeams != null ? `${t.teamCount ?? 0}/${t.maxTeams}` : `${t.teamCount ?? 0}/∞`;
-  return `${t.name} (${cap}${trackIsFull(t) ? ' – full' : ''})`;
-};
 
 const CreateTeam = () => {
   const navigate = useNavigate();
@@ -25,8 +19,6 @@ const CreateTeam = () => {
   // Event-first: only events with registration open (status=published) are selectable.
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
-  const [tracks, setTracks] = useState([]);
-  const [tracksLoading, setTracksLoading] = useState(false);
 
   // Thể lệ PUBLIC của sự kiện + trạng thái checkbox chấp thuận.
   // Thí sinh phải tích "I agree" trước khi tạo team; BE cũng ghi nhận việc chấp thuận.
@@ -35,7 +27,7 @@ const CreateTeam = () => {
 
   const currentUser = getStoredUser() || {};
 
-  const [teamData, setTeamData] = useState({ name: '', eventId: '', trackId: '' });
+  const [teamData, setTeamData] = useState({ name: '', eventId: '' });
   // One email slot shown by default (person #2). "+" adds up to 3 more (person #3/#4/#5).
   const [memberEmails, setMemberEmails] = useState(['']);
 
@@ -56,30 +48,12 @@ const CreateTeam = () => {
     return () => { active = false; };
   }, []);
 
-  // When an event is picked, load its tracks (with capacity info).
-  useEffect(() => {
-    if (!teamData.eventId) { setTracks([]); setRules([]); setAcceptedRules(false); return; }
-    let active = true;
-    setTracksLoading(true);
-    (async () => {
-      try {
-        const res = await getTracks({ eventId: teamData.eventId, size: 100 });
-        const list = res?.content || res || [];
-        if (!active) return;
-        setTracks(list);
-      } catch (e) {
-        if (active) setError(e.message || 'Failed to load tracks');
-      } finally {
-        if (active) setTracksLoading(false);
-      }
-    })();
-    return () => { active = false; };
-  }, [teamData.eventId]);
-
   // Tải thể lệ PUBLIC của sự kiện đang chọn; reset checkbox mỗi khi đổi sự kiện.
   useEffect(() => {
     if (!teamData.eventId) return;
     let active = true;
+    // Reset acceptance whenever the selected event changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAcceptedRules(false);
     (async () => {
       try {
@@ -94,11 +68,7 @@ const CreateTeam = () => {
 
   const handleTeamChange = (e) => {
     const { name, value } = e.target;
-    setTeamData((prev) => {
-      // Changing the event clears the previously selected track.
-      if (name === 'eventId') return { ...prev, eventId: value, trackId: '' };
-      return { ...prev, [name]: value };
-    });
+    setTeamData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEmailChange = (idx, value) => {
@@ -118,9 +88,6 @@ const CreateTeam = () => {
     setError('');
     if (!teamData.name.trim()) { setError('Please enter a team name.'); return; }
     if (!teamData.eventId) { setError('Please select an event that is open for registration.'); return; }
-    if (!teamData.trackId) { setError('Please select a track.'); return; }
-    const chosenTrack = tracks.find((t) => t.id === teamData.trackId);
-    if (chosenTrack && trackIsFull(chosenTrack)) { setError('This track is full, please choose another track.'); return; }
     // Bắt buộc chấp thuận thể lệ (chỉ khi sự kiện có công bố thể lệ PUBLIC).
     if (rules.length > 0 && !acceptedRules) { setError('Please read and agree to the event rules before creating a team.'); return; }
 
@@ -138,7 +105,7 @@ const CreateTeam = () => {
         } catch { /* việc ghi nhận không nên chặn tạo team nếu BE tạm lỗi */ }
       }
       const created = await createTeam({
-        trackId: teamData.trackId,
+        eventId: teamData.eventId,
         name: teamData.name.trim(),
         leaderUserId: currentUser.id || undefined,
         memberEmails: emails, // BE resolves to approved users; blank list = solo team
@@ -238,17 +205,9 @@ const CreateTeam = () => {
                     )}
                   </Form.Group>
 
-                  <Form.Group className="mb-3">
-                    <Form.Label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--cf-text-secondary)' }}>Track *</Form.Label>
-                    <Form.Select name="trackId" value={teamData.trackId} onChange={handleTeamChange} disabled={!teamData.eventId || tracksLoading} required>
-                      <option value="">
-                        {!teamData.eventId ? 'Select an event first' : (tracksLoading ? 'Loading tracks...' : (tracks.length === 0 ? 'This event has no tracks' : 'Select a track...'))}
-                      </option>
-                      {tracks.map((t) => (
-                        <option key={t.id} value={t.id} disabled={trackIsFull(t)}>{trackLabel(t)}</option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
+                  <Form.Text className="text-muted">
+                    The event coordinator will assign your team to a track later.
+                  </Form.Text>
                 </Card.Body>
               </Card>
             </Col>

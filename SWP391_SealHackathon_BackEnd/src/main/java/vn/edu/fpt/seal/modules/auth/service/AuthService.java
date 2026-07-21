@@ -246,6 +246,8 @@ public class AuthService {
     }
 
     private AuthResponse buildPendingResponse(User user) {
+        Campus campus = user.getCampus();
+        University university = campus != null ? campus.getUniversity() : user.getUniversity();
         return AuthResponse.builder()
                 .user(AuthResponse.UserSummary.builder()
                         .id(user.getId())
@@ -253,6 +255,10 @@ public class AuthService {
                         .fullName(user.getFullName())
                         .status(user.getStatus().name())
                         .studentType(user.getStudentType().name())
+                        .universityId(university == null ? null : university.getId())
+                        .universityName(university == null ? null : university.getName())
+                        .campusId(campus == null ? null : campus.getId())
+                        .campusName(campus == null ? null : campus.getName())
                         .isGuest(user.isGuest())
                         .roles(user.getRoles().stream().map(Role::getName).toList())
                         .mustChangePassword(user.isMustChangePassword())

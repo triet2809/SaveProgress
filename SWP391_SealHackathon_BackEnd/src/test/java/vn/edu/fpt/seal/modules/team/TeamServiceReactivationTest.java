@@ -57,7 +57,7 @@ class TeamServiceReactivationTest {
         track.setId(UUID.randomUUID());
         TeamProfile profile = TeamProfile.builder().canonicalName("Team").status(TeamProfileStatus.active).build();
         profile.setId(UUID.randomUUID());
-        team = Team.builder().teamProfile(profile).track(track).name("Team")
+        team = Team.builder().teamProfile(profile).event(event).track(track).name("Team")
                 .status(TeamStatus.disqualified).disqualifiedReason("Administrative correction").build();
         team.setId(UUID.randomUUID());
         CurrentUser actor = CurrentUser.builder().id(UUID.randomUUID()).email("ec@example.test")

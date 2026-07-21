@@ -21,6 +21,7 @@ import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
 import vn.edu.fpt.seal.modules.user.entity.User;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 import vn.edu.fpt.seal.modules.event.repository.EventRepository;
+import vn.edu.fpt.seal.modules.event.entity.Event;
 import vn.edu.fpt.seal.modules.teamprofile.entity.TeamProfile;
 import vn.edu.fpt.seal.modules.teamprofile.repository.TeamProfileRepository;
 import vn.edu.fpt.seal.modules.recognition.service.TeamRecognitionService;
@@ -91,20 +92,21 @@ public class TeamService {
 
     @Transactional
     public TeamResponse create(CreateTeamRequest req, Authentication auth) {
-        Track track = trackRepository.findById(req.trackId()).orElseThrow(() -> ApiException.notFound("Track not found: " + req.trackId()));
-        ensureEditable(track);
-        ensureRegistrationOpen(track);
+        Event event = eventRepository.findById(req.eventId())
+                .orElseThrow(() -> ApiException.notFound("Event not found: " + req.eventId()));
+        ensureRegistrationOpen(event);
         String name = req.name().trim();
-        if (teamRepository.existsByTrackIdAndNameIgnoreCase(track.getId(), name)) throw ApiException.conflict("Team name already exists in this track");
+        if (teamRepository.existsByEventIdAndTrackIsNullAndNameIgnoreCase(event.getId(), name))
+            throw ApiException.conflict("An unassigned team with this name already exists in this event");
 
         boolean coordinator = isCoordinator(auth);
         UUID actorId = currentUserIdOrNull(auth);
         User creator = actorId == null ? null : userRepository.findById(actorId).orElse(null);
         TeamProfile profile = teamProfileRepository.save(TeamProfile.builder()
                 .canonicalName(name).createdBy(creator).status(TeamProfileStatus.active).build());
-        Team team = teamRepository.save(Team.builder().teamProfile(profile).track(track).name(name)
+        Team team = teamRepository.save(Team.builder().teamProfile(profile).event(event).track(null).name(name)
                 .status(TeamStatus.active).inviteCode(generateInviteCode()).build());
-        timelineService.record(track.getEvent(), team.getId(), null, track.getId(), "TEAM_CREATED",
+        timelineService.record(event, team.getId(), null, null, "TEAM_CREATED",
                 TimelineScope.EVENT_PARTICIPANTS, "Team created", "A team registration was created",
                 "TEAM", team.getId(), "team:" + team.getId() + ":created");
         Set<UUID> added = new LinkedHashSet<>();
@@ -128,7 +130,8 @@ public class TeamService {
             if (added.size() > MAX_TEAM_SIZE)
                 throw ApiException.badRequest("A team can have at most " + MAX_TEAM_SIZE + " members (including the leader)");
         }
-        log.info("Team created: id={}, track={}, name={}, byCoordinator={}", team.getId(), track.getId(), team.getName(), coordinator);
+        log.info("Team created unassigned: id={}, event={}, name={}, byCoordinator={}",
+                team.getId(), event.getId(), team.getName(), coordinator);
         return toResponse(team);
     }
 
@@ -156,10 +159,14 @@ public class TeamService {
 
     @Transactional
     public TeamResponse update(UUID id, UpdateTeamRequest req) {
-        Team team = findOrThrow(id); ensureEditable(team.getTrack());
+        Team team = findOrThrow(id); ensureEditable(team.getEvent());
         if (req.name() != null) {
             String name = req.name().trim();
-            if (!name.equalsIgnoreCase(team.getName()) && teamRepository.existsByTrackIdAndNameIgnoreCase(team.getTrack().getId(), name)) throw ApiException.conflict("Team name already exists in this track");
+            boolean duplicate = team.getTrack() == null
+                    ? teamRepository.existsByEventIdAndTrackIsNullAndNameIgnoreCase(team.getEvent().getId(), name)
+                    : teamRepository.existsByTrackIdAndNameIgnoreCase(team.getTrack().getId(), name);
+            if (!name.equalsIgnoreCase(team.getName()) && duplicate)
+                throw ApiException.conflict("Team name already exists in this allocation scope");
             team.setName(name);
         }
         return toResponse(team);
@@ -170,15 +177,15 @@ public class TeamService {
         Team team = findOrThrow(id);
         Track target = trackRepository.findById(req.trackId()).orElseThrow(() -> ApiException.notFound("Track not found: " + req.trackId()));
         Track current = team.getTrack();
-        if (current.getId().equals(target.getId())) return toResponse(team);
+        if (current != null && current.getId().equals(target.getId())) return toResponse(team);
         // Target track must be in the same event (cross-event moves are not allowed).
-        if (!current.getEvent().getId().equals(target.getEvent().getId()))
+        if (!team.getEvent().getId().equals(target.getEvent().getId()))
             throw ApiException.badRequest("Target track must belong to the same event");
-        ensureEditable(target);
+        ensureEditable(target.getEvent());
         // Name must stay unique within the destination track.
         if (teamRepository.existsByTrackIdAndNameIgnoreCase(target.getId(), team.getName()))
             throw ApiException.conflict("A team with this name already exists in the target track");
-        String oldTrack = current.getId().toString();
+        String oldTrack = current == null ? "unassigned" : current.getId().toString();
         team.setTrack(target);
         // Requirement #10-style audit trail: record cross-track moves.
         writeAudit(auth, team, AuditAction.PROMOTE_TEAM, oldTrack, target.getId().toString(), "Moved team to track " + target.getName());
@@ -192,8 +199,8 @@ public class TeamService {
         String code = req.inviteCode().trim().toUpperCase().replace("SEAL-", "").replace("-", "");
         Team team = teamRepository.findByInviteCodeIgnoreCase(code)
                 .orElseThrow(() -> ApiException.notFound("Team invite code not found"));
-        ensureEditable(team.getTrack());
-        ensureRegistrationOpen(team.getTrack());
+        ensureEditable(team.getEvent());
+        ensureRegistrationOpen(team.getEvent());
         if (teamMemberRepository.existsByTeamIdAndUserId(team.getId(), callerId)) return toResponse(team);
         if (teamMemberRepository.countByTeamId(team.getId()) >= MAX_TEAM_SIZE) throw ApiException.badRequest("A team can have at most " + MAX_TEAM_SIZE + " members");
         addMemberInternal(team, callerId, TeamMemberRole.member);
@@ -202,7 +209,7 @@ public class TeamService {
 
     @Transactional
     public TeamResponse addMember(UUID teamId, AddTeamMemberRequest req) {
-        Team team = findOrThrow(teamId); ensureEditable(team.getTrack());
+        Team team = findOrThrow(teamId); ensureEditable(team.getEvent());
         if (teamMemberRepository.countByTeamId(teamId) >= MAX_TEAM_SIZE)
             throw ApiException.badRequest("A team can have at most " + MAX_TEAM_SIZE + " members");
         addMemberInternal(team, req.userId(), req.role() == null ? TeamMemberRole.member : req.role());
@@ -211,7 +218,7 @@ public class TeamService {
 
     @Transactional
     public void removeMember(UUID teamId, UUID userId) {
-        Team team = findOrThrow(teamId); ensureEditable(team.getTrack());
+        Team team = findOrThrow(teamId); ensureEditable(team.getEvent());
         TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId).orElseThrow(() -> ApiException.notFound("Team member not found"));
         teamMemberRepository.delete(member);
     }
@@ -224,7 +231,8 @@ public class TeamService {
         team.setDisqualifiedReason(req.reason().trim());
         // Requirement #10: disqualification must leave an audit trail.
         writeAudit(auth, team, AuditAction.DISQUALIFY_TEAM, oldStatus, TeamStatus.disqualified.name(), req.reason().trim());
-        timelineService.record(team.getTrack().getEvent(), team.getId(), null, team.getTrack().getId(),
+        timelineService.record(team.getEvent(), team.getId(), null,
+                team.getTrack() == null ? null : team.getTrack().getId(),
                 "TEAM_DISQUALIFIED", TimelineScope.EVENT_PARTICIPANTS, "Team disqualified",
                 "The team was disqualified", "TEAM", team.getId(),
                 "team:" + team.getId() + ":disqualified:" + team.getUpdatedAt());
@@ -234,7 +242,7 @@ public class TeamService {
     @Transactional
     public TeamResponse reactivate(UUID id, Authentication auth) {
         Team team = findOrThrow(id);
-        ensureEditable(team.getTrack());
+        ensureEditable(team.getEvent());
         if (team.getStatus() == TeamStatus.active) {
             throw ApiException.conflict("Team is already active");
         }
@@ -250,7 +258,8 @@ public class TeamService {
         team = teamRepository.saveAndFlush(team);
         writeAudit(auth, team, AuditAction.UPDATE, oldStatus, TeamStatus.active.name(),
                 "Coordinator restored this event registration before registration closed");
-        timelineService.record(team.getTrack().getEvent(), team.getId(), null, team.getTrack().getId(),
+        timelineService.record(team.getEvent(), team.getId(), null,
+                team.getTrack() == null ? null : team.getTrack().getId(),
                 "TEAM_REACTIVATED", TimelineScope.EVENT_PARTICIPANTS, "Team reactivated",
                 "The team registration was reactivated", "TEAM", team.getId(),
                 "team:" + team.getId() + ":reactivated:" + team.getUpdatedAt());
@@ -258,7 +267,7 @@ public class TeamService {
     }
 
     @Transactional
-    public void delete(UUID id) { Team team = findOrThrow(id); ensureDraft(team.getTrack()); teamRepository.delete(team); }
+    public void delete(UUID id) { Team team = findOrThrow(id); ensureDraft(team.getEvent()); teamRepository.delete(team); }
 
     private TeamResponse toResponse(Team team) { return toResponse(team, true); }
     private TeamResponse toResponse(Team team, boolean includeInviteCode) {
@@ -276,17 +285,17 @@ public class TeamService {
     private Team findOrThrow(UUID id) { return teamRepository.findWithTrackById(id).orElseThrow(() -> ApiException.notFound("Team not found: " + id)); }
     private TeamMember addMemberInternal(Team team, UUID userId, TeamMemberRole role) {
         if (teamMemberRepository.existsByTeamIdAndUserId(team.getId(), userId)) throw ApiException.conflict("User already belongs to this team");
-        if (teamMemberRepository.existsActiveRegistrationInEvent(userId, team.getTrack().getEvent().getId()))
+        if (teamMemberRepository.existsActiveRegistrationInEvent(userId, team.getEvent().getId()))
             throw ApiException.conflict("User already belongs to another active team in this event");
         if (role == TeamMemberRole.leader && teamMemberRepository.existsByTeamIdAndRole(team.getId(), TeamMemberRole.leader)) throw ApiException.conflict("Team already has a leader");
         User user = userRepository.findById(userId).orElseThrow(() -> ApiException.notFound("User not found: " + userId));
         if (user.getStatus() != AccountStatus.approved) throw ApiException.badRequest("Only approved users can join teams");
         return teamMemberRepository.save(TeamMember.builder().team(team).user(user).role(role).build());
     }
-    private void ensureEditable(Track track) { EventStatus s = track.getEvent().getStatus(); if (s != EventStatus.draft && s != EventStatus.published) throw ApiException.badRequest("Historical team registrations cannot be edited after registration closes (status: " + s + ")"); }
+    private void ensureEditable(Event event) { EventStatus s = event.getStatus(); if (s != EventStatus.draft && s != EventStatus.published) throw ApiException.badRequest("Historical team registrations cannot be edited after registration closes (status: " + s + ")"); }
     /** Team registration (create/join) is only allowed while the event has registration open (status=published). */
-    private void ensureRegistrationOpen(Track track) { EventStatus s = track.getEvent().getStatus(); if (s != EventStatus.published) throw ApiException.badRequest("Registration is not open for this event (status: " + s + ")"); }
-    private void ensureDraft(Track track) { EventStatus s = track.getEvent().getStatus(); if (s != EventStatus.draft) throw ApiException.badRequest("Teams can only be deleted while event is draft (current: " + s + ")"); }
+    private void ensureRegistrationOpen(Event event) { EventStatus s = event.getStatus(); if (s != EventStatus.published) throw ApiException.badRequest("Registration is not open for this event (status: " + s + ")"); }
+    private void ensureDraft(Event event) { EventStatus s = event.getStatus(); if (s != EventStatus.draft) throw ApiException.badRequest("Teams can only be deleted while event is draft (current: " + s + ")"); }
 
     private boolean isCoordinator(Authentication auth) {
         return auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_COORDINATOR"));
@@ -317,7 +326,7 @@ public class TeamService {
 
     private int currentRegistrationPriority(Team team) {
         if (team.getStatus() == TeamStatus.disqualified) return 10;
-        return switch (team.getTrack().getEvent().getStatus()) {
+        return switch (team.getEvent().getStatus()) {
             case ongoing -> 0;
             case published -> 1;
             case draft -> 2;

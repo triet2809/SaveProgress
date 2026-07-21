@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Button, Form, Row, Col, Alert, Badge, Spinner } from 'react-bootstrap';
 import { Plus, Trash2, Users, Save, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getTracks, createTeam, addTeamMember } from '../../api/hackathonApi';
+import { getTracks, createTeam, moveTeamTrack, addTeamMember } from '../../api/hackathonApi';
 
 const RecordTeam = () => {
   const navigate = useNavigate();
@@ -82,11 +82,16 @@ const RecordTeam = () => {
     }
     setSubmitting(true);
     try {
+      const selectedTrack = tracks.find((track) => track.id === teamData.trackId);
+      if (!selectedTrack?.eventId) {
+        throw new Error('The selected track is missing its event');
+      }
       const created = await createTeam({
-        trackId: teamData.trackId,
+        eventId: selectedTrack.eventId,
         name: teamData.name,
       });
       const teamId = created?.id;
+      if (teamId) await moveTeamTrack(teamId, teamData.trackId);
 
       // Add members (each identified by email); collect any failures without aborting.
       const failed = [];

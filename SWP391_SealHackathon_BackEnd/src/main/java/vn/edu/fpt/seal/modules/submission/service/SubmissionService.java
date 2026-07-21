@@ -50,7 +50,7 @@ public class SubmissionService {
         if (eventId == null && teamId != null) {
             eventId = teamRepository.findWithTrackById(teamId)
                     .orElseThrow(() -> ApiException.notFound("Team not found: " + teamId))
-                    .getTrack().getEvent().getId();
+                    .getEvent().getId();
         }
         if (eventId == null) throw ApiException.badRequest("eventId is required unless teamId safely determines it");
         UUID scopedEventId = eventId;
@@ -59,7 +59,7 @@ public class SubmissionService {
             throw ApiException.badRequest("Track does not belong to the selected event");
         }
         if (teamId != null && !teamRepository.findWithTrackById(teamId)
-                .filter(t -> t.getTrack().getEvent().getId().equals(scopedEventId)).isPresent()) {
+                .filter(t -> t.getEvent().getId().equals(scopedEventId)).isPresent()) {
             throw ApiException.badRequest("Team does not belong to the selected event");
         }
         if (roundId != null) {
@@ -89,6 +89,7 @@ public class SubmissionService {
     public SubmissionResponse submit(UpsertSubmissionRequest req, Authentication auth) {
         Round round = roundRepository.findById(req.roundId()).orElseThrow(() -> ApiException.notFound("Round not found: " + req.roundId()));
         Team team = teamRepository.findWithTrackById(req.teamId()).orElseThrow(() -> ApiException.notFound("Team not found: " + req.teamId()));
+        if (team.getTrack() == null) throw ApiException.badRequest("Team must be assigned to a track before submitting");
         validateRoundTeam(round, team); ensureCanSubmit(team, auth); ensureSubmissionOpen(round);
         Submission existing = submissionRepository.findByRoundIdAndTeamId(round.getId(), team.getId()).orElse(null);
         boolean created = existing == null;

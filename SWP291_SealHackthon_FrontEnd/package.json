@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node --test src/pages/coordinator/CoordinatorDashboard.test.js",
+    "test": "node --test src/pages/coordinator/CoordinatorDashboard.test.js src/pages/team/RegistrationTeamFlows.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

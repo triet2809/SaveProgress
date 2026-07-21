@@ -29,19 +29,19 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, UUID> {
 
     Optional<TeamMember> findByTeamIdAndUserId(UUID teamId, UUID userId);
 
-    @EntityGraph(attributePaths = {"team", "team.teamProfile", "team.track", "team.track.event", "user"})
+    @EntityGraph(attributePaths = {"team", "team.teamProfile", "team.event", "team.track", "user"})
     List<TeamMember> findByUserIdOrderByJoinedAtDesc(UUID userId);
 
-    @EntityGraph(attributePaths = {"team", "team.track", "team.track.event", "user"})
+    @EntityGraph(attributePaths = {"team", "team.event", "team.track", "user"})
     List<TeamMember> findByTeamIdIn(Collection<UUID> teamIds);
 
-    @EntityGraph(attributePaths = {"team", "team.track", "team.track.event", "user"})
-    @Query("""
-        select tm from TeamMember tm
-        where tm.user.id in :userIds
-          and tm.team.track.event.id = :eventId
-          and tm.team.status = vn.edu.fpt.seal.common.enums.TeamStatus.active
-        """)
+    @Query(value = """
+        select tm.* from public.team_members tm
+        join public.teams team on team.id = tm.team_id
+        where tm.user_id in (:userIds)
+          and team.event_id = :eventId
+          and team.status = 'active'::public.team_status
+        """, nativeQuery = true)
     List<TeamMember> findActiveRegistrationsInEvent(@Param("userIds") Collection<UUID> userIds,
                                                      @Param("eventId") UUID eventId);
 

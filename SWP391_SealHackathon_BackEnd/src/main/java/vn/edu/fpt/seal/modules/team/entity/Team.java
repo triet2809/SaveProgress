@@ -7,6 +7,7 @@ import org.hibernate.type.SqlTypes;
 import vn.edu.fpt.seal.common.entity.BaseEntity;
 import vn.edu.fpt.seal.common.enums.TeamStatus;
 import vn.edu.fpt.seal.modules.track.entity.Track;
+import vn.edu.fpt.seal.modules.event.entity.Event;
 import vn.edu.fpt.seal.modules.teamprofile.entity.TeamProfile;
 import vn.edu.fpt.seal.modules.user.entity.User;
 
@@ -26,7 +27,11 @@ public class Team extends BaseEntity {
     private TeamProfile teamProfile;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "track_id", nullable = false)
+    @JoinColumn(name = "event_id", nullable = false)
+    private Event event;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "track_id")
     private Track track;
 
     @Column(name = "name", nullable = false, length = 255)

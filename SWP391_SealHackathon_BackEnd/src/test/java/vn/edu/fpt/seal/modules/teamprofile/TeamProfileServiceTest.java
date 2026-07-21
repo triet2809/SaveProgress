@@ -57,7 +57,7 @@ class TeamProfileServiceTest {
         historicalEvent.setId(UUID.randomUUID());
         Track historicalTrack = Track.builder().event(historicalEvent).name("General").build();
         historicalTrack.setId(UUID.randomUUID());
-        source = Team.builder().teamProfile(profile).track(historicalTrack).name("Legacy Alpha")
+        source = Team.builder().teamProfile(profile).event(historicalEvent).track(historicalTrack).name("Legacy Alpha")
                 .status(TeamStatus.active).inviteCode("OLD123").build();
         source.setId(UUID.randomUUID());
 
@@ -135,7 +135,7 @@ class TeamProfileServiceTest {
     void existingProfileRegistrationAndMemberConflictMakePreviewIneligible() {
         when(teams.existsByTeamProfileIdAndTrackEventId(profile.getId(), targetEvent.getId())).thenReturn(true);
         Team conflictTeam = Team.builder().teamProfile(TeamProfile.builder().canonicalName("Other").build())
-                .track(targetTrack).name("Other").status(TeamStatus.active).build();
+                .event(targetEvent).track(targetTrack).name("Other").status(TeamStatus.active).build();
         conflictTeam.setId(UUID.randomUUID());
         TeamMember conflict = member(historicalRoster.get(1).getUser(), TeamMemberRole.member);
         conflict.setTeam(conflictTeam);

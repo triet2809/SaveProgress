@@ -65,7 +65,7 @@ public class TeamProfileService {
         UUID callerId = current(authentication).getId();
         List<TeamMember> callerMemberships = members.findByUserIdOrderByJoinedAtDesc(callerId);
         Set<UUID> profileIds = callerMemberships.stream()
-                .filter(member -> isHistorical(member.getTeam().getTrack().getEvent()))
+                .filter(member -> isHistorical(member.getTeam().getEvent()))
                 .map(TeamMember::getTeam)
                 .map(Team::getTeamProfile)
                 .filter(Objects::nonNull)
@@ -92,12 +92,12 @@ public class TeamProfileService {
                             Comparator.nullsLast(Comparator.reverseOrder())))
                     .toList();
             boolean eligible = profileTeams.stream().anyMatch(team ->
-                    isHistorical(team.getTrack().getEvent())
+                    isHistorical(team.getEvent())
                             && rosterByTeam.getOrDefault(team.getId(), List.of()).stream()
                             .anyMatch(member -> member.getUser().getId().equals(callerId)
                                     && member.getRole() == TeamMemberRole.leader));
             boolean registered = targetEventId != null && profileTeams.stream()
-                    .anyMatch(team -> team.getTrack().getEvent().getId().equals(targetEventId));
+                    .anyMatch(team -> team.getEvent().getId().equals(targetEventId));
             List<TeamProfileDtos.HistoricalRegistration> history = profileTeams.stream()
                     .map(team -> historicalRegistration(team, callerId,
                             rosterByTeam.getOrDefault(team.getId(), List.of())))
@@ -138,6 +138,7 @@ public class TeamProfileService {
         Team created = Team.builder()
                 .teamProfile(profile)
                 .sourceTeam(source)
+                .event(target.getEvent())
                 .track(target)
                 .name(profile.getCanonicalName())
                 .status(TeamStatus.active)
@@ -197,7 +198,7 @@ public class TeamProfileService {
         if (!targetTrack.getEvent().getId().equals(targetEvent.getId())) {
             throw ApiException.badRequest("Target track does not belong to the target event");
         }
-        if (source.getTrack().getEvent().getId().equals(targetEvent.getId())) {
+        if (source.getEvent().getId().equals(targetEvent.getId())) {
             throw ApiException.badRequest("Source and target events must be different");
         }
 
@@ -222,7 +223,7 @@ public class TeamProfileService {
                 .anyMatch(user -> user.getStatus() != AccountStatus.approved)) {
             missing.add("All returning members must use approved existing accounts");
         }
-        if (!isHistorical(source.getTrack().getEvent())) missing.add("Source registration is not historical yet");
+        if (!isHistorical(source.getEvent())) missing.add("Source registration is not historical yet");
         if (targetEvent.getStatus() != EventStatus.published) missing.add("Target event registration is not open");
         if (profile.getStatus() != TeamProfileStatus.active) missing.add("Team profile is not active");
         if (teams.existsByTeamProfileIdAndTrackEventId(profile.getId(), targetEvent.getId())) {
@@ -263,9 +264,9 @@ public class TeamProfileService {
                 .filter(member -> member.getUser().getId().equals(callerId))
                 .map(TeamMember::getRole).findFirst().orElse(null);
         return new TeamProfileDtos.HistoricalRegistration(team.getId(),
-                team.getTrack().getEvent().getId(), team.getTrack().getEvent().getTitle(),
-                team.getTrack().getEvent().getStatus().name(), team.getTrack().getId(),
-                team.getTrack().getName(), callerRole,
+                team.getEvent().getId(), team.getEvent().getTitle(),
+                team.getEvent().getStatus().name(), team.getTrack() == null ? null : team.getTrack().getId(),
+                team.getTrack() == null ? null : team.getTrack().getName(), callerRole,
                 roster.stream().map(this::historicalMember).toList());
     }
 

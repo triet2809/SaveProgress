@@ -159,7 +159,8 @@ class TeamTransferServiceTest {
     private Team team(String name, Track track) {
         TeamProfile profile = TeamProfile.builder().canonicalName(name).build();
         profile.setId(UUID.randomUUID());
-        Team team = Team.builder().teamProfile(profile).track(track).name(name).status(TeamStatus.active).build();
+        Team team = Team.builder().teamProfile(profile).event(track.getEvent()).track(track)
+                .name(name).status(TeamStatus.active).build();
         team.setId(UUID.randomUUID());
         return team;
     }

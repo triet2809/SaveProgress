@@ -170,9 +170,10 @@ public class TimelineService {
     private void validateHierarchy(Event event, Team team, Round round, Track track) {
         if (track != null && !track.getEvent().getId().equals(event.getId())) hierarchy();
         if (round != null && !round.getTrack().getEvent().getId().equals(event.getId())) hierarchy();
-        if (team != null && !team.getTrack().getEvent().getId().equals(event.getId())) hierarchy();
+        if (team != null && !team.getEvent().getId().equals(event.getId())) hierarchy();
         if (round != null && track != null && !round.getTrack().getId().equals(track.getId())) hierarchy();
-        if (team != null && track != null && !team.getTrack().getId().equals(track.getId())) hierarchy();
+        if (team != null && track != null
+                && (team.getTrack() == null || !team.getTrack().getId().equals(track.getId()))) hierarchy();
     }
 
     private void validateFilterHierarchy(UUID eventId, UUID roundId, UUID trackId) {

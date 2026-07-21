@@ -185,8 +185,12 @@ public class IncidentService {
             expectedTrack = mergeTrack(expectedTrack, round.getTrack().getId(), "Round and track do not match");
         }
         if (team != null) {
-            requireSame(expectedEvent, team.getTrack().getEvent().getId(), "Team does not belong to the selected event");
-            expectedTrack = mergeTrack(expectedTrack, team.getTrack().getId(), "Team and track do not match");
+            requireSame(expectedEvent, team.getEvent().getId(), "Team does not belong to the selected event");
+            if (team.getTrack() != null) {
+                expectedTrack = mergeTrack(expectedTrack, team.getTrack().getId(), "Team and track do not match");
+            } else if (expectedTrack != null) {
+                throw ApiException.badRequest("Unassigned team does not belong to the selected track");
+            }
         }
         if (submission != null) {
             requireSame(expectedEvent, submission.getRound().getTrack().getEvent().getId(),

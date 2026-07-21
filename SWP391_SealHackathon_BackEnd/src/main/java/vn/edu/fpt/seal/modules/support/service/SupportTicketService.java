@@ -126,11 +126,12 @@ public class SupportTicketService {
                 .map(member -> member.getTeam())
                 .filter(candidate -> candidate.getStatus() == TeamStatus.active)
                 .filter(candidate -> Set.of(EventStatus.published, EventStatus.ongoing)
-                        .contains(candidate.getTrack().getEvent().getStatus()))
+                        .contains(candidate.getEvent().getStatus()))
                 .findFirst().orElse(null);
         if (team == null) return;
-        timeline.record(new TimelineEventRequest(team.getTrack().getEvent().getId(), team.getId(), null,
-                team.getTrack().getId(), type, TimelineSourceType.SUPPORT_TICKET, ticket.getId(),
+        timeline.record(new TimelineEventRequest(team.getEvent().getId(), team.getId(), null,
+                team.getTrack() == null ? null : team.getTrack().getId(),
+                type, TimelineSourceType.SUPPORT_TICKET, ticket.getId(),
                 TimelineScope.TEAM_PRIVATE, title, description, null,
                 "support:" + ticket.getId() + ":" + suffix));
     }

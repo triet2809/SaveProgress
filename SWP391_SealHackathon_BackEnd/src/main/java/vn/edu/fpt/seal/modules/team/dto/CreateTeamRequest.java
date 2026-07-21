@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record CreateTeamRequest(
-        @NotNull UUID trackId,
+        @NotNull UUID eventId,
         @NotBlank @Size(max = 255) String name,
         UUID leaderUserId,
         List<UUID> memberUserIds,

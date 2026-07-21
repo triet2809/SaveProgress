@@ -80,7 +80,7 @@ public class TeamJoinRequestService {
         }
         if (teamMemberRepository.countByTeamId(team.getId()) >= MAX_TEAM_SIZE) throw ApiException.badRequest("Team is already full");
         if (r.getUser().getStatus() != AccountStatus.approved) throw ApiException.badRequest("Only approved users can join teams");
-        if (teamMemberRepository.existsActiveRegistrationInEvent(r.getUser().getId(), team.getTrack().getEvent().getId()))
+        if (teamMemberRepository.existsActiveRegistrationInEvent(r.getUser().getId(), team.getEvent().getId()))
             throw ApiException.conflict("User already belongs to another active team in this event");
         teamMemberRepository.save(TeamMember.builder().team(team).user(r.getUser()).role(TeamMemberRole.member).build());
         r.setStatus("accepted"); r.setRespondedAt(LocalDateTime.now());
@@ -109,7 +109,7 @@ public class TeamJoinRequestService {
 
     // --- helpers ---
     private void ensureRegistrationOpen(Team team) {
-        EventStatus s = team.getTrack().getEvent().getStatus();
+        EventStatus s = team.getEvent().getStatus();
         if (s != EventStatus.published) throw ApiException.badRequest("Registration is not open for this event (status: " + s + ")");
     }
 

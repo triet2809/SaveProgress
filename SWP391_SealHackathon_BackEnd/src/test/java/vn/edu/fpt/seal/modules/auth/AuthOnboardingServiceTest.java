@@ -14,6 +14,8 @@ import vn.edu.fpt.seal.modules.auth.dto.*;
 import vn.edu.fpt.seal.modules.auth.service.AuthService;
 import vn.edu.fpt.seal.modules.university.repository.CampusRepository;
 import vn.edu.fpt.seal.modules.university.repository.UniversityRepository;
+import vn.edu.fpt.seal.modules.university.entity.Campus;
+import vn.edu.fpt.seal.modules.university.entity.University;
 import vn.edu.fpt.seal.modules.user.entity.Role;
 import vn.edu.fpt.seal.modules.user.entity.User;
 import vn.edu.fpt.seal.modules.user.repository.RoleRepository;
@@ -122,6 +124,35 @@ class AuthOnboardingServiceTest {
         assertNotNull(captor.getValue().getTermsAcceptedAt());
         assertEquals("terms-v2", captor.getValue().getTermsVersion());
         assertEquals("privacy-v2", captor.getValue().getPrivacyVersion());
+    }
+
+    @Test
+    void registrationPersistsSelectedCampusAndItsUniversity() {
+        UUID campusId = UUID.randomUUID();
+        University university = University.builder().name("FPT University").build();
+        university.setId(UUID.randomUUID());
+        Campus campus = Campus.builder().university(university).name("FPT University Quy Nhon")
+                .city("Quy Nhon").build();
+        campus.setId(campusId);
+        Role role = Role.builder().name("team_member").build();
+        when(campuses.findWithUniversityById(campusId)).thenReturn(Optional.of(campus));
+        when(roles.findByName(RoleName.TEAM_MEMBER)).thenReturn(Optional.of(role));
+        when(encoder.encode("Password123")).thenReturn("hash");
+        when(users.save(any())).thenAnswer(invocation -> {
+            User saved = invocation.getArgument(0);
+            saved.setId(UUID.randomUUID());
+            return saved;
+        });
+
+        AuthResponse response = service.register(new RegisterRequest("quynhon@example.test", "Password123",
+                "Quy Nhon Student", StudentType.fpt, "SE123", null, null, campusId, true));
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(users).save(captor.capture());
+        assertSame(campus, captor.getValue().getCampus());
+        assertSame(university, captor.getValue().getUniversity());
+        assertEquals(campusId, response.user().campusId());
+        assertEquals("FPT University Quy Nhon", response.user().campusName());
     }
 
     @Test
