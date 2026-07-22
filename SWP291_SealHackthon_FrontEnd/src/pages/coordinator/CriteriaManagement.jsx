@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, Table, Button, Badge, Modal, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
+import { Card, Table, Button, Badge, Modal, Form, InputGroup, Spinner, Alert, Row, Col } from 'react-bootstrap';
 import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import {
   getEvents,
@@ -194,6 +194,55 @@ const CriteriaManagement = () => {
 
       {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
 
+      {/* Panel chọn ngữ cảnh: bắt buộc chọn theo thứ tự Sự kiện → Vòng → Track mới tạo được tiêu chí. */}
+      <Card className="mb-3" style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div className="p-3">
+          <div className="fw-semibold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Chọn phạm vi tiêu chí</div>
+          <div className="text-muted mb-3" style={{ fontSize: '0.8125rem' }}>
+            Chọn lần lượt: <strong>Sự kiện</strong> → <strong>Vòng thi</strong> → <strong>Track</strong>. Tiêu chí sẽ gắn vào track của vòng đã chọn.
+          </div>
+          <Row className="g-3">
+            <Col md={4}>
+              <Form.Label className="small fw-medium text-muted">1. Sự kiện</Form.Label>
+              <Form.Select value={selectedEvent} onChange={(e) => setSelectedEvent(e.target.value)} disabled={loadingEvents}>
+                <option value="">{loadingEvents ? 'Đang tải sự kiện...' : '— Chọn sự kiện —'}</option>
+                {events.map((ev) => (
+                  <option key={ev.id} value={ev.id}>{ev.title || ev.name}</option>
+                ))}
+              </Form.Select>
+            </Col>
+            <Col md={4}>
+              <Form.Label className="small fw-medium text-muted">2. Vòng thi</Form.Label>
+              <Form.Select value={selectedLogicalRound} onChange={(e) => { setSelectedLogicalRound(e.target.value); setSelectedTrack(''); }} disabled={!selectedEvent || loadingRounds}>
+                <option value="">{loadingRounds ? 'Đang tải vòng...' : (selectedEvent ? '— Chọn vòng thi —' : 'Chọn sự kiện trước')}</option>
+                {logicalRounds.map((lr) => (
+                  <option key={lr.logicalRoundId} value={lr.logicalRoundId}>{lr.name}</option>
+                ))}
+              </Form.Select>
+            </Col>
+            <Col md={4}>
+              <Form.Label className="small fw-medium text-muted">3. Track</Form.Label>
+              <Form.Select value={selectedTrack} onChange={(e) => setSelectedTrack(e.target.value)} disabled={!selectedLogicalRound}>
+                <option value="">{selectedLogicalRound ? '— Chọn track —' : 'Chọn vòng trước'}</option>
+                {trackRounds.map((tr) => (
+                  <option key={tr.id} value={tr.trackId}>{trackNameOf(tr.trackId)}</option>
+                ))}
+              </Form.Select>
+            </Col>
+          </Row>
+          {resolvedRoundId && (
+            <div className="mt-3 d-flex align-items-center gap-2 flex-wrap">
+              <span className="text-muted small">Đang quản lý tiêu chí cho:</span>
+              <Badge bg="primary" className="bg-opacity-10 text-primary border border-primary">{events.find((e) => e.id === selectedEvent)?.title || ''}</Badge>
+              <span className="text-muted">›</span>
+              <Badge bg="info" className="bg-opacity-10 text-info border border-info">{currentLogical?.name || ''}</Badge>
+              <span className="text-muted">›</span>
+              <Badge bg="secondary" className="bg-opacity-10 text-secondary border">{selectedTrackName()}</Badge>
+            </div>
+          )}
+        </div>
+      </Card>
+
       <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <div className="p-3 border-bottom d-flex align-items-center justify-content-between gap-2 flex-wrap">
           <InputGroup style={{ maxWidth: '260px' }}>
@@ -206,29 +255,6 @@ const CriteriaManagement = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </InputGroup>
-          <div className="d-flex align-items-center gap-2 flex-wrap">
-            {/* Bước 1: chọn sự kiện */}
-            <Form.Select style={{ maxWidth: '220px' }} value={selectedEvent} onChange={(e) => setSelectedEvent(e.target.value)} disabled={loadingEvents}>
-              <option value="">{loadingEvents ? 'Loading events...' : '1. Select event'}</option>
-              {events.map((ev) => (
-                <option key={ev.id} value={ev.id}>{ev.title || ev.name}</option>
-              ))}
-            </Form.Select>
-            {/* Bước 2: chọn round (logical) */}
-            <Form.Select style={{ maxWidth: '200px' }} value={selectedLogicalRound} onChange={(e) => { setSelectedLogicalRound(e.target.value); setSelectedTrack(''); }} disabled={!selectedEvent || loadingRounds}>
-              <option value="">{loadingRounds ? 'Loading rounds...' : '2. Select round'}</option>
-              {logicalRounds.map((lr) => (
-                <option key={lr.logicalRoundId} value={lr.logicalRoundId}>{lr.name}</option>
-              ))}
-            </Form.Select>
-            {/* Bước 3: chọn track */}
-            <Form.Select style={{ maxWidth: '200px' }} value={selectedTrack} onChange={(e) => setSelectedTrack(e.target.value)} disabled={!selectedLogicalRound}>
-              <option value="">3. Select track</option>
-              {trackRounds.map((tr) => (
-                <option key={tr.id} value={tr.trackId}>{trackNameOf(tr.trackId)}</option>
-              ))}
-            </Form.Select>
-          </div>
         </div>
         <div className="table-responsive">
           {loading ? (
