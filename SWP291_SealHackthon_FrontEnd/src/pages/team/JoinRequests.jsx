@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Card, Button, Badge, Spinner, Alert, Table } from 'react-bootstrap';
+import { useEffect, useState } from 'react';
+import { Card, Button, Spinner, Alert, Table } from 'react-bootstrap';
 import { Check, X, Inbox, Users } from 'lucide-react';
 import { getMyTeams, getTeamJoinRequests, acceptJoinRequest, rejectJoinRequest, markAllNotificationsRead } from '../../api/hackathonApi';
 import { getStoredUser } from '../../utils/authUser';
@@ -8,15 +8,33 @@ const JoinRequests = () => {
   const currentUser = getStoredUser() || {};
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [team, setTeam] = useState(null);
-  const [isLeader, setIsLeader] = useState(false);
-  const [requests, setRequests] = useState([]);
+  const [ledTeams, setLedTeams] = useState([]); // teams where current user is leader
+  const [hasAnyTeam, setHasAnyTeam] = useState(false);
+  const [requests, setRequests] = useState([]); // merged across all led teams, each tagged with teamName
   const [acting, setActing] = useState({}); // { [id]: 'accept'|'reject' }
 
-  const loadRequests = async (teamId) => {
-    const res = await getTeamJoinRequests(teamId, 'pending');
-    const list = Array.isArray(res) ? res : (res?.content || []);
-    setRequests(list);
+  // Chỉ giữ các team mà user hiện tại là leader (user có thể lead nhiều team ở nhiều sự kiện).
+  const leaderTeamsOf = (list) =>
+    list.filter((t) =>
+      (t.members || []).some(
+        (m) => m.userId === currentUser.id && String(m.role).toLowerCase() === 'leader'
+      )
+    );
+
+  // Gom pending request của TẤT CẢ team mà user làm leader (không chỉ team đầu tiên).
+  const loadRequests = async (teams) => {
+    const perTeam = await Promise.all(
+      teams.map(async (t) => {
+        try {
+          const res = await getTeamJoinRequests(t.id, 'pending');
+          const list = Array.isArray(res) ? res : (res?.content || []);
+          return list.map((r) => ({ ...r, teamName: r.teamName || t.name }));
+        } catch {
+          return [];
+        }
+      })
+    );
+    setRequests(perTeam.flat());
   };
 
   useEffect(() => {
@@ -26,16 +44,11 @@ const JoinRequests = () => {
       try {
         const teams = await getMyTeams();
         const list = Array.isArray(teams) ? teams : (teams?.content || []);
-        const t = list[0] || null;
         if (!active) return;
-        setTeam(t);
-        if (t) {
-          const leader = (t.members || []).some(
-            (m) => m.userId === currentUser.id && String(m.role).toLowerCase() === 'leader'
-          );
-          setIsLeader(leader);
-          if (leader) await loadRequests(t.id);
-        }
+        setHasAnyTeam(list.length > 0);
+        const led = leaderTeamsOf(list);
+        setLedTeams(led);
+        if (led.length) await loadRequests(led);
       } catch (e) {
         if (active) setError(e.message || 'Failed to load join requests');
       } finally {
@@ -52,11 +65,12 @@ const JoinRequests = () => {
     try {
       if (kind === 'accept') await acceptJoinRequest(req.id);
       else await rejectJoinRequest(req.id);
-      // Refresh list + team (member count changes on accept).
+      // Refresh teams + requests (member count changes on accept).
       const teams = await getMyTeams();
       const list = Array.isArray(teams) ? teams : (teams?.content || []);
-      setTeam(list[0] || team);
-      await loadRequests(team.id);
+      const led = leaderTeamsOf(list);
+      setLedTeams(led);
+      await loadRequests(led);
     } catch (e) {
       setError(e.message || 'Action failed');
     } finally {
@@ -78,14 +92,16 @@ const JoinRequests = () => {
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Join Requests</h1>
           <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>
-            {team ? `Team ${team.name} · ${(team.members || []).length}/5 members` : 'You are not in a team yet.'}
+            {ledTeams.length
+              ? `Managing ${ledTeams.length} team${ledTeams.length > 1 ? 's' : ''} · ${requests.length} pending request${requests.length === 1 ? '' : 's'}`
+              : 'You are not a team leader yet.'}
           </div>
         </div>
       </div>
 
       {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
 
-      {!team && (
+      {!hasAnyTeam && (
         <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)' }}>
           <Card.Body className="p-5 text-center text-muted">
             <Users size={48} className="mb-3 opacity-50" />
@@ -94,11 +110,11 @@ const JoinRequests = () => {
         </Card>
       )}
 
-      {team && !isLeader && (
+      {hasAnyTeam && ledTeams.length === 0 && (
         <Alert variant="info">Only the team leader can approve join requests.</Alert>
       )}
 
-      {team && isLeader && (
+      {ledTeams.length > 0 && (
         <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <Card.Body className="p-0">
             {requests.length === 0 ? (
@@ -113,6 +129,7 @@ const JoinRequests = () => {
                     <tr>
                       <th className="border-top-0">Sender</th>
                       <th className="border-top-0">Email</th>
+                      <th className="border-top-0">Team</th>
                       <th className="border-top-0">Message</th>
                       <th className="border-top-0 text-end">Actions</th>
                     </tr>
@@ -124,6 +141,7 @@ const JoinRequests = () => {
                         <tr key={req.id}>
                           <td className="align-middle fw-medium">{req.userFullName || '—'}</td>
                           <td className="align-middle text-muted">{req.userEmail}</td>
+                          <td className="align-middle text-muted">{req.teamName || '—'}</td>
                           <td className="align-middle text-muted">{req.message || <span className="fst-italic opacity-50">(none)</span>}</td>
                           <td className="align-middle text-end">
                             <div className="d-inline-flex gap-2">

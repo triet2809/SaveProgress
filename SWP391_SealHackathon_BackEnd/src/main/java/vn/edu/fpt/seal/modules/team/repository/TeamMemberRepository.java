@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.edu.fpt.seal.common.enums.TeamMemberRole;
+import vn.edu.fpt.seal.common.enums.TeamStatus;
 import vn.edu.fpt.seal.modules.team.entity.TeamMember;
 
 import java.util.List;
@@ -40,12 +41,13 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, UUID> {
         select tm from TeamMember tm
         where tm.user.id in :userIds
           and tm.team.track.event.id = :eventId
-          and tm.team.status = vn.edu.fpt.seal.common.enums.TeamStatus.active
+          and tm.team.status = :status
         """)
     List<TeamMember> findActiveRegistrationsInEvent(@Param("userIds") Collection<UUID> userIds,
-                                                     @Param("eventId") UUID eventId);
+                                                     @Param("eventId") UUID eventId,
+                                                     @Param("status") TeamStatus status);
 
     default boolean existsActiveRegistrationInEvent(UUID userId, UUID eventId) {
-        return !findActiveRegistrationsInEvent(List.of(userId), eventId).isEmpty();
+        return !findActiveRegistrationsInEvent(List.of(userId), eventId, TeamStatus.active).isEmpty();
     }
 }

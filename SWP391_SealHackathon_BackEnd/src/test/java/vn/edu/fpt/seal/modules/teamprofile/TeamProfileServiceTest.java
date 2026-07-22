@@ -139,7 +139,7 @@ class TeamProfileServiceTest {
         conflictTeam.setId(UUID.randomUUID());
         TeamMember conflict = member(historicalRoster.get(1).getUser(), TeamMemberRole.member);
         conflict.setTeam(conflictTeam);
-        when(members.findActiveRegistrationsInEvent(any(), eq(targetEvent.getId())))
+        when(members.findActiveRegistrationsInEvent(any(), eq(targetEvent.getId()), any()))
                 .thenReturn(List.of(conflict));
 
         var preview = service.preview(profile.getId(),

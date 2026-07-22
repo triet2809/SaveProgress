@@ -1,3 +1,8 @@
+/**
+ * AppRoutes.jsx — Cấu hình định tuyến (routing) trung tâm của toàn ứng dụng.
+ * Chia route theo vai trò: auth (công khai), student, team, mentor, judge, coordinator.
+ * Các route cần đăng nhập được bọc trong <ProtectedRoute> và <DashboardLayout>.
+ */
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Layout
@@ -80,10 +85,12 @@ import AppealsInbox from '../pages/coordinator/AppealsInbox';
 import StaffManagement from '../pages/coordinator/StaffManagement';
 import SeedingManagement from '../pages/coordinator/SeedingManagement';
 
+// Component gốc định tuyến; bọc toàn bộ trong BrowserRouter.
 const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
+        {/* ===== Route xác thực (công khai / semi-protected) ===== */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/pending-approval" element={<PendingApproval />} />
@@ -114,6 +121,8 @@ const AppRoutes = () => {
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<TeamDashboard />} />
+          <Route path="create-team" element={<CreateTeam />} />
+          <Route path="join-team" element={<JoinTeam />} />
           <Route path="topic" element={<TrackTopic />} />
           <Route path="my-team" element={<MyTeam />} />
           <Route path="members" element={<TeamMembers />} />

@@ -31,6 +31,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Service xử lý nghiệp vụ xác thực: đăng ký, đăng nhập, đăng xuất,
+ * làm mới token và hoàn tất onboarding.
+ * Phối hợp {@link JwtService} để cấp/thu hồi JWT và các repository để truy xuất dữ liệu.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -44,8 +49,18 @@ public class AuthService {
     private final JwtService jwtService;
     private final AppProperties appProperties;
 
+    /**
+     * Đăng ký tài khoản mới ở trạng thái pending (chờ duyệt).
+     * Phân giải trường/campus theo dữ liệu đầu vào, gán vai trò mặc định TEAM_MEMBER.
+     *
+     * @param req dữ liệu đăng ký
+     * @return phản hồi trạng thái pending (không kèm token vì chưa duyệt)
+     * @throws ApiException nếu email đã tồn tại, trường/campus không tìm thấy,
+     *                      hoặc thiếu tên trường cho sinh viên ngoài FPT
+     */
     @Transactional
     public AuthResponse register(RegisterRequest req) {
+        // Chuẩn hóa email (lưu chữ thường, bỏ khoảng trắng) trước khi kiểm tra trùng
         if (userRepository.existsByEmail(req.email().toLowerCase().trim())) {
             throw ApiException.conflict("Email already registered");
         }
@@ -54,6 +69,8 @@ public class AuthService {
         Campus campus = null;
         University university = null;
 
+        // Ưu tiên campusId; nếu không có thì universityId; nếu là sinh viên external thì
+        // tạo/tìm trường theo tên
         if (req.campusId() != null) {
             campus = campusRepository.findWithUniversityById(req.campusId())
                     .orElseThrow(() -> ApiException.notFound("Campus not found"));
@@ -66,6 +83,7 @@ public class AuthService {
             if (universityName == null || universityName.isBlank()) {
                 throw ApiException.badRequest("University name is required for external students");
             }
+            // Tạo mới trường nếu chưa tồn tại trong hệ thống
             university = universityRepository.findByNameIgnoreCase(universityName)
                     .orElseGet(() -> universityRepository.save(University.builder()
                             .name(universityName)
@@ -98,11 +116,20 @@ public class AuthService {
         return buildPendingResponse(user);
     }
 
+    /**
+     * Đăng nhập bằng email + mật khẩu.
+     * Kiểm tra mật khẩu và trạng thái tài khoản trước khi cấp token.
+     *
+     * @param req thông tin đăng nhập
+     * @return phản hồi xác thực kèm cặp token
+     * @throws ApiException nếu sai thông tin đăng nhập, hoặc tài khoản pending/rejected
+     */
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest req) {
         User user = userRepository.findByEmail(req.email().toLowerCase().trim())
                 .orElseThrow(() -> ApiException.unauthorized("Invalid email or password"));
 
+        // Dùng thông báo chung khi sai mật khẩu để tránh lộ email có tồn tại hay không
         if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
             throw ApiException.unauthorized("Invalid email or password");
         }
@@ -117,8 +144,16 @@ public class AuthService {
         return buildAuthResponse(user);
     }
 
+    /**
+     * Đăng xuất: thu hồi access token và/hoặc refresh token nếu được cung cấp.
+     *
+     * @param authorizationHeader header Authorization dạng "Bearer &lt;token&gt;"
+     * @param refreshToken        refresh token cần thu hồi (tùy chọn)
+     * @throws ApiException nếu token không hợp lệ
+     */
     @Transactional
     public void logout(String authorizationHeader, String refreshToken) {
+        // Thu hồi access token nếu header đúng định dạng Bearer
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String token = authorizationHeader.substring(7);
             try {
@@ -136,6 +171,15 @@ public class AuthService {
         }
     }
 
+    /**
+     * Làm mới access token từ refresh token hợp lệ.
+     * Xác minh token là loại refresh, chưa bị thu hồi, đúng security version của người dùng.
+     *
+     * @param req yêu cầu chứa refresh token
+     * @return phản hồi xác thực với cặp token mới
+     * @throws ApiException nếu token sai, không phải refresh, đã thu hồi, lỗi thời (stale),
+     *                      hoặc tài khoản pending/rejected
+     */
     @Transactional(readOnly = true)
     public AuthResponse refresh(RefreshRequest req) {
         Claims claims;
@@ -144,6 +188,7 @@ public class AuthService {
         } catch (Exception e) {
             throw ApiException.unauthorized("Invalid refresh token");
         }
+        // Đảm bảo token đúng loại refresh, không dùng access token để refresh
         if (!jwtService.isRefreshToken(claims)) {
             throw ApiException.unauthorized("Not a refresh token");
         }
@@ -168,17 +213,29 @@ public class AuthService {
         if (user.getStatus() == AccountStatus.rejected) {
             throw ApiException.forbidden("Your account has been rejected");
         }
+        // security version lệch nghĩa là phiên bảo mật đã thay đổi (ví dụ đổi mật khẩu) => token cũ vô hiệu
         if (user.getSecurityVersion() != tokenVersion) {
             throw ApiException.unauthorized("Refresh token is stale");
         }
         return buildAuthResponse(user);
     }
 
+    /**
+     * Hoàn tất onboarding: đổi mật khẩu bắt buộc (nếu cần) và ghi nhận chấp nhận điều khoản.
+     * Tăng security version để vô hiệu các token cũ.
+     *
+     * @param userId  ID người dùng
+     * @param request dữ liệu onboarding
+     * @return phản hồi xác thực đã cập nhật
+     * @throws ApiException nếu không tìm thấy người dùng, thiếu mật khẩu mới khi bắt buộc đổi,
+     *                      mật khẩu không khớp hoặc không đủ mạnh
+     */
     @Transactional
     public AuthResponse completeOnboarding(UUID userId,
                                            vn.edu.fpt.seal.modules.auth.dto.CompleteOnboardingRequest request) {
         User user = userRepository.findWithRolesById(userId)
                 .orElseThrow(() -> ApiException.notFound("User not found"));
+        // Chỉ xử lý đổi mật khẩu khi tài khoản bị đánh dấu bắt buộc đổi mật khẩu
         if (user.isMustChangePassword()) {
             if (request.newPassword() == null || request.confirmPassword() == null) {
                 throw ApiException.badRequest("A new password is required");
@@ -193,22 +250,43 @@ public class AuthService {
         user.setTermsAcceptedAt(LocalDateTime.now(ZoneOffset.UTC));
         user.setTermsVersion(appProperties.getLegal().getTermsVersion());
         user.setPrivacyVersion(appProperties.getLegal().getPrivacyVersion());
+        // Tăng security version để các token cấp trước onboarding không còn hợp lệ
         user.incrementSecurityVersion();
         return buildAuthResponse(userRepository.save(user));
     }
 
+    /**
+     * Kiểm tra độ mạnh mật khẩu: 8-72 ký tự, có cả chữ và số.
+     *
+     * @param password mật khẩu cần kiểm tra
+     * @throws ApiException nếu mật khẩu không đạt yêu cầu
+     */
     private void validatePassword(String password) {
         if (password == null || !password.matches("^(?=.*[A-Za-z])(?=.*\\d).{8,72}$")) {
             throw ApiException.badRequest("Password must be 8-72 characters and contain letters and numbers");
         }
     }
 
+    /**
+     * Xác định người dùng có cần chấp nhận lại điều khoản/chính sách hay không.
+     * Trả về true nếu chưa từng chấp nhận hoặc phiên bản đã chấp nhận khác phiên bản hiện hành.
+     *
+     * @param user người dùng cần kiểm tra
+     * @return true nếu cần chấp nhận lại điều khoản
+     */
     private boolean termsAcceptanceRequired(User user) {
         return user.getTermsAcceptedAt() == null
                 || !appProperties.getLegal().getTermsVersion().equals(user.getTermsVersion())
                 || !appProperties.getLegal().getPrivacyVersion().equals(user.getPrivacyVersion());
     }
 
+    /**
+     * Dựng {@link AuthResponse} đầy đủ (kèm token) cho người dùng đã được duyệt.
+     *
+     * @param user người dùng đã approved
+     * @return phản hồi xác thực đầy đủ
+     * @throws ApiException nếu tài khoản chưa được duyệt
+     */
     private AuthResponse buildAuthResponse(User user) {
         if (user.getStatus() != AccountStatus.approved) {
             throw ApiException.forbidden(user.getStatus() == AccountStatus.pending
@@ -216,10 +294,12 @@ public class AuthService {
         }
         List<String> roleNames = user.getRoles().stream().map(Role::getName).toList();
         boolean termsRequired = termsAcceptanceRequired(user);
+        // onboarding cần thiết nếu phải đổi mật khẩu hoặc chấp nhận lại điều khoản
         boolean onboardingRequired = user.isMustChangePassword() || termsRequired;
         String access = jwtService.generateAccessToken(user.getId(), user.getEmail(), roleNames,
                 onboardingRequired, user.getSecurityVersion());
         String refresh = jwtService.generateRefreshToken(user.getId(), user.getSecurityVersion());
+        // Lấy trường từ campus nếu có, ngược lại dùng trường gán trực tiếp cho user
         Campus campus = user.getCampus();
         University university = campus != null ? campus.getUniversity() : user.getUniversity();
 
@@ -245,6 +325,13 @@ public class AuthService {
                 .build();
     }
 
+    /**
+     * Dựng {@link AuthResponse} cho tài khoản vừa đăng ký (pending) — không kèm token
+     * vì chưa được phép đăng nhập.
+     *
+     * @param user người dùng ở trạng thái pending
+     * @return phản hồi chỉ chứa thông tin tóm tắt
+     */
     private AuthResponse buildPendingResponse(User user) {
         return AuthResponse.builder()
                 .user(AuthResponse.UserSummary.builder()

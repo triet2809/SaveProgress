@@ -39,7 +39,7 @@ const TeamDashboard = () => {
           }).catch(() => {}));
         }
         if (current?.id) {
-          jobs.push(getSubmissions({ teamId: current.id }).then((s) => {
+          jobs.push(getSubmissions({ eventId: current.eventId, teamId: current.id }).then((s) => {
             const subList = s?.content || s || [];
             if (active) setSubmission(subList[0] || null);
           }).catch(() => {}));

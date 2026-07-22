@@ -31,6 +31,10 @@ const SubmissionManagement = () => {
   useEffect(() => {
     let active = true;
     (async () => {
+      // Chưa chọn sự kiện thì không gọi BE (tránh 400 "Missing required parameter: eventId").
+      if (!eventId) { setLoading(false); setSubmissions([]); setRounds([]); setError(''); return; }
+      setLoading(true);
+      setError(''); // clear lỗi cũ mỗi lần đổi event, tránh toast đỏ tồn đọng từ lần mount eventId rỗng
       try {
         const [subs, rds] = await Promise.all([
           getSubmissions({ eventId, size: 200 }),

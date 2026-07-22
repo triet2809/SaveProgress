@@ -1,3 +1,8 @@
+/**
+ * DecisionPanel.jsx — Panel cho EC ra quyết định xử lý một sự cố (incident).
+ * Cho chọn hành động, nhập lý do công khai + ghi chú nội bộ; sau khi gửi hiển thị xác nhận.
+ * @param {(decision:string)=>void} onDecisionMade - Callback khi quyết định được ghi nhận.
+ */
 import React, { useState } from 'react';
 import { Card, Form, Button, Alert } from 'react-bootstrap';
 import { CheckCircle, Info } from 'lucide-react';
@@ -8,6 +13,7 @@ const DecisionPanel = ({ onDecisionMade }) => {
   const [note, setNote] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
+  // Gửi quyết định: đánh dấu đã gửi và gọi callback cho component cha.
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitted(true);
@@ -16,6 +22,7 @@ const DecisionPanel = ({ onDecisionMade }) => {
     }
   };
 
+  // Sau khi gửi: hiển thị màn hình xác nhận thay vì form.
   if (submitted) {
     return (
       <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>

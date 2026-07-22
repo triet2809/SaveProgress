@@ -1,3 +1,9 @@
+/**
+ * IncidentReportForm.jsx — Form nộp báo cáo sự cố / vi phạm.
+ * Dùng chung cho mentor và giám khảo (isJudge thêm field chọn submission).
+ * Tải các dropdown phụ thuộc (event -> track/team/round -> submission) và gọi createIncident.
+ * @param {boolean} isJudge - Nếu true, hiển thêm ô chọn bài nộp (submission).
+ */
 import { useEffect, useState } from 'react';
 import { Form, Button, Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
 import { Send, AlertTriangle } from 'lucide-react';
@@ -28,12 +34,14 @@ const IncidentReportForm = ({ isJudge = false }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Danh sách cho các dropdown phụ thuộc.
   const [events, setEvents] = useState([]);
   const [tracks, setTracks] = useState([]);
   const [teams, setTeams] = useState([]);
   const [rounds, setRounds] = useState([]);
   const [submissions, setSubmissions] = useState([]);
 
+  // State form gom tất cả field nhập.
   const [form, setForm] = useState({
     eventId: '',
     roundId: '',
@@ -47,6 +55,7 @@ const IncidentReportForm = ({ isJudge = false }) => {
     severity: '',
   });
 
+  // Tải danh sách sự kiện khi mount.
   useEffect(() => {
     let active = true;
     async function load() {
@@ -66,6 +75,7 @@ const IncidentReportForm = ({ isJudge = false }) => {
     };
   }, []);
 
+  // Khi đổi event: tải lại tracks/teams/rounds thuộc sự kiện đó (hoặc reset nếu bỏ chọn).
   useEffect(() => {
     if (!form.eventId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -86,7 +96,7 @@ const IncidentReportForm = ({ isJudge = false }) => {
     return () => { active = false; };
   }, [form.eventId]);
 
-  // load submissions for judge when team selected
+  // Khi là giám khảo và đã chọn team: tải danh sách bài nộp của team đó.
   useEffect(() => {
     if (!isJudge || !form.teamId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -106,8 +116,10 @@ const IncidentReportForm = ({ isJudge = false }) => {
     };
   }, [isJudge, form.teamId]);
 
+  // Helper tạo handler cập nhật một field trong form.
   const setField = (name) => (e) => setForm((prev) => ({ ...prev, [name]: e.target.value }));
 
+  // Gửi báo cáo: gồm severity + evidence vào mô tả, chỉ gắn field không rỗng.
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -135,6 +147,7 @@ const IncidentReportForm = ({ isJudge = false }) => {
     }
   };
 
+  // Reset form về trạng thái trống để nộp báo cáo khác.
   const resetForm = () => {
     setForm({
       eventId: '',

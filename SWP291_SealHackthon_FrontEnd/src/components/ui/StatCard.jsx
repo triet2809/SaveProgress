@@ -1,7 +1,19 @@
+/**
+ * StatCard.jsx — Thẻ hiển thị một chỉ số thống kê (icon + giá trị + tiêu đề).
+ * Dùng nhiều ở các trang dashboard.
+ */
 import React from 'react';
 import { Card } from 'react-bootstrap';
 import styles from './StatCard.module.css';
 
+/**
+ * @param {Component} icon - Component icon (đổi tên thành Icon để render JSX).
+ * @param {string} iconColor - Màu icon.
+ * @param {string} iconBg - Màu nền ô icon.
+ * @param {string|number} value - Giá trị thống kê chính.
+ * @param {string} title - Nhãn chỉ số.
+ * @param {string} [subtitle] - Chú thích phụ (tùy chọn).
+ */
 const StatCard = ({ icon: Icon, iconColor, iconBg, value, title, subtitle }) => {
   return (
     <Card className={`${styles.statCard} h-100`}>

@@ -15,12 +15,17 @@ import vn.edu.fpt.seal.security.CurrentUser;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * REST controller cho chat nội bộ của đội.
+ * Cho phép thành viên đội (và coordinator khi đọc) trao đổi tin nhắn.
+ */
 @RestController
 @RequestMapping("/team-chat")
 @RequiredArgsConstructor
 public class TeamChatController {
     private final TeamChatService service;
 
+    /** Lấy danh sách tin nhắn của một đội; service kiểm tra quyền đọc. */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<TeamChatMessageResponse>> list(@RequestParam UUID teamId,
@@ -28,6 +33,7 @@ public class TeamChatController {
         return ResponseEntity.ok(service.list(teamId, authentication));
     }
 
+    /** Gửi tin nhắn mới; chỉ thành viên đội được gửi (kiểm tra ở service). */
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<TeamChatMessageResponse> create(@AuthenticationPrincipal CurrentUser user,

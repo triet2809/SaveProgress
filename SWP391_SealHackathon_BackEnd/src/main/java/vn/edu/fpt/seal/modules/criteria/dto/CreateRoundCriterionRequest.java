@@ -4,6 +4,10 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+/**
+ * DTO đầu vào tạo tiêu chí cho vòng thi.
+ * roundId bắt buộc; templateId tuỳ chọn (nếu tạo từ mẫu); trọng số >= 0.
+ */
 public record CreateRoundCriterionRequest(
         @NotNull UUID roundId,
         UUID templateId,

@@ -1,3 +1,13 @@
+/**
+ * HistoricalRosterReview.jsx — Danh sách thành viên đội cũ để chọn khi tái kích hoạt.
+ * Cho phép tick chọn thành viên đưa vào đội mới và chọn leader mới (radio).
+ * @param {Array} roster - Danh sách thành viên lịch sử.
+ * @param {string[]} selectedIds - id thành viên đang được chọn.
+ * @param {string} leaderId - id leader mới được chọn.
+ * @param {(id)=>void} onMemberToggle - Callback tick/bỏ tick thành viên.
+ * @param {(id)=>void} onLeaderChange - Callback chọn leader.
+ * @param {boolean} disabled - Vô hiệu hoá toàn bộ.
+ */
 import { Badge, Form, ListGroup } from 'react-bootstrap';
 
 const HistoricalRosterReview = ({
@@ -8,6 +18,7 @@ const HistoricalRosterReview = ({
   onLeaderChange,
   disabled = false,
 }) => {
+  // Dùng Set để tra cứu nhanh thành viên đã chọn.
   const selected = new Set(selectedIds);
 
   return (

@@ -5,6 +5,11 @@ import lombok.*;
 import vn.edu.fpt.seal.common.entity.BaseEntity;
 import java.time.Instant;
 
+/**
+ * Entity lưu trữ các token đã bị thu hồi (blacklist).
+ * Dùng để vô hiệu hóa JWT trước khi hết hạn (ví dụ khi đăng xuất).
+ * Bản ghi hết hạn được dọn định kỳ dựa trên {@code expiresAt}.
+ */
 @Entity
 @Table(name = "revoked_tokens", indexes = {
         @Index(name = "idx_revoked_tokens_token_hash", columnList = "token_hash", unique = true),
@@ -12,9 +17,11 @@ import java.time.Instant;
 })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class RevokedToken extends BaseEntity {
+    /** Giá trị băm (hash) của token bị thu hồi — không lưu token gốc vì lý do bảo mật. */
     @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     private String tokenHash;
 
+    /** Thời điểm token hết hạn — sau mốc này bản ghi có thể xóa khỏi blacklist. */
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 }

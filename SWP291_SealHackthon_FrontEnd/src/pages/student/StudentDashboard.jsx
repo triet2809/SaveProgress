@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Table, Badge, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { Trophy, Calendar, ExternalLink, Award } from 'lucide-react';
 import { getMyTeams, getTrack, getSubmissions } from '../../api/hackathonApi';
@@ -22,7 +22,7 @@ const StudentDashboard = () => {
           teams.map(async (team) => {
             const [track, subRes] = await Promise.all([
               team.trackId ? getTrack(team.trackId).catch(() => null) : Promise.resolve(null),
-              getSubmissions({ teamId: team.id, size: 5 }).catch(() => null),
+              getSubmissions({ eventId: team.eventId, teamId: team.id, size: 5 }).catch(() => null),
             ]);
             const subs = subRes?.content || subRes || [];
             const myMember = (team.members || []).find((m) => m.userId === userId);

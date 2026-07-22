@@ -44,6 +44,7 @@ app:
       - http://localhost:5173
       - http://127.0.0.1:5173
       - http://192.168.100.214:5173
+      - http://192.168.1.4:5173
       - http://localhost:3000
   invitation:
     expose-link: ${APP_INVITATION_EXPOSE_LINK:false}

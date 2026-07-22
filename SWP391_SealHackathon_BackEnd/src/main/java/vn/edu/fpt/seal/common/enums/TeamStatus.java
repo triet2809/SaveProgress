@@ -1,5 +1,11 @@
 package vn.edu.fpt.seal.common.enums;
 
+/**
+ * Trạng thái thi đấu của đội.
+ */
 public enum TeamStatus {
-    active, disqualified
+    /** Đội đang đủ điều kiện thi đấu. */
+    active,
+    /** Đội bị truất quyền. */
+    disqualified
 }

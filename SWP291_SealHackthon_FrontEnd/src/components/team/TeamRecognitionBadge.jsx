@@ -1,9 +1,17 @@
+/**
+ * TeamRecognitionBadge.jsx — Badge hiển thị các danh hiệu (recognition) của đội.
+ * Lọc ra danh hiệu active, render badge pill kèm tooltip và aria-label cho trợ năng.
+ * @param {Array} recognitions - Danh sách danh hiệu thô.
+ * @param {'compact'|'detailed'} variant - 'detailed' hiển thêm displayText và icon lớn hơn.
+ * @param {string} className - Class bổ sung.
+ */
 import PropTypes from 'prop-types';
 import { Award } from 'lucide-react';
 import { activeRecognitionModels } from './recognitionUtils';
 
 const TeamRecognitionBadge = ({ recognitions, variant = 'compact', className = '' }) => {
   const models = activeRecognitionModels(recognitions);
+  // Không có danh hiệu active -> không render gì.
   if (!models.length) return null;
 
   return (

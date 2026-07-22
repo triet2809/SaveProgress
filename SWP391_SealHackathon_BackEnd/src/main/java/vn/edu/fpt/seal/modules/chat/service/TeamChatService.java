@@ -17,6 +17,10 @@ import vn.edu.fpt.seal.security.AuthorizationService;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Service nghiệp vụ chat nội bộ của đội.
+ * Quản lý đọc/gửi tin nhắn kèm kiểm tra quyền truy cập theo thành viên đội/coordinator.
+ */
 @Service
 @RequiredArgsConstructor
 public class TeamChatService {
@@ -26,12 +30,18 @@ public class TeamChatService {
     private final UserRepository userRepository;
     private final AuthorizationService authorizationService;
 
+    /**
+     * Lấy tối đa 100 tin nhắn của một đội.
+     * Chỉ thành viên đội hoặc coordinator mới được đọc.
+     * @throws ApiException nếu đội không tồn tại hoặc ngoài phạm vi truy cập
+     */
     @Transactional(readOnly = true)
     public List<TeamChatMessageResponse> list(UUID teamId, Authentication authentication) {
         if (!teamRepository.existsById(teamId)) {
             throw ApiException.notFound("Team not found");
         }
         var user = authorizationService.current(authentication);
+        // Chặn truy cập: phải là coordinator hoặc thành viên của đội
         authorizationService.require(
                 authorizationService.isCoordinator(user)
                         || teamMemberRepository.existsByTeamIdAndUserId(teamId, user.getId()),
@@ -39,10 +49,17 @@ public class TeamChatService {
         return repository.findTop100ByTeamIdOrderByCreatedAtAsc(teamId).stream().map(this::map).toList();
     }
 
+    /**
+     * Gửi tin nhắn mới vào khung chat của đội.
+     * Chỉ thành viên đội được phép gửi; nội dung được trim trước khi lưu.
+     * @param senderId id người gửi (lấy từ principal)
+     * @throws ApiException nếu đội/người gửi không tồn tại hoặc người gửi không phải thành viên
+     */
     @Transactional
     public TeamChatMessageResponse create(CreateTeamChatMessageRequest request, UUID senderId) {
         var team = teamRepository.findById(request.teamId())
                 .orElseThrow(() -> ApiException.notFound("Team not found"));
+        // Chỉ thành viên đội mới được đăng tin
         if (!teamMemberRepository.existsByTeamIdAndUserId(team.getId(), senderId)) {
             throw ApiException.forbidden("Only team members can post team chat messages");
         }
@@ -55,6 +72,7 @@ public class TeamChatService {
                 .build()));
     }
 
+    /** Ánh xạ thực thể TeamChatMessage sang DTO Response kèm thông tin người gửi. */
     private TeamChatMessageResponse map(TeamChatMessage message) {
         var sender = message.getSender();
         return new TeamChatMessageResponse(

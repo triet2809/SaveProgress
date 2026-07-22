@@ -15,14 +15,25 @@ import vn.edu.fpt.seal.modules.incident.service.IncidentService;
 import vn.edu.fpt.seal.security.AuthorizationService;
 import java.util.*;
 
+/**
+ * Service nghiệp vụ cho "case" (vụ việc).
+ * Case là lớp bọc lại IncidentReport: chuyển đổi thuật ngữ case sang incident,
+ * uỷ quyền xử lý thực tế cho IncidentService, rồi ánh xạ kết quả ngược lại CaseResponse.
+ */
 @Service @RequiredArgsConstructor
 public class CaseService {
     private final IncidentReportRepository incidents;
     private final IncidentService incidentService;
     private final AuthorizationService authorizationService;
 
+    /**
+     * Liệt kê case có phân trang.
+     * Nếu không phải coordinator và không truyền eventId thì chỉ xem case của chính mình (bảo mật phạm vi).
+     * @throws ApiException nếu không có eventId lẫn reporterId
+     */
     @Transactional(readOnly = true)
     public Page<CaseResponse> list(UUID eventId, UUID reporterId, Pageable pageable, Authentication auth) {
+        // Người dùng thường chỉ được xem case của chính mình khi không lọc theo sự kiện
         if (eventId == null && !hasCoordinator(auth)) reporterId = authorizationService.current(auth).getId();
         if (eventId == null && reporterId == null) throw ApiException.badRequest("eventId is required");
         Page<IncidentReport> page = eventId != null ? incidents.findByEventId(eventId, pageable)
@@ -31,14 +42,21 @@ public class CaseService {
         return new PageImpl<>(visible, pageable, visible.size());
     }
 
+    /** Lấy chi tiết một case theo id. @throws ApiException nếu không tìm thấy */
     @Transactional(readOnly = true)
     public CaseResponse get(UUID id, Authentication auth) {
         IncidentReport incident = incidents.findWithRelationsById(id).orElseThrow(() -> ApiException.notFound("Case not found"));
         return map(incident);
     }
 
+    /**
+     * Tạo case mới.
+     * Ánh xạ category (thuật ngữ case) sang IncidentType tương ứng, sau đó uỷ quyền cho IncidentService tạo incident.
+     * @return CaseResponse với trạng thái mặc định "open"
+     */
     @Transactional
     public CaseResponse create(CreateCaseRequest request, Authentication auth) {
+        // Chuyển category dạng case sang loại incident nội bộ
         IncidentType type = switch (request.category().toLowerCase(Locale.ROOT)) {
             case "technical_support" -> IncidentType.technical_issue;
             case "rule_question", "conduct_incident" -> IncidentType.rule_violation;
@@ -52,8 +70,14 @@ public class CaseService {
                 source.reporterId(), source.reporterEmail(), source.createdAt(), source.updatedAt());
     }
 
+    /**
+     * Cập nhật trạng thái case.
+     * Ánh xạ status dạng case sang IncidentStatus rồi uỷ quyền cho IncidentService.
+     * @throws ApiException nếu trạng thái không hợp lệ
+     */
     @Transactional
     public CaseResponse updateStatus(UUID id, UpdateCaseStatusRequest request, Authentication auth) {
+        // Ánh xạ trạng thái case -> trạng thái incident nội bộ
         IncidentStatus target = switch (request.status().toLowerCase(Locale.ROOT)) {
             case "open" -> IncidentStatus.reported;
             case "in_progress", "awaiting_reporter" -> IncidentStatus.under_review;
@@ -67,10 +91,13 @@ public class CaseService {
                 source.reporterId(), source.reporterEmail(), source.createdAt(), source.updatedAt());
     }
 
+    /** Chuẩn hóa IncidentStatus nội bộ sang chuỗi trạng thái case hiển thị cho client. */
     private String normalize(IncidentStatus status) {
         return switch (status) { case reported -> "open"; case under_review -> "in_progress"; case resolved -> "resolved"; case rejected -> "rejected"; };
     }
+    /** Kiểm tra người dùng có quyền COORDINATOR không. */
     private boolean hasCoordinator(Authentication a) { return a != null && a.getAuthorities().stream().anyMatch(x -> x.getAuthority().equals("ROLE_COORDINATOR")); }
+    /** Ánh xạ IncidentReport sang CaseResponse; xử lý null-safe cho các quan hệ tuỳ chọn. */
     private CaseResponse map(IncidentReport i) {
         return new CaseResponse("INC-" + i.getId(), "incident", i.getCategory(), i.getTitle(), i.getDescription(), normalize(i.getStatus()),
                 i.getEvent().getId(), i.getRound() == null ? null : i.getRound().getId(), i.getTrack() == null ? null : i.getTrack().getId(),

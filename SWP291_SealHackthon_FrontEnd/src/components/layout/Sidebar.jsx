@@ -1,3 +1,8 @@
+/**
+ * Sidebar.jsx — Menu điều hướng bên trái của dashboard.
+ * Hiển thị menu theo vai trò (role), badge số thông báo chưa đọc (red dot),
+ * bộ chọn đổi vai trò (nếu user giữ nhiều role), thông tin user và nút đăng xuất.
+ */
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
@@ -30,13 +35,14 @@ import { getUnreadSummary } from '../../api/hackathonApi';
 import { getStoredUser, getInitials } from '../../utils/authUser';
 import { getDashboardRoles, getActiveRole, routeForRole, setActiveRole } from '../../utils/authSession';
 
-// Which notification category lights up which menu path (red dot).
+// Ánh xạ path menu -> category thông báo tương ứng (để hiển red dot khi có tin chưa đọc).
 const CATEGORY_BY_PATH = {
   '/team/join-requests': 'join_requests',
   '/team/support': 'my_support',
   '/team/submissions': 'my_requests',
   '/team/my-team': 'mentor_feedback',
   '/student/join-team': 'my_requests',
+  '/team/join-team': 'my_requests',
   '/coordinator/support': 'support',
   '/judge/submissions': ['assignments', 'submissions'],
   '/mentor/review': 'submissions',
@@ -46,27 +52,31 @@ const Sidebar = ({ role }) => {
   const navigate = useNavigate();
   const stored = getStoredUser();
   const fallback = users[role] || {};
+  // Thông tin user hiển thị: ưu tiên dữ liệu thật (stored), fallback về mock data.
   const user = {
     name: stored?.fullName || fallback.name || 'User',
     email: stored?.email || fallback.email || '',
     role: fallback.role || (stored?.roles && stored.roles[0]) || role,
     initials: getInitials(stored?.fullName || fallback.name || 'User'),
   };
+  // Các role có dashboard mà user đang giữ + role đang kích hoạt (để hiển bộ chọn đổi vai trò).
   const dashboardRoles = getDashboardRoles(stored);
   const activeRole = getActiveRole(stored);
+  // Đổi vai trò đang xem -> lưu lại và điều hướng sang dashboard tương ứng.
   const switchRole = (event) => {
     const next = event.target.value;
     setActiveRole(next);
     navigate(routeForRole(next));
   };
 
-  // Define links based on role
-
+  // Xây danh sách link menu theo vai trò.
   const getLinks = () => {
     switch(role) {
       case 'team':
         return [
           { name: 'Overview', path: '/team/dashboard', icon: LayoutDashboard },
+          { name: 'Create Team', path: '/team/create-team', icon: Users },
+          { name: 'Join Team', path: '/team/join-team', icon: UserPlus },
           { name: 'Track Topic', path: '/team/topic', icon: FileText },
           { name: 'My Team', path: '/team/my-team', icon: Users },
           { name: 'Previous Teams', path: '/team/previous-teams', icon: History },
@@ -135,7 +145,7 @@ const Sidebar = ({ role }) => {
 
   const links = getLinks();
 
-  // Poll unread notification counts -> red dots on the matching menu items.
+  // Poll số thông báo chưa đọc theo category -> red dot trên menu (30s/lần + khi tab focus lại).
   const [unread, setUnread] = useState({});
   useEffect(() => {
     let active = true;
@@ -153,6 +163,7 @@ const Sidebar = ({ role }) => {
     return () => { active = false; clearInterval(t); window.removeEventListener('focus', onFocus); };
   }, [role]);
 
+  // Đăng xuất: gọi API logout (bỏ qua lỗi), xóa token/user local, về login.
   const handleLogout = async () => {
     try { await logout(); } catch { /* local clear still proceeds */ }
     localStorage.removeItem('seal_access_token');

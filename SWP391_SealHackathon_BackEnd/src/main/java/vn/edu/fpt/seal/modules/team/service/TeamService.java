@@ -19,7 +19,9 @@ import vn.edu.fpt.seal.security.CurrentUser;
 import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
 import vn.edu.fpt.seal.modules.user.entity.User;
+import vn.edu.fpt.seal.modules.user.entity.Role;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
+import vn.edu.fpt.seal.modules.user.repository.RoleRepository;
 import vn.edu.fpt.seal.modules.event.repository.EventRepository;
 import vn.edu.fpt.seal.modules.teamprofile.entity.TeamProfile;
 import vn.edu.fpt.seal.modules.teamprofile.repository.TeamProfileRepository;
@@ -41,6 +43,7 @@ public class TeamService {
     private final TeamMemberRepository teamMemberRepository;
     private final TrackRepository trackRepository;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final AuditLogRepository auditLogRepository;
     private final EventRepository eventRepository;
     private final TeamProfileRepository teamProfileRepository;
@@ -281,7 +284,20 @@ public class TeamService {
         if (role == TeamMemberRole.leader && teamMemberRepository.existsByTeamIdAndRole(team.getId(), TeamMemberRole.leader)) throw ApiException.conflict("Team already has a leader");
         User user = userRepository.findById(userId).orElseThrow(() -> ApiException.notFound("User not found: " + userId));
         if (user.getStatus() != AccountStatus.approved) throw ApiException.badRequest("Only approved users can join teams");
+        // Khi trở thành leader của một team, cấp role tài khoản team_leader (idempotent) để
+        // FE điều hướng user vào workspace /team (nơi có menu Join Requests) thay vì /student.
+        if (role == TeamMemberRole.leader) grantTeamLeaderRole(user);
         return teamMemberRepository.save(TeamMember.builder().team(team).user(user).role(role).build());
+    }
+
+    /** Cấp role tài khoản "team_leader" cho user nếu chưa có (không bump security version để token hiện tại vẫn hợp lệ). */
+    private void grantTeamLeaderRole(User user) {
+        boolean alreadyLeader = user.getRoles().stream().anyMatch(r -> "team_leader".equals(r.getName()));
+        if (alreadyLeader) return;
+        roleRepository.findByName("team_leader").ifPresent(role -> {
+            user.getRoles().add(role);
+            userRepository.save(user);
+        });
     }
     private void ensureEditable(Track track) { EventStatus s = track.getEvent().getStatus(); if (s != EventStatus.draft && s != EventStatus.published) throw ApiException.badRequest("Historical team registrations cannot be edited after registration closes (status: " + s + ")"); }
     /** Team registration (create/join) is only allowed while the event has registration open (status=published). */

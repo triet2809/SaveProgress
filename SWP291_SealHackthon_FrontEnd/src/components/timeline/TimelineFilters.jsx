@@ -1,3 +1,9 @@
+/**
+ * TimelineFilters.jsx — Bộ lọc cho timeline: loại sự kiện, roundId, trackId, và (với EC) phạm vi hiển thị.
+ * @param {object} value - Giá trị lọc hiện tại.
+ * @param {(next)=>void} onChange - Callback khi đổi bộ lọc.
+ * @param {boolean} coordinator - Nếu true, hiện thêm bộ lọc visibility (scope).
+ */
 import { TIMELINE_EVENT_TYPES } from './timelineEventTypes';
 
 export default function TimelineFilters({ value = {}, onChange, coordinator = false }) {

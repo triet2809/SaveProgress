@@ -23,6 +23,12 @@ import java.util.UUID;
 public class LogicalRoundController {
     private final LogicalRoundIntegrityService service;
 
+    @GetMapping
+    @Operation(summary = "List logical rounds by event (coordinator only)")
+    public ResponseEntity<List<LogicalRoundResponse>> list(@RequestParam UUID eventId) {
+        return ResponseEntity.ok(service.listByEvent(eventId));
+    }
+
     @PatchMapping("/{id}")
     @Operation(summary = "Update shared logical-round metadata")
     public ResponseEntity<LogicalRoundResponse> update(

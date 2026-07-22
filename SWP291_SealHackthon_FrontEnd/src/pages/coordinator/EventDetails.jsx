@@ -4,7 +4,7 @@ import { ArrowLeft, Calendar, Users, Target, Plus } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import TrackGeneratorModal from '../../components/coordinator/TrackGeneratorModal';
 import {
-  getEvent, getTracks, getRounds, getTeams, createLogicalRound, createTrack, updateTrack,
+  getEvent, getTracks, getLogicalRounds, getTeams, createLogicalRound, createTrack, updateTrack,
 } from '../../api/hackathonApi';
 
 const listOf = (data) => data?.content || data || [];
@@ -43,11 +43,10 @@ const EventDetails = () => {
       const trackList = listOf(tk);
       setTracks(trackList);
       setTeams(listOf(tm));
-      // Rounds are per-track; aggregate across all tracks in this event.
-      const roundResults = await Promise.all(
-        trackList.map((t) => getRounds({ trackId: t.id, size: 100 }).then(listOf).catch(() => []))
-      );
-      setRounds(roundResults.flat());
+      // Logical round = 1 vòng thi cấp sự kiện, gồm nhiều track execution (trackRounds).
+      // Hiển thị theo logical round → mỗi vòng 1 hàng (không phải mỗi track 1 hàng).
+      const logical = await getLogicalRounds(id).then(listOf).catch(() => []);
+      setRounds(logical);
     } catch (err) {
       setError(err.message || 'Failed to load event');
     } finally {
@@ -223,7 +222,7 @@ const EventDetails = () => {
               <thead>
                 <tr>
                   <th className="border-top-0 border-bottom text-muted py-3">Round Name</th>
-                  <th className="border-top-0 border-bottom text-muted py-3">Track</th>
+                  <th className="border-top-0 border-bottom text-muted py-3">Tracks</th>
                   <th className="border-top-0 border-bottom text-muted py-3">Sequence</th>
                   <th className="border-top-0 border-bottom text-muted py-3">Deadline</th>
                   <th className="border-top-0 border-bottom text-muted py-3">Promote Top</th>
@@ -232,15 +231,28 @@ const EventDetails = () => {
               <tbody>
                 {rounds.length === 0 ? (
                   <tr><td colSpan={5} className="text-center py-4 text-muted">No rounds yet.</td></tr>
-                ) : rounds.map((round) => (
-                  <tr key={round.id}>
+                ) : rounds.map((round) => {
+                  const trackRounds = round.trackRounds || [];
+                  // Deadline chung: lấy của track execution đầu tiên (các track thường dùng chung deadline).
+                  const deadline = trackRounds.find((tr) => tr.submissionDeadline)?.submissionDeadline;
+                  return (
+                  <tr key={round.logicalRoundId}>
                     <td className="fw-bold py-3" style={{ color: 'var(--cf-text-primary)' }}>{round.name}</td>
-                    <td className="py-3"><Badge bg="info" text="dark">{trackName(round.trackId)}</Badge></td>
+                    <td className="py-3">
+                      <div className="d-flex flex-wrap gap-1">
+                        {trackRounds.length === 0
+                          ? <span className="text-muted">—</span>
+                          : trackRounds.map((tr) => (
+                              <Badge key={tr.id} bg="info" text="dark">{trackName(tr.trackId)}</Badge>
+                            ))}
+                      </div>
+                    </td>
                     <td className="py-3 text-muted">{round.sequenceNumber}</td>
-                    <td className="py-3 text-muted">{round.submissionDeadline ? new Date(round.submissionDeadline).toLocaleString() : '—'}</td>
-                    <td className="py-3 text-muted">{round.topNToPromote}</td>
+                    <td className="py-3 text-muted">{deadline ? new Date(deadline).toLocaleString() : '—'}</td>
+                    <td className="py-3 text-muted">{round.defaultTopNToPromote}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </Table>
           </div>

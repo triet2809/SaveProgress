@@ -26,8 +26,15 @@ import java.util.UUID;
 public class ScoreService {
     private final ScoreRepository scoreRepository; private final SubmissionRepository submissionRepository; private final RoundCriterionRepository criterionRepository; private final UserRepository userRepository; private final RoundJudgeRepository roundJudgeRepository; private final AuthorizationService authorizationService;
     @Transactional(readOnly=true) public Page<ScoreResponse> list(UUID submissionId, UUID judgeId, Pageable pageable, Authentication auth){
-        Page<Score> scores = submissionId!=null ? scoreRepository.findBySubmissionId(submissionId,pageable) : judgeId!=null ? scoreRepository.findByJudgeId(judgeId,pageable) : scoreRepository.findAll(pageable);
         CurrentUser user=authorizationService.current(auth);
+        boolean coordinator=authorizationService.isCoordinator(user);
+        // If caller is a judge (not coordinator) and no explicit judgeId filter given,
+        // auto-filter to their own scores instead of loading all and then 403-ing.
+        UUID effectiveJudgeId = judgeId;
+        if (effectiveJudgeId == null && !coordinator) {
+            effectiveJudgeId = user.getId();
+        }
+        Page<Score> scores = submissionId!=null ? scoreRepository.findBySubmissionId(submissionId,pageable) : effectiveJudgeId!=null ? scoreRepository.findByJudgeId(effectiveJudgeId,pageable) : scoreRepository.findAll(pageable);
         scores.forEach(score->authorizationService.require(authorizationService.canReadDetailedScore(user,score.getSubmission()),"You are not authorized to view one or more requested scores"));
         return scores.map(ScoreMapper::toResponse);
     }

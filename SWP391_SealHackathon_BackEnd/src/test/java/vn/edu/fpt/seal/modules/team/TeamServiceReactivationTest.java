@@ -23,6 +23,7 @@ import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
 import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
+import vn.edu.fpt.seal.modules.user.repository.RoleRepository;
 import vn.edu.fpt.seal.security.CurrentUser;
 
 import java.util.*;
@@ -37,6 +38,7 @@ class TeamServiceReactivationTest {
     @Mock TeamMemberRepository members;
     @Mock TrackRepository tracks;
     @Mock UserRepository users;
+    @Mock RoleRepository roles;
     @Mock AuditLogRepository audits;
     @Mock EventRepository events;
     @Mock TeamProfileRepository profiles;
@@ -50,7 +52,7 @@ class TeamServiceReactivationTest {
 
     @BeforeEach
     void setUp() {
-        service = new TeamService(teams, members, tracks, users, audits, events, profiles, recognitions, timeline);
+        service = new TeamService(teams, members, tracks, users, roles, audits, events, profiles, recognitions, timeline);
         event = Event.builder().title("Event").status(EventStatus.published).build();
         event.setId(UUID.randomUUID());
         Track track = Track.builder().event(event).name("Track").build();

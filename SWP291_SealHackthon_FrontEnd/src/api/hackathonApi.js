@@ -1,5 +1,14 @@
+/**
+ * hackathonApi.js — Module API trung tâm cho toàn bộ nghiệp vụ hackathon.
+ * Gom các lời gọi REST theo nhóm: events, tracks, rounds, teams, submissions,
+ * scores, criteria, rankings, prizes, incidents, notices, join-requests,
+ * team chat, support tickets, timeline, appeals, event rules, prize revisions,
+ * tie-break decisions... Mọi hàm trả về res.data hoặc ném Error khi !res.ok.
+ */
 import { apiDelete, apiDownload, apiGet, apiPatch, apiPost, apiPut } from './client';
 
+// ===== Events (sự kiện hackathon) =====
+// Lấy danh sách sự kiện (params = bộ lọc / phân trang).
 export async function getEvents(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/events${qs ? `?${qs}` : ''}`);
@@ -7,12 +16,14 @@ export async function getEvents(params = {}) {
   return res.data;
 }
 
+// Lấy chi tiết một sự kiện theo id.
 export async function getEvent(id) {
   const res = await apiGet(`/events/${id}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load event');
   return res.data;
 }
 
+// EC tạo sự kiện mới.
 export async function createEvent(payload) {
   const res = await apiPost('/events', payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to create event');
@@ -25,24 +36,28 @@ export async function updateEvent(id, payload) {
   return res.data;
 }
 
+// Mở cổng đăng ký cho sự kiện.
 export async function openEventRegistration(id) {
   const res = await apiPost(`/events/${id}/open-registration`, {});
   if (!res.ok) throw new Error(res.data?.message || 'Failed to open registration');
   return res.data;
 }
 
+// Đóng cổng đăng ký cho sự kiện.
 export async function closeEventRegistration(id) {
   const res = await apiPost(`/events/${id}/close-registration`, {});
   if (!res.ok) throw new Error(res.data?.message || 'Failed to close registration');
   return res.data;
 }
 
+// Thiết lập cấu trúc thi đấu (tracks/rounds) cho sự kiện.
 export async function setupCompetition(id, payload) {
   const res = await apiPost(`/events/${id}/setup-competition`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to set up competition');
   return res.data;
 }
 
+// Đổi trạng thái vòng đời của sự kiện.
 export async function changeEventStatus(id, status) {
   const res = await apiPost(`/events/${id}/status`, { status });
   if (!res.ok) throw new Error(res.data?.message || 'Failed to change event status');
@@ -54,6 +69,7 @@ export async function deleteEvent(id) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to delete event');
 }
 
+// ===== Tracks (bảng đấu / hạng mục) =====
 export async function getTracks(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/tracks${qs ? `?${qs}` : ''}`);
@@ -84,6 +100,7 @@ export async function deleteTrack(id) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to delete track');
 }
 
+// ===== Rounds (vòng thi) =====
 export async function getRounds(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/rounds${qs ? `?${qs}` : ''}`);
@@ -108,6 +125,7 @@ export async function deleteRound(id) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to delete round');
 }
 
+// ===== Track mentors (phân công mentor theo track) =====
 export async function getTrackMentors(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/track-mentors${qs ? `?${qs}` : ''}`);
@@ -126,6 +144,7 @@ export async function deleteTrackMentor(id) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to remove track mentor');
 }
 
+// ===== Round judges (phân công giám khảo theo vòng) =====
 export async function getRoundJudges(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/round-judges${qs ? `?${qs}` : ''}`);
@@ -144,6 +163,7 @@ export async function deleteRoundJudge(id) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to remove round judge');
 }
 
+// ===== Track judges (phân công giám khảo theo track) =====
 export async function getTrackJudges(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/track-judges${qs ? `?${qs}` : ''}`);
@@ -162,6 +182,7 @@ export async function deleteTrackJudge(id) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to remove track judge');
 }
 
+// ===== Teams (đội thi) =====
 export async function getTeams(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/teams${qs ? `?${qs}` : ''}`);
@@ -175,6 +196,7 @@ export async function getTeam(id) {
   return res.data;
 }
 
+// Lấy các đội mà user hiện tại tham gia.
 export async function getMyTeams() {
   const res = await apiGet('/teams/me');
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load my teams');
@@ -193,6 +215,7 @@ export async function updateTeam(id, payload) {
   return res.data;
 }
 
+// Chuyển đội sang track khác.
 export async function moveTeamTrack(id, trackId) {
   const res = await apiPost(`/teams/${id}/move-track`, { trackId });
   if (!res.ok) throw new Error(res.data?.message || 'Failed to move team to track');
@@ -210,42 +233,57 @@ export async function removeTeamMember(teamId, userId) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to remove team member');
 }
 
+// Loại đội (disqualify) kèm lý do.
 export async function disqualifyTeam(id, reason) {
   const res = await apiPost(`/teams/${id}/disqualify`, { reason });
   if (!res.ok) throw new Error(res.data?.message || 'Failed to disqualify team');
   return res.data;
 }
 
+// Kích hoạt lại đội đã bị loại.
 export async function reactivateTeam(id) {
   const res = await apiPost(`/teams/${id}/reactivate`, {});
   if (!res.ok) throw new Error(res.data?.message || 'Failed to reactivate team');
   return res.data;
 }
 
+// Tạo vòng logic (nhóm nhiều vòng con) cho sự kiện.
 export async function createLogicalRound(payload) {
   const res = await apiPost('/rounds/logical', payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to create logical round');
   return res.data;
 }
 
+// Danh sach logical round theo event (moi logical round gom nhieu track execution trong `trackRounds`).
+export async function getLogicalRounds(eventId) {
+  const res = await apiGet(`/logical-rounds?eventId=${encodeURIComponent(eventId)}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load logical rounds');
+  return res.data;
+}
+
+// Chuyển hàng loạt đội sang track đích.
 export async function bulkTransferTeams(teamIds, targetTrackId) {
   const res = await apiPost('/teams/bulk-transfer', { teamIds, targetTrackId });
   if (!res.ok) throw new Error(res.data?.message || 'Bulk team transfer failed');
   return res.data;
 }
 
+// Xem trước kết quả chia đều đội vào các track (không lưu).
 export async function previewBalancedTeams(eventId, targetTrackIds, randomSeed = null) {
   const res = await apiPost(`/teams/events/${eventId}/balance-preview`, { targetTrackIds, randomSeed });
   if (!res.ok) throw new Error(res.data?.message || 'Balance preview failed');
   return res.data;
 }
 
+// Áp dụng thật việc chia đều đội vào các track.
 export async function applyBalancedTeams(eventId, targetTrackIds, randomSeed = null) {
   const res = await apiPost(`/teams/events/${eventId}/balance-apply`, { targetTrackIds, randomSeed });
   if (!res.ok) throw new Error(res.data?.message || 'Balanced distribution failed');
   return res.data;
 }
 
+// ===== Team profiles (hồ sơ đội qua các mùa) & tái kích hoạt =====
+// Lấy các hồ sơ đội cũ của tôi (để tái sử dụng cho sự kiện mới).
 export async function getMyTeamProfiles(targetEventId) {
   const qs = targetEventId ? `?${new URLSearchParams({ targetEventId })}` : '';
   const res = await apiGet(`/team-profiles/mine${qs}`);
@@ -265,12 +303,14 @@ export async function reactivateTeamProfile(profileId, payload) {
   return res.data;
 }
 
+// EC chốt kết quả cuối cùng của sự kiện.
 export async function finalizeEventResults(eventId) {
   const res = await apiPost(`/events/${eventId}/finalize-results`, {});
   if (!res.ok) throw new Error(res.data?.message || 'Failed to finalize event results');
   return res.data;
 }
 
+// ===== Seeding (xết hạt giống đội mạnh) =====
 export async function getSeedCandidates(eventId, trackId) {
   const qs = trackId ? `?${new URLSearchParams({ trackId })}` : '';
   const res = await apiGet(`/events/${eventId}/seed-candidates${qs}`);
@@ -295,6 +335,7 @@ export async function removeEventSeed(eventId, teamId) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to remove seed decision');
 }
 
+// ===== Team recognitions (danh hiệu / thành tích đội) =====
 export async function recalculateTeamRecognitions(profileId) {
   const res = await apiPost(`/team-profiles/${profileId}/recognitions/recalculate`, {});
   if (!res.ok) throw new Error(res.data?.message || 'Failed to recalculate team recognition');
@@ -325,6 +366,7 @@ export async function restoreTeamRecognition(profileId, recognitionId) {
   return res.data;
 }
 
+// ===== Mentor / Event staff (nhân sự sự kiện) =====
 export async function getMentorTeams(mentorId, params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/track-mentors/mentors/${mentorId}/teams${qs ? `?${qs}` : ''}`);
@@ -356,6 +398,7 @@ export async function removeEventStaff(eventId, userId, assignmentType) {
   return res.data;
 }
 
+// ===== Cases (hồ sơ chủ đề / bài toán) =====
 export async function getCases(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/cases${qs ? `?${qs}` : ''}`);
@@ -375,6 +418,7 @@ export async function updateCaseStatus(id, payload) {
   return res.data;
 }
 
+// ===== Mentor feedback (nhận xét của mentor) =====
 export async function getMyMentorTeams(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/track-mentors/me/teams${qs ? `?${qs}` : ''}`);
@@ -411,8 +455,13 @@ export async function deleteTeam(id) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to delete team');
 }
 
+// ===== Submissions (bài nộp) =====
 export async function getSubmissions(params = {}) {
-  const qs = new URLSearchParams(params).toString();
+  // Bỏ field null/undefined/'' để URLSearchParams không serialize thành 'undefined'.
+  const clean = Object.fromEntries(
+    Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+  );
+  const qs = new URLSearchParams(clean).toString();
   const res = await apiGet(`/submissions${qs ? `?${qs}` : ''}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load submissions');
   return res.data;
@@ -424,6 +473,7 @@ export async function getSubmission(id) {
   return res.data;
 }
 
+// Tạo mới hoặc cập nhật bài nộp (upsert).
 export async function upsertSubmission(payload) {
   const res = await apiPost('/submissions', payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to save submission');
@@ -441,6 +491,7 @@ export async function deleteSubmission(id) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to delete submission');
 }
 
+// ===== Scores (điểm chấm) =====
 export async function getScores(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/scores${qs ? `?${qs}` : ''}`);
@@ -448,12 +499,14 @@ export async function getScores(params = {}) {
   return res.data;
 }
 
+// Lưu điểm (tạo mới hoặc cập nhật).
 export async function upsertScore(payload) {
   const res = await apiPost('/scores', payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to save score');
   return res.data;
 }
 
+// ===== Round criteria & templates (tiêu chí chấm điểm) =====
 export async function getRoundCriteria(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/round-criteria${qs ? `?${qs}` : ''}`);
@@ -491,6 +544,7 @@ export async function createCriteriaTemplate(payload) {
   return res.data;
 }
 
+// Lấy các bài nộp được giao cho một giám khảo.
 export async function getJudgeSubmissions(judgeId, params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/round-judges/judges/${judgeId}/submissions${qs ? `?${qs}` : ''}`);
@@ -498,6 +552,7 @@ export async function getJudgeSubmissions(judgeId, params = {}) {
   return res.data;
 }
 
+// ===== Rankings (bảng xếp hạng) =====
 export async function getRoundRankings(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/round-rankings${qs ? `?${qs}` : ''}`);
@@ -511,6 +566,7 @@ export async function recalculateRoundRankings(roundId, payload = {}) {
   return res.data;
 }
 
+// ===== Prizes (giải thưởng) =====
 export async function getPrizes(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/prizes${qs ? `?${qs}` : ''}`);
@@ -541,6 +597,7 @@ export async function deletePrize(id) {
   if (!res.ok) throw new Error(res.data?.message || 'Failed to delete prize');
 }
 
+// ===== Incidents (báo cáo sự cố / vi phạm) =====
 export async function getIncidents(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/incidents${qs ? `?${qs}` : ''}`);
@@ -566,18 +623,22 @@ export async function updateIncidentStatus(id, payload) {
   return res.data;
 }
 
+// Thêm bằng chứng cho sự cố.
 export async function addIncidentEvidence(id, payload) {
   const res = await apiPost(`/incidents/${id}/evidences`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to add evidence');
   return res.data;
 }
 
+// Thêm hành động xử lý cho sự cố.
 export async function addIncidentAction(id, payload) {
   const res = await apiPost(`/incidents/${id}/actions`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to add action');
   return res.data;
 }
 
+// ===== Reports (báo cáo / phân tích) =====
+// Độ lệch điểm giữa các giám khảo (phát hiện chấm thiên lệch).
 export async function getJudgeVariance(eventId, roundId, trackId) {
   const qs = new URLSearchParams({ eventId, ...(trackId ? { trackId } : {}) }).toString();
   const res = await apiGet(`/reports/rounds/${roundId}/judge-variance?${qs}`);
@@ -591,12 +652,14 @@ export async function getAnonymizedDataset(roundId) {
   return res.data;
 }
 
+// Tải CSV bảng xếp hạng (dạng text).
 export async function downloadRankingCsv(roundId) {
   const res = await apiDownload(`/reports/rounds/${roundId}/ranking.csv`);
   if (!res.ok) throw new Error(res.text || 'Failed to download ranking CSV');
   return res.text;
 }
 
+// ===== Audit logs (nhật ký thao tác) =====
 export async function getAuditLogs(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/audit-logs${qs ? `?${qs}` : ''}`);
@@ -611,6 +674,7 @@ export async function getRoundParticipants(params = {}) {
   return res.data;
 }
 
+// ===== Notices (thông báo / bảng tin) =====
 export async function getNotices(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/notices${qs ? `?${qs}` : ''}`);
@@ -624,12 +688,14 @@ export async function createNotice(payload) {
   return res.data;
 }
 
+// Tham gia đội bằng mã mời.
 export async function joinTeamByInviteCode(inviteCode) {
   const res = await apiPost('/teams/join', { inviteCode });
   if (!res.ok) throw new Error(res.data?.message || 'Failed to join team');
   return res.data;
 }
 
+// Rời khỏi đội.
 export async function leaveTeam(teamId) {
   const res = await apiPost(`/teams/${teamId}/leave`, {});
   if (!res.ok) throw new Error(res.data?.message || 'Failed to leave team');

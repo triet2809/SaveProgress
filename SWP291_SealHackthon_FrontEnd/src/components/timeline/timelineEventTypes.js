@@ -1,3 +1,7 @@
+/**
+ * timelineEventTypes.js — Bảng ánh xạ loại sự kiện timeline -> nhãn hiển thị + màu badge.
+ * Dùng chung cho các component timeline (đồng bộ màu/nhãn giữa các màn hình).
+ */
 export const TIMELINE_EVENT_TYPES = {
   EVENT_PUBLISHED: { label: 'Event published', variant: 'primary' },
   EVENT_STARTED: { label: 'Event started', variant: 'success' },
@@ -32,6 +36,7 @@ export const TIMELINE_EVENT_TYPES = {
   RECOGNITION_RESTORED: { label: 'Recognition restored', variant: 'success' },
 };
 
+// Trả metadata (label + variant) cho một loại sự kiện; fallback tự chuẩn hoá tên nếu chưa khai báo.
 export const timelineTypeMeta = (type) =>
   TIMELINE_EVENT_TYPES[type] || {
     label: type ? type.replaceAll('_', ' ').toLowerCase() : 'Timeline milestone',

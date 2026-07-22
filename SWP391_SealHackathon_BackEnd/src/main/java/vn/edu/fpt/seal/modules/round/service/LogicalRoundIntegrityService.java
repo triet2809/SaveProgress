@@ -42,6 +42,14 @@ public class LogicalRoundIntegrityService {
     private final RoundCriterionRepository criteria;
     private final RoundJudgeRepository roundJudges;
 
+    @Transactional(readOnly = true)
+    public List<LogicalRoundResponse> listByEvent(UUID eventId) {
+        List<RoundDefinition> defs = definitions.findByEventIdOrderBySequenceNumberAsc(eventId);
+        return defs.stream()
+                .map(def -> response(def, rounds.findByLogicalRoundId(def.getId())))
+                .toList();
+    }
+
     @Transactional
     public LogicalRoundResponse update(UUID id, UpdateLogicalRoundRequest request) {
         RoundDefinition definition = definition(id);

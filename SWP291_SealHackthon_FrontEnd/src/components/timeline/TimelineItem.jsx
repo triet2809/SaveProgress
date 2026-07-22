@@ -1,7 +1,13 @@
+/**
+ * TimelineItem.jsx — Một dòng mốc trong timeline: badge loại, tiêu đề, thời điểm, mô tả.
+ * @param {object} item - Dữ liệu mốc (eventType, title, occurredAt, teamId, description).
+ * @param {boolean} showTeam - Nếu true, hiển thêm teamId (dùng ở timeline toàn sự kiện).
+ */
 import { Badge } from 'react-bootstrap';
 import { timelineTypeMeta } from './timelineEventTypes';
 
 export default function TimelineItem({ item, showTeam = false }) {
+  // Lấy nhãn + màu theo loại sự kiện.
   const meta = timelineTypeMeta(item.eventType);
   return (
     <div className="border-bottom py-3">

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, Table, Button, Badge, Modal, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
 import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import {
-  getRounds,
+  getEvents,
+  getLogicalRounds,
   getTracks,
   getRoundCriteria,
   createRoundCriterion,
@@ -13,11 +14,16 @@ import {
 const listOf = (data) => data?.content || data || [];
 
 const CriteriaManagement = () => {
-  const [rounds, setRounds] = useState([]);
-  const [tracks, setTracks] = useState([]);
-  const [selectedRound, setSelectedRound] = useState('');
+  const [events, setEvents] = useState([]);
+  const [logicalRounds, setLogicalRounds] = useState([]); // logical rounds của event đang chọn
+  const [tracks, setTracks] = useState([]); // tracks của event đang chọn (để map trackId -> name)
+  const [selectedEvent, setSelectedEvent] = useState('');
+  const [selectedLogicalRound, setSelectedLogicalRound] = useState('');
+  const [selectedTrack, setSelectedTrack] = useState(''); // trackId
   const [criteria, setCriteria] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingRounds, setLoadingRounds] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,32 +31,77 @@ const CriteriaManagement = () => {
   const [editingCriteria, setEditingCriteria] = useState(null);
   const [newCriteria, setNewCriteria] = useState({ name: '', weight: '', description: '', status: 'active' });
 
-  // Applicable Category == the track that the round belongs to
-  const trackNameOf = (trackId) => tracks.find((t) => t.id === trackId)?.name || '—';
-  const roundOf = (id) => rounds.find((r) => r.id === id);
-  const selectedTrackName = () => trackNameOf(roundOf(selectedRound)?.trackId);
+  // Logical round đang chọn (chứa nhiều track execution).
+  const currentLogical = useMemo(
+    () => logicalRounds.find((lr) => lr.logicalRoundId === selectedLogicalRound),
+    [logicalRounds, selectedLogicalRound],
+  );
+  // Các track của logical round đang chọn (mỗi track = 1 physical round).
+  const trackRounds = useMemo(() => currentLogical?.trackRounds || [], [currentLogical]);
+  // Physical round id tương ứng track đang chọn → criteria gắn vào đây.
+  const resolvedRound = useMemo(
+    () => trackRounds.find((tr) => tr.trackId === selectedTrack),
+    [trackRounds, selectedTrack],
+  );
+  const resolvedRoundId = resolvedRound?.id || '';
+  // trackRounds (RoundResponse) không có trackName → map qua danh sách tracks của event.
+  const trackNameOf = (trackId) => tracks.find((t) => t.id === trackId)?.name
+    || trackRounds.find((tr) => tr.trackId === trackId)?.trackName || '—';
+  const selectedTrackName = () => trackNameOf(selectedTrack);
 
+  // Load danh sách event.
   useEffect(() => {
     (async () => {
       try {
-        const [roundData, trackData] = await Promise.all([
-          getRounds({ size: 100 }),
-          getTracks({ size: 100 }).catch(() => []),
-        ]);
-        const list = listOf(roundData);
-        setTracks(listOf(trackData));
-        setRounds(list);
-        if (list.length) setSelectedRound(list[0].id);
-        else setLoading(false);
+        const data = await getEvents({ size: 100 });
+        const list = listOf(data);
+        setEvents(list);
       } catch (err) {
         setError(err.message);
-        setLoading(false);
+      } finally {
+        setLoadingEvents(false);
       }
     })();
   }, []);
 
+  // Chọn event → load logical rounds của event đó. Reset round + track.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!selectedEvent) {
+      setLogicalRounds([]);
+      setSelectedLogicalRound('');
+      setSelectedTrack('');
+      setCriteria([]);
+      return;
+    }
+    let active = true;
+    (async () => {
+      setLoadingRounds(true);
+      setError('');
+      setSelectedLogicalRound('');
+      setSelectedTrack('');
+      setCriteria([]);
+      try {
+        const [rounds, trackData] = await Promise.all([
+          getLogicalRounds(selectedEvent),
+          getTracks({ eventId: selectedEvent, size: 100 }).catch(() => []),
+        ]);
+        if (active) {
+          setLogicalRounds(listOf(rounds));
+          setTracks(listOf(trackData));
+        }
+      } catch (err) {
+        if (active) setError(err.message);
+      } finally {
+        if (active) setLoadingRounds(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [selectedEvent]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   const loadCriteria = useCallback(async (roundId) => {
-    if (!roundId) return;
+    if (!roundId) { setCriteria([]); return; }
     setLoading(true);
     setError('');
     try {
@@ -63,9 +114,12 @@ const CriteriaManagement = () => {
     }
   }, []);
 
+  // Chọn đủ event + round + track → resolve physical round → load criteria.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (selectedRound) loadCriteria(selectedRound);
-  }, [selectedRound, loadCriteria]);
+    loadCriteria(resolvedRoundId);
+  }, [resolvedRoundId, loadCriteria]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const filteredCriteria = criteria.filter((item) =>
     (item.name || '').toLowerCase().includes(searchTerm.toLowerCase())
@@ -76,14 +130,14 @@ const CriteriaManagement = () => {
       alert('Please fill all fields');
       return;
     }
-    if (!selectedRound) {
-      alert('Select a round first');
+    if (!resolvedRoundId) {
+      alert('Select event, round and track first');
       return;
     }
     setSaving(true);
     setError('');
     const payload = {
-      roundId: selectedRound,
+      roundId: resolvedRoundId,
       name: newCriteria.name,
       weight: Number(newCriteria.weight),
       description: newCriteria.description || '',
@@ -103,7 +157,7 @@ const CriteriaManagement = () => {
       setEditingCriteria(null);
       setNewCriteria({ name: '', weight: '', description: '', status: 'active' });
       setShowModal(false);
-      await loadCriteria(selectedRound);
+      await loadCriteria(resolvedRoundId);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -116,7 +170,7 @@ const CriteriaManagement = () => {
     setError('');
     try {
       await deleteRoundCriterion(id);
-      await loadCriteria(selectedRound);
+      await loadCriteria(resolvedRoundId);
     } catch (err) {
       setError(err.message);
     }
@@ -129,7 +183,7 @@ const CriteriaManagement = () => {
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Criteria Management</h1>
           <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Manage scoring rubrics and weighting</div>
         </div>
-        <Button variant="primary" className="d-flex align-items-center gap-2" disabled={!selectedRound} onClick={() => {
+        <Button variant="primary" className="d-flex align-items-center gap-2" disabled={!resolvedRoundId} onClick={() => {
           setEditingCriteria(null);
           setNewCriteria({ name: '', weight: '', description: '', status: 'active' });
           setShowModal(true);
@@ -141,8 +195,8 @@ const CriteriaManagement = () => {
       {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
 
       <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <div className="p-3 border-bottom d-flex align-items-center justify-content-between gap-2">
-          <InputGroup style={{ maxWidth: '300px' }}>
+        <div className="p-3 border-bottom d-flex align-items-center justify-content-between gap-2 flex-wrap">
+          <InputGroup style={{ maxWidth: '260px' }}>
             <InputGroup.Text>
               <Search size={16} />
             </InputGroup.Text>
@@ -152,16 +206,35 @@ const CriteriaManagement = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </InputGroup>
-          <Form.Select style={{ maxWidth: '260px' }} value={selectedRound} onChange={(e) => setSelectedRound(e.target.value)}>
-            {rounds.length === 0 && <option value="">No rounds available</option>}
-            {rounds.map((r) => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </Form.Select>
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            {/* Bước 1: chọn sự kiện */}
+            <Form.Select style={{ maxWidth: '220px' }} value={selectedEvent} onChange={(e) => setSelectedEvent(e.target.value)} disabled={loadingEvents}>
+              <option value="">{loadingEvents ? 'Loading events...' : '1. Select event'}</option>
+              {events.map((ev) => (
+                <option key={ev.id} value={ev.id}>{ev.title || ev.name}</option>
+              ))}
+            </Form.Select>
+            {/* Bước 2: chọn round (logical) */}
+            <Form.Select style={{ maxWidth: '200px' }} value={selectedLogicalRound} onChange={(e) => { setSelectedLogicalRound(e.target.value); setSelectedTrack(''); }} disabled={!selectedEvent || loadingRounds}>
+              <option value="">{loadingRounds ? 'Loading rounds...' : '2. Select round'}</option>
+              {logicalRounds.map((lr) => (
+                <option key={lr.logicalRoundId} value={lr.logicalRoundId}>{lr.name}</option>
+              ))}
+            </Form.Select>
+            {/* Bước 3: chọn track */}
+            <Form.Select style={{ maxWidth: '200px' }} value={selectedTrack} onChange={(e) => setSelectedTrack(e.target.value)} disabled={!selectedLogicalRound}>
+              <option value="">3. Select track</option>
+              {trackRounds.map((tr) => (
+                <option key={tr.id} value={tr.trackId}>{trackNameOf(tr.trackId)}</option>
+              ))}
+            </Form.Select>
+          </div>
         </div>
         <div className="table-responsive">
           {loading ? (
             <div className="text-center py-5"><Spinner animation="border" /></div>
+          ) : !resolvedRoundId ? (
+            <div className="text-center text-muted py-5">Select event, round and track to view criteria.</div>
           ) : (
             <Table className="mb-0" hover>
               <thead>
@@ -175,7 +248,7 @@ const CriteriaManagement = () => {
               </thead>
               <tbody>
                 {filteredCriteria.length === 0 && (
-                  <tr><td colSpan={5} className="text-center text-muted py-4">No criteria for this round</td></tr>
+                  <tr><td colSpan={5} className="text-center text-muted py-4">No criteria for this track's round</td></tr>
                 )}
                 {filteredCriteria.map((item) => {
                   const status = (item.status || 'active').toLowerCase();
@@ -185,7 +258,7 @@ const CriteriaManagement = () => {
                       <td className="py-3">
                         <Badge bg="secondary" className="bg-opacity-25 text-secondary border">{item.weight}%</Badge>
                       </td>
-                      <td className="py-3">{trackNameOf(roundOf(item.roundId ?? selectedRound)?.trackId)}</td>
+                      <td className="py-3">{selectedTrackName()}</td>
                       <td className="py-3">
                         <Badge bg={status === 'active' ? 'success' : 'secondary'}>{item.status || 'active'}</Badge>
                       </td>

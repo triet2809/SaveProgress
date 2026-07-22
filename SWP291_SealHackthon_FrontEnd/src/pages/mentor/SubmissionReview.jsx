@@ -28,16 +28,32 @@ const SubmissionReview = () => {
       try {
         const res = await getMentorTeams(mentorId);
         const assigned = Array.isArray(res) ? res : res?.content || [];
-        const teamIds = [...new Set(assigned.map((t) => t.teamId).filter(Boolean))];
+        // BE bắt buộc query param eventId cho /submissions; gọi theo từng team kèm eventId của nó.
+        // (Trước đây chỉ truyền teamId → BE trả 400 → .catch nuốt lỗi → danh sách rỗng.)
         const teamNameById = new Map(assigned.map((t) => [t.teamId, t.teamName]));
+        // Khử trùng theo cặp (teamId, eventId).
+        const teamEventPairs = [
+          ...new Map(
+            assigned
+              .filter((t) => t.teamId && t.eventId)
+              .map((t) => [`${t.teamId}:${t.eventId}`, { teamId: t.teamId, eventId: t.eventId }])
+          ).values(),
+        ];
 
         const subResults = await Promise.all(
-          teamIds.map((id) => getSubmissions({ teamId: id, size: 50 }).catch(() => null)),
+          teamEventPairs.map((p) =>
+            getSubmissions({ eventId: p.eventId, teamId: p.teamId, size: 50 }).catch(() => null),
+          ),
         );
         const all = [];
+        const seen = new Set();
         subResults.forEach((sr) => {
           const items = sr?.content || sr || [];
-          items.forEach((s) => all.push({ ...s, teamNameResolved: teamNameById.get(s.teamId) || s.teamName }));
+          items.forEach((s) => {
+            if (seen.has(s.id)) return;
+            seen.add(s.id);
+            all.push({ ...s, teamNameResolved: teamNameById.get(s.teamId) || s.teamName });
+          });
         });
         if (active) setSubmissions(all);
       } catch (err) {
@@ -54,6 +70,21 @@ const SubmissionReview = () => {
 
   const getStatusClass = (isReviewed) =>
     isReviewed ? styles.statusReviewed : styles.statusPending;
+
+  // Chỉ mở link file nếu là URL http(s) ngoài, KHÔNG trỏ về chính app.
+  // (submission giả hay để trống repoUrl = URL app → mở ra tab route app → redirect theo role → nhảy judge dashboard.)
+  const safeFileUrl = (submission) => {
+    const raw = submission.repoUrl || submission.demoUrl || submission.slideUrl || submission.reportUrl || '';
+    if (!raw) return '';
+    try {
+      const u = new URL(raw, window.location.origin);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+      if (u.origin === window.location.origin) return ''; // link nội bộ app → không phải file thật
+      return u.href;
+    } catch {
+      return '';
+    }
+  };
 
   return (
     <div className="py-2">
@@ -109,16 +140,23 @@ const SubmissionReview = () => {
                   </div>
 
                   <div className={styles.actionRow}>
-                    <Button
-                      variant="outline-secondary"
-                      className={styles.viewBtn}
-                      as="a"
-                      href={submission.repoUrl || submission.demoUrl || '#'}
-                      target={submission.repoUrl || submission.demoUrl ? '_blank' : undefined}
-                      rel="noopener noreferrer"
-                    >
-                      View Files
-                    </Button>
+                    {(() => {
+                      const fileUrl = safeFileUrl(submission);
+                      return (
+                        <Button
+                          variant="outline-secondary"
+                          className={styles.viewBtn}
+                          as={fileUrl ? 'a' : 'button'}
+                          href={fileUrl || undefined}
+                          target={fileUrl ? '_blank' : undefined}
+                          rel={fileUrl ? 'noopener noreferrer' : undefined}
+                          disabled={!fileUrl}
+                          title={fileUrl ? fileUrl : 'No external file link submitted'}
+                        >
+                          View Files
+                        </Button>
+                      );
+                    })()}
                     <Button
                       className={styles.feedbackBtn}
                       onClick={() => {

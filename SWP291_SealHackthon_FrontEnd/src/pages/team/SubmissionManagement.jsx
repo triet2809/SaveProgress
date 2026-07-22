@@ -49,7 +49,7 @@ const SubmissionManagement = () => {
         const currentRound = upcoming || rounds[rounds.length - 1] || null;
         if (active) setRound(currentRound);
 
-        const subsRes = await getSubmissions({ teamId: current.id });
+        const subsRes = await getSubmissions({ eventId: current.eventId, teamId: current.id });
         const subs = subsRes?.content || subsRes || [];
         const sub = currentRound
           ? subs.find((s) => s.roundId === currentRound.id) || null

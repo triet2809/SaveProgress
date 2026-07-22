@@ -52,6 +52,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Service quản lý vòng đời sự kiện: CRUD sự kiện, chuyển trạng thái có kiểm soát,
+ * mở/đóng đăng ký và dựng toàn bộ cấu trúc cuộc thi (track + vòng thi + phân bổ đội).
+ * Phối hợp nhiều service khác: seeding, lifecycle, recognition, timeline, audit.
+ */
 @Slf4j
 @Service
 public class EventService {
@@ -70,6 +75,9 @@ public class EventService {
     private final TimelineService timelineService;
     private final RoundDefinitionRepository roundDefinitionRepository;
 
+    /**
+     * Constructor rút gọn (không có recognition/timeline/roundDefinition) — dùng cho test/tương thích.
+     */
     public EventService(EventRepository events, TrackRepository tracks,
                         RoundRepository rounds, TeamRepository teams,
                         RoundParticipantRepository participants,
@@ -80,6 +88,9 @@ public class EventService {
         this(events, tracks, rounds, teams, participants, members, audits, users, lifecycle, seeding, null, null, null);
     }
 
+    /**
+     * Constructor rút gọn có recognition nhưng thiếu timeline/roundDefinition — tương thích.
+     */
     public EventService(EventRepository events, TrackRepository tracks,
                         RoundRepository rounds, TeamRepository teams,
                         RoundParticipantRepository participants,
@@ -90,6 +101,9 @@ public class EventService {
         this(events, tracks, rounds, teams, participants, members, audits, users, lifecycle, seeding, recognition, null, null);
     }
 
+    /**
+     * Constructor chính (Spring inject đầy đủ các phụ thuộc).
+     */
     @Autowired
     public EventService(EventRepository events, TrackRepository tracks,
                         RoundRepository rounds, TeamRepository teams,
@@ -134,6 +148,13 @@ public class EventService {
             EventStatus.cancelled, EnumSet.noneOf(EventStatus.class)
     );
 
+    /**
+     * Liệt kê sự kiện (tùy chọn lọc theo trạng thái), kèm số liệu thống kê.
+     *
+     * @param status   trạng thái cần lọc, null = tất cả
+     * @param pageable thông tin phân trang
+     * @return trang sự kiện đã map sang DTO
+     */
     @Transactional(readOnly = true)
     public Page<EventResponse> list(EventStatus status, Pageable pageable) {
         Page<Event> page = (status == null)
@@ -142,11 +163,24 @@ public class EventService {
         return page.map(this::toResponseWithCounts);
     }
 
+    /**
+     * Lấy chi tiết sự kiện theo ID kèm số liệu thống kê.
+     *
+     * @param id ID sự kiện
+     * @return DTO sự kiện
+     * @throws ApiException nếu không tìm thấy
+     */
     @Transactional(readOnly = true)
     public EventResponse get(UUID id) {
         return toResponseWithCounts(findOrThrow(id));
     }
 
+    /**
+     * Map Event sang DTO kèm đếm số track, số vòng và số đội tham gia.
+     *
+     * @param e entity sự kiện
+     * @return DTO kèm số liệu thống kê
+     */
     private EventResponse toResponseWithCounts(Event e) {
         UUID eventId = e.getId();
         long tracks = trackRepository.countByEventId(eventId);
@@ -155,6 +189,13 @@ public class EventService {
         return EventMapper.toResponse(e, (int) tracks, (int) rounds, participants);
     }
 
+    /**
+     * Tạo sự kiện mới ở trạng thái draft.
+     *
+     * @param req dữ liệu tạo
+     * @return sự kiện đã tạo
+     * @throws ApiException nếu tiêu đề đã tồn tại
+     */
     @Transactional
     public EventResponse create(CreateEventRequest req) {
         String title = req.title().trim();
@@ -177,6 +218,15 @@ public class EventService {
         return toResponseWithCounts(e);
     }
 
+    /**
+     * Cập nhật thông tin sự kiện (cập nhật một phần — chỉ trường khác null).
+     * Không cho phép sửa khi sự kiện đã completed hoặc cancelled.
+     *
+     * @param id  ID sự kiện
+     * @param req dữ liệu cập nhật
+     * @return sự kiện sau cập nhật
+     * @throws ApiException nếu không tìm thấy, trạng thái không cho sửa, hoặc tiêu đề trùng
+     */
     @Transactional
     public EventResponse update(UUID id, UpdateEventRequest req) {
         Event e = findOrThrow(id);
@@ -215,11 +265,28 @@ public class EventService {
         return toResponseWithCounts(e);
     }
 
+    /**
+     * Thay đổi trạng thái sự kiện (không có thông tin người thực hiện).
+     *
+     * @param id     ID sự kiện
+     * @param target trạng thái đích
+     * @return sự kiện sau đổi trạng thái
+     */
     @Transactional
     public EventResponse changeStatus(UUID id, EventStatus target) {
         return changeStatus(id, target, null);
     }
 
+    /**
+     * Thay đổi trạng thái sự kiện theo bảng chuyển đổi hợp lệ ({@code ALLOWED_TRANSITIONS}).
+     * Ghi timeline; khi hoàn tất event thì kiểm tra điều kiện trao giải và chạy đánh giá recognition.
+     *
+     * @param id             ID sự kiện
+     * @param target         trạng thái đích
+     * @param authentication thông tin người thực hiện (có thể null)
+     * @return sự kiện sau đổi trạng thái
+     * @throws ApiException nếu chuyển trạng thái không hợp lệ
+     */
     @Transactional
     public EventResponse changeStatus(UUID id, EventStatus target, Authentication authentication) {
         Event e = findOrThrow(id);
@@ -272,6 +339,12 @@ public class EventService {
         return EventMapper.toResponse(e);
     }
 
+    /**
+     * Xóa sự kiện — chỉ cho phép khi đang ở trạng thái draft (nếu khác thì dùng cancel).
+     *
+     * @param id ID sự kiện
+     * @throws ApiException nếu không tìm thấy hoặc trạng thái không phải draft
+     */
     @Transactional
     public void delete(UUID id) {
         Event e = findOrThrow(id);

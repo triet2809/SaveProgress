@@ -1,3 +1,8 @@
+/**
+ * ReactivationEligibilitySummary.jsx — Tóm tắt điều kiện tái kích hoạt đội.
+ * Hiển thị trạng thái đủ/thiếu điều kiện, số thành viên quay lại, xung đột thành viên và cảnh báo.
+ * @param {object} preview - Kết quả preview từ API (eligible, returningMemberCount, missingRequirements...).
+ */
 import { Alert, Badge, ListGroup } from 'react-bootstrap';
 
 const ReactivationEligibilitySummary = ({ preview }) => {
@@ -14,6 +19,7 @@ const ReactivationEligibilitySummary = ({ preview }) => {
         </div>
       </Alert>
 
+      {/* Danh sách điều kiện còn thiếu (nếu có). */}
       {preview.missingRequirements?.length > 0 && (
         <ListGroup className="mb-3">
           {preview.missingRequirements.map((item) => (
@@ -22,6 +28,7 @@ const ReactivationEligibilitySummary = ({ preview }) => {
         </ListGroup>
       )}
 
+      {/* Xung đột thành viên: đã thuộc đội khác... */}
       {preview.memberConflicts?.length > 0 && (
         <ListGroup className="mb-3">
           {preview.memberConflicts.map((conflict) => (
@@ -32,6 +39,7 @@ const ReactivationEligibilitySummary = ({ preview }) => {
         </ListGroup>
       )}
 
+      {/* Cảnh báo không chặn việc tái kích hoạt. */}
       {preview.warnings?.length > 0 && (
         <ListGroup>
           {preview.warnings.map((warning) => (

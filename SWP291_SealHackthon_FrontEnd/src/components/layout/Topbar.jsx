@@ -1,3 +1,8 @@
+/**
+ * Topbar.jsx — Thanh trên của dashboard: breadcrumb tên trang, ô tìm kiếm, nút đổi theme.
+ * Tên trang được suy ra từ URL hiện tại.
+ * @param {string} role - Vai trò hiện tại (để format tên role).
+ */
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Sun, Moon } from 'lucide-react';
@@ -9,24 +14,26 @@ const Topbar = ({ role }) => {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   
-  // Format role name for breadcrumb
+  // Format tên role cho breadcrumb (team -> Team Member).
   const roleName = role === 'team' ? 'Team Member' : role.charAt(0).toUpperCase() + role.slice(1);
   
-  // Get page name from path
+  // Lấy tên trang từ phần cuối của đường dẫn URL.
   const pathParts = location.pathname.split('/').filter(Boolean);
   let pageNameRaw = pathParts[pathParts.length - 1] || 'Overview';
   
+  // Nếu phần cuối là ID (số) thì dùng tên thực thể cha dạng số ít + "-details".
   if (!isNaN(pageNameRaw) && pathParts.length > 1) {
-    // If it's an ID, use the parent entity name
     const parentEntity = pathParts[pathParts.length - 2];
     const singularEntity = parentEntity.endsWith('s') ? parentEntity.slice(0, -1) : parentEntity;
     pageNameRaw = `${singularEntity}-details`;
   }
   
+  // Trang dashboard hiển thị là "Overview".
   if (pageNameRaw.toLowerCase() === 'dashboard') {
     pageNameRaw = 'Overview';
   }
   
+  // Viết hoa chữ cái đầu và thay '-' bằng khoảng trắng.
   const pageName = pageNameRaw.charAt(0).toUpperCase() + pageNameRaw.slice(1).replace('-', ' ');
 
   return (

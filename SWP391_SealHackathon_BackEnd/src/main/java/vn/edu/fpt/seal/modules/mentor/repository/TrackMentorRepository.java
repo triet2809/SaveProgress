@@ -28,12 +28,12 @@ public interface TrackMentorRepository extends JpaRepository<TrackMentor, UUID> 
             from track_mentors tm
             join tracks t on t.id = tm.track_id
             join events e on e.id = tm.event_id
-            left join rounds r on r.track_id = t.id
+            left join rounds r on r.track_id = t.id and (:roundId is not null and r.id = :roundId)
             left join teams team on team.track_id = t.id
             where tm.user_id = :mentorId
               and (:eventId is null or tm.event_id = :eventId)
               and (:trackId is null or tm.track_id = :trackId)
-              and (:roundId is null or r.id = :roundId)
+              and (:roundId is null or exists (select 1 from rounds r2 where r2.id = :roundId and r2.track_id = t.id))
             order by t.name asc, team.name asc, r.sequence_number asc
             """, nativeQuery = true)
     List<MentorTeamRow> findTeamRowsForMentor(@Param("mentorId") UUID mentorId, @Param("eventId") UUID eventId,

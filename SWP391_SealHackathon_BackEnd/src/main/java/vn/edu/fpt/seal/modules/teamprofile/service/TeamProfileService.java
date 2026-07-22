@@ -233,7 +233,7 @@ public class TeamProfileService {
         }
 
         List<TeamMember> conflicts = returningIds.isEmpty() ? List.of()
-                : members.findActiveRegistrationsInEvent(returningIds, targetEvent.getId());
+                : members.findActiveRegistrationsInEvent(returningIds, targetEvent.getId(), vn.edu.fpt.seal.common.enums.TeamStatus.active);
         List<TeamProfileDtos.MemberConflict> memberConflicts = conflicts.stream()
                 .map(member -> new TeamProfileDtos.MemberConflict(member.getUser().getId(),
                         member.getUser().getFullName(), member.getTeam().getId(),
