@@ -23,11 +23,6 @@ import vn.edu.fpt.seal.modules.round.service.RoundService;
 
 import java.util.UUID;
 
-/**
- * Controller quản lý sự kiện hackathon: tạo/sửa/xóa event, chuyển trạng thái,
- * mở/đóng đăng ký, dựng cuộc thi và điều phối vòng thi.
- * Phần lớn endpoint yêu cầu vai trò COORDINATOR.
- */
 @RestController
 @RequestMapping("/events")
 @RequiredArgsConstructor
@@ -37,14 +32,8 @@ public class EventController {
     private final EventService eventService;
     private final RoundService roundService;
 
-    /**
-     * Công bố kết quả của một vòng thi (chỉ COORDINATOR).
-     *
-     * @param eventId        ID sự kiện
-     * @param roundId        ID vòng thi
-     * @param authentication thông tin người thực hiện
-     * @return vòng thi đã công bố kết quả
-     */
+    // Endpoint mở đầu luồng publish kết quả: FE bấm nút publish -> controller -> RoundService.publishResults().
+    // Round publish flow: FE publish button -> RoundService.publishResults.
     @PostMapping("/{eventId}/rounds/{roundId}/publish-results")
     @PreAuthorize("hasRole('COORDINATOR')")
     public ResponseEntity<RoundResponse> publishResults(@PathVariable UUID eventId, @PathVariable UUID roundId,
@@ -52,39 +41,24 @@ public class EventController {
         return ResponseEntity.ok(roundService.publishResults(eventId, roundId, authentication));
     }
 
-    /**
-     * Mở lại một vòng thi (chỉ COORDINATOR).
-     *
-     * @param eventId ID sự kiện
-     * @param roundId ID vòng thi
-     * @return vòng thi đã mở lại
-     */
+    // Endpoint cho phép coordinator mở lại vòng sau khi xử lý appeal xong.
+    // Round resume flow: FE resume button -> RoundService.resume.
     @PostMapping("/{eventId}/rounds/{roundId}/resume")
     @PreAuthorize("hasRole('COORDINATOR')")
     public ResponseEntity<RoundResponse> resume(@PathVariable UUID eventId, @PathVariable UUID roundId) {
         return ResponseEntity.ok(roundService.resume(eventId, roundId));
     }
 
-    /**
-     * Chuyển cuộc thi sang vòng tiếp theo (chỉ COORDINATOR).
-     *
-     * @param eventId ID sự kiện
-     * @param roundId ID vòng thi hiện tại
-     * @return vòng thi sau khi advance
-     */
+    // Endpoint đẩy vòng sang trạng thái kế tiếp sau khi đủ điều kiện advance.
+    // Round advance flow: FE advance button -> RoundService.advance.
     @PostMapping("/{eventId}/rounds/{roundId}/advance")
     @PreAuthorize("hasRole('COORDINATOR')")
     public ResponseEntity<RoundResponse> advance(@PathVariable UUID eventId, @PathVariable UUID roundId) {
         return ResponseEntity.ok(roundService.advance(eventId, roundId));
     }
 
-    /**
-     * Liệt kê sự kiện, có thể lọc theo trạng thái.
-     *
-     * @param status   trạng thái cần lọc (tùy chọn)
-     * @param pageable thông tin phân trang
-     * @return trang danh sách sự kiện
-     */
+    // Danh sách event để FE render bảng quản lý event.
+    // Event list flow: FE table/list -> EventService.list.
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List events (optional filter by status)")
@@ -94,12 +68,8 @@ public class EventController {
         return ResponseEntity.ok(eventService.list(status, pageable));
     }
 
-    /**
-     * Lấy chi tiết sự kiện theo ID.
-     *
-     * @param id ID sự kiện
-     * @return chi tiết sự kiện
-     */
+    // Lấy 1 event theo ID để màn chi tiết event nạp dữ liệu.
+    // Event detail flow: FE event detail page -> EventService.get.
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get event by id")
@@ -107,12 +77,8 @@ public class EventController {
         return ResponseEntity.ok(eventService.get(id));
     }
 
-    /**
-     * Tạo sự kiện mới (chỉ COORDINATOR).
-     *
-     * @param req dữ liệu tạo sự kiện
-     * @return sự kiện vừa tạo
-     */
+    // Tạo event mới từ modal bên FE.
+    // Create event flow: FE modal -> EventService.create.
     @PostMapping
     @PreAuthorize("hasRole('COORDINATOR')")
     @Operation(summary = "Create new event (coordinator only)")
@@ -120,13 +86,8 @@ public class EventController {
         return ResponseEntity.ok(eventService.create(req));
     }
 
-    /**
-     * Cập nhật thông tin sự kiện (chỉ COORDINATOR).
-     *
-     * @param id  ID sự kiện
-     * @param req dữ liệu cập nhật
-     * @return sự kiện sau cập nhật
-     */
+    // Cập nhật metadata của event đã có.
+    // Update event flow: FE edit modal -> EventService.update.
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('COORDINATOR')")
     @Operation(summary = "Update event metadata (coordinator only)")
@@ -135,14 +96,8 @@ public class EventController {
         return ResponseEntity.ok(eventService.update(id, req));
     }
 
-    /**
-     * Thay đổi trạng thái sự kiện (chỉ COORDINATOR).
-     *
-     * @param id             ID sự kiện
-     * @param req            trạng thái mới
-     * @param authentication thông tin người thực hiện
-     * @return sự kiện sau khi đổi trạng thái
-     */
+    // Đổi status event qua endpoint riêng, FE chỉ gửi target status.
+    // Change status flow: FE status action -> EventService.changeStatus.
     @PostMapping("/{id}/status")
     @PreAuthorize("hasRole('COORDINATOR')")
     @Operation(summary = "Change event status (coordinator only)")
@@ -152,12 +107,8 @@ public class EventController {
         return ResponseEntity.ok(eventService.changeStatus(id, req.status(), authentication));
     }
 
-    /**
-     * Mở đăng ký: chuyển draft -&gt; published; tự động tạo track "General" (chỉ COORDINATOR).
-     *
-     * @param id ID sự kiện
-     * @return sự kiện sau khi mở đăng ký
-     */
+    // Mở đăng ký: đổi draft -> published và tạo track General nếu thiếu.
+    // Open registration flow: FE action -> EventService.openRegistration.
     @PostMapping("/{id}/open-registration")
     @PreAuthorize("hasRole('COORDINATOR')")
     @Operation(summary = "Open registration: draft -> published; auto-creates a General track (coordinator only)")
@@ -165,13 +116,8 @@ public class EventController {
         return ResponseEntity.ok(eventService.openRegistration(id));
     }
 
-    /**
-     * Đóng đăng ký: chuyển published -&gt; ongoing (chỉ COORDINATOR).
-     *
-     * @param id   ID sự kiện
-     * @param auth thông tin người thực hiện
-     * @return sự kiện sau khi đóng đăng ký
-     */
+    // Đóng đăng ký: chặn team mới và chuyển event sang ongoing.
+    // Close registration flow: FE action -> EventService.closeRegistration.
     @PostMapping("/{id}/close-registration")
     @PreAuthorize("hasRole('COORDINATOR')")
     @Operation(summary = "Close registration: published -> ongoing (coordinator only)")
@@ -179,13 +125,8 @@ public class EventController {
         return ResponseEntity.ok(eventService.closeRegistration(id, auth));
     }
 
-    /**
-     * Dựng track + vòng thi và phân bổ đội sau khi đóng đăng ký (chỉ COORDINATOR).
-     *
-     * @param id  ID sự kiện
-     * @param req cấu hình dựng cuộc thi (tùy chọn; null dùng mặc định)
-     * @return kết quả dựng cuộc thi
-     */
+    // Dựng competition từ roundPlan do FE gửi lên.
+    // Setup competition flow: FE wizard -> EventService.setupCompetition.
     @PostMapping("/{id}/setup-competition")
     @PreAuthorize("hasRole('COORDINATOR')")
     @Operation(summary = "Build tracks + rounds and distribute teams after registration closes (coordinator only)")
@@ -194,12 +135,8 @@ public class EventController {
         return ResponseEntity.ok(eventService.setupCompetition(id, req));
     }
 
-    /**
-     * Xóa sự kiện (chỉ khi status=draft).
-     *
-     * @param id ID sự kiện
-     * @return 204 No Content khi xóa thành công
-     */
+    // Xóa event nháp.
+    // Delete draft event flow: FE delete -> EventService.delete.
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('COORDINATOR')")
     @Operation(summary = "Delete event (only when status=draft)")

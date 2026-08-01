@@ -4,11 +4,10 @@ import { Plus, Edit, Settings, Trash2, Eye, Play, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getEvents, createEvent, updateEvent, changeEventStatus, deleteEvent, openEventRegistration, closeEventRegistration, setupCompetition } from '../../api/hackathonApi';
 
-const listOf = (data) => data?.content || data || [];
+const listOf = (data) => data?.content || data || []; // Chuẩn hóa response phân trang / mảng thường
 
-// date input holds yyyy-mm-dd; BE wants full datetime
-const toDateTime = (v) => (v ? (v.includes('T') ? v : `${v}T00:00:00`) : undefined);
-const toDateInput = (v) => (v ? String(v).slice(0, 10) : '');
+const toDateTime = (v) => (v ? (v.includes('T') ? v : `${v}T00:00:00`) : undefined); // FE nhập yyyy-mm-dd, BE cần datetime
+const toDateInput = (v) => (v ? String(v).slice(0, 10) : ''); // Đổi ISO sang input date
 
 const EventManagement = () => {
   const navigate = useNavigate();
@@ -33,12 +32,12 @@ const EventManagement = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [events, setEvents] = useState([]);
 
-  // competition setup wizard state
   const [setupEvent, setSetupEvent] = useState(null);
   const [setupBusy, setSetupBusy] = useState(false);
   const [setupResult, setSetupResult] = useState(null);
   const [tracksText, setTracksText] = useState('');
 
+  // Điểm bắt đầu màn Event Management: gọi BE lấy danh sách event để render table.
   const loadEvents = async () => {
     try {
       setLoading(true);
@@ -56,13 +55,20 @@ const EventManagement = () => {
     loadEvents();
   }, []);
 
+  /*
+   * Luồng lưu event từ FE.
+   * Bắt đầu từ modal tạo/sửa event.
+   * FE validate dữ liệu ngày giờ trước.
+   * Sau đó gọi hackathonApi.js.
+   * Tiếp theo BE đi qua EventController -> EventService.
+   * Kết thúc bằng reload lại danh sách event để UI hiện trạng thái mới nhất.
+   */
   const handleSaveEvent = async () => {
     if (!newEvent.name) {
       alert('Event name is required');
       return;
     }
 
-    // Date-ordering validation: regStart < regEnd <= eventStart < eventEnd
     const { registrationStart, registrationEnd, eventStart, eventEnd } = newEvent;
     if (registrationStart && registrationEnd && new Date(registrationStart) >= new Date(registrationEnd)) {
       alert('Registration Start must be before Registration End');
@@ -110,6 +116,7 @@ const EventManagement = () => {
     }
   };
 
+  // Xóa event nháp: FE confirm trước, BE chỉ cho xóa khi status = draft.
   const handleDeleteEvent = async (id) => {
     if (!window.confirm('Delete this event?')) return;
     try {
@@ -121,7 +128,11 @@ const EventManagement = () => {
     }
   };
 
-  // --- competition lifecycle ---
+  /*
+   * Mở đăng ký event.
+   * FE bấm nút -> gọi openEventRegistration().
+   * BE đổi draft -> published và tự tạo track General nếu chưa có.
+   */
   const handleOpenRegistration = async (event) => {
     if (!window.confirm(`Open registration for "${event.title}"? Teams will be able to register.`)) return;
     try {
@@ -133,6 +144,11 @@ const EventManagement = () => {
     }
   };
 
+  /*
+   * Đóng đăng ký event.
+   * FE bấm nút -> gọi closeEventRegistration().
+   * BE kiểm tra đội thiếu thành viên, loại đội không đủ điều kiện, rồi đổi event sang ongoing.
+   */
   const handleCloseRegistration = async (event) => {
     if (!window.confirm(`Close registration for "${event.title}"? No new teams can join after this.`)) return;
     try {
@@ -144,12 +160,19 @@ const EventManagement = () => {
     }
   };
 
+  // Mở wizard setup competition và nạp sẵn mẫu round plan để coordinator sửa nhanh.
   const openSetup = (event) => {
     setSetupEvent(event);
     setSetupResult(null);
     setTracksText('Qualifier | General, Track B | 3\nFinal | Final Stage | 1');
   };
 
+  /*
+   * Dựng cấu trúc cuộc thi.
+   * FE parse text round plan thành payload JSON.
+   * Sau đó gọi setupCompetition().
+   * BE tạo logical round, round execution, track, rồi seed team vào round đầu.
+   */
   const handleSetupCompetition = async () => {
     try {
       setSetupBusy(true);
@@ -193,6 +216,7 @@ const EventManagement = () => {
     }
   };
 
+  // Mở modal edit và đổ dữ liệu event hiện tại lên form.
   const openEdit = (event) => {
     setEditingEvent(event);
     setNewEvent({

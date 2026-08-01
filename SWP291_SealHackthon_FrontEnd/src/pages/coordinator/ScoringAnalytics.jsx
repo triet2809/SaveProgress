@@ -5,15 +5,16 @@ import { getRounds, getJudgeVariance, getTracks, getVarianceAnalysis, chatVarian
 import EventSelector from '../../components/coordinator/EventSelector';
 import { useSearchParams } from 'react-router-dom';
 
-const HIGH_VARIANCE = 10;
+const HIGH_VARIANCE = 10; // Ngưỡng variance cao để đánh dấu cần xem lại
 
 const TENDENCY_BADGE = {
-  LENIENT: { bg: 'info', label: 'Chấm dễ' },
-  HARSH: { bg: 'dark', label: 'Chấm khó' },
-  INCONSISTENT: { bg: 'warning', label: 'Thiếu nhất quán' },
-  BALANCED: { bg: 'success', label: 'Cân bằng' },
+  LENIENT: { bg: 'info', label: 'Lenient' },
+  HARSH: { bg: 'dark', label: 'Harsh' },
+  INCONSISTENT: { bg: 'warning', label: 'Inconsistent' },
+  BALANCED: { bg: 'success', label: 'Balanced' },
 };
 
+// Bong bóng chat: user nằm phải, AI nằm trái.
 const ChatBubble = ({ role, content }) => (
   <div className={`d-flex mb-2 ${role === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
     <div className={`p-2 rounded-3 ${role === 'user' ? 'bg-primary text-white' : 'bg-light text-dark'}`} style={{ maxWidth: '85%', whiteSpace: 'pre-wrap' }}>
@@ -22,7 +23,7 @@ const ChatBubble = ({ role, content }) => (
   </div>
 );
 
-// Panel diễn giải AI. Thống kê từ code hiển thị luôn; phần AI chỉ khi có.
+// Panel AI phân tích variance: FE chỉ hiển thị số liệu và câu trả lời BE trả về.
 const AiAnalysisPanel = ({ ai, loading, error, onRefresh }) => {
   const stats = ai?.stats;
   const narrative = ai?.ai;
@@ -31,43 +32,43 @@ const AiAnalysisPanel = ({ ai, loading, error, onRefresh }) => {
     <Card className="mb-4" style={{ border: '1px solid var(--cf-border, #e5e7eb)', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)' }}>
       <div className="p-3 border-bottom d-flex align-items-center justify-content-between">
         <div className="d-flex align-items-center gap-2 fw-bold" style={{ color: 'var(--cf-text-primary)' }}>
-          <Sparkles size={18} /> AI Phân tích phương sai
+          <Sparkles size={18} /> AI Variance Analysis
         </div>
         <Button variant="outline-secondary" size="sm" className="d-flex align-items-center gap-2"
           disabled={loading} onClick={onRefresh}>
-          <RefreshCw size={14} /> Làm mới
+          <RefreshCw size={14} /> Refresh
         </Button>
       </div>
 
       <div className="p-3">
         {loading && (
-          <div className="text-center py-4"><Spinner animation="border" /> <span className="ms-2">Đang phân tích...</span></div>
+          <div className="text-center py-4"><Spinner animation="border" /> <span className="ms-2">Analyzing...</span></div>
         )}
 
         {!loading && error && (
           <Alert variant="warning" className="mb-3">
-            AI không khả dụng: {error}. Hiển thị thống kê tính bằng code bên dưới.
+            AI unavailable: {error}. Showing code-generated statistics below.
           </Alert>
         )}
 
         {!loading && stats && (
           <>
             <div className="d-flex flex-wrap gap-3 mb-3">
-              <Badge bg="secondary" className="px-3 py-2">Nhóm chấm: {stats.groupCount}</Badge>
-              <Badge bg="danger" className="px-3 py-2">Phương sai cao: {stats.highVarianceCount}</Badge>
-              <Badge bg="info" className="px-3 py-2">Phương sai TB: {Number(stats.avgVariance ?? 0).toFixed(2)}</Badge>
+              <Badge bg="secondary" className="px-3 py-2">Groups: {stats.groupCount}</Badge>
+              <Badge bg="danger" className="px-3 py-2">High variance: {stats.highVarianceCount}</Badge>
+              <Badge bg="info" className="px-3 py-2">Average variance: {Number(stats.avgVariance ?? 0).toFixed(2)}</Badge>
             </div>
 
             {narrative?.summary && (
               <div className="mb-3">
-                <div className="fw-bold mb-1">Tổng quan</div>
+                <div className="fw-bold mb-1">Overview</div>
                 <div style={{ color: 'var(--cf-text-secondary)' }}>{narrative.summary}</div>
               </div>
             )}
 
             {narrative?.recommendations?.length > 0 && (
               <div className="mb-3">
-                <div className="fw-bold mb-1">Khuyến nghị</div>
+                <div className="fw-bold mb-1">Recommendations</div>
                 <ul className="mb-0">
                   {narrative.recommendations.map((r, i) => <li key={i}>{r}</li>)}
                 </ul>
@@ -76,7 +77,7 @@ const AiAnalysisPanel = ({ ai, loading, error, onRefresh }) => {
 
             {narrative?.judgeNotes?.length > 0 && (
               <div className="mb-3">
-                <div className="fw-bold mb-1">Ghi chú giám khảo</div>
+                <div className="fw-bold mb-1">Judge Notes</div>
                 <ul className="mb-0">
                   {narrative.judgeNotes.map((n, i) => <li key={i}>{n}</li>)}
                 </ul>
@@ -85,7 +86,7 @@ const AiAnalysisPanel = ({ ai, loading, error, onRefresh }) => {
 
             {stats.judgeBiases?.length > 0 && (
               <div className="mb-2">
-                <div className="fw-bold mb-2">Xu hướng chấm của giám khảo</div>
+                <div className="fw-bold mb-2">Judge Scoring Tendencies</div>
                 <div className="d-flex flex-wrap gap-2">
                   {stats.judgeBiases.map((b) => {
                     const t = TENDENCY_BADGE[b.tendency] || { bg: 'secondary', label: b.tendency };
@@ -127,6 +128,7 @@ const ScoringAnalytics = () => {
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState('');
 
+  // Đổi event / round / track thì reset state AI để tránh giữ dữ liệu cũ.
   useEffect(() => {
     if (!eventId) {
       setRounds([]);
@@ -157,6 +159,7 @@ const ScoringAnalytics = () => {
     })();
   }, [eventId, selectedRound, searchParams, setSearchParams]);
 
+  // Tải số liệu variance từ BE theo event / round / track đang chọn.
   const loadVariance = useCallback(async (roundId) => {
     if (!roundId || !eventId) return;
     setLoading(true);
@@ -183,6 +186,7 @@ const ScoringAnalytics = () => {
     setChatError('');
   }, [selectedRound, trackId]);
 
+  // Gọi BE sinh phân tích AI cho round hiện tại.
   const runAiAnalysis = useCallback(async ({ refresh = false } = {}) => {
     if (!selectedRound) return;
     setAiLoading(true);
@@ -200,6 +204,7 @@ const ScoringAnalytics = () => {
     }
   }, [selectedRound, eventId, trackId]);
 
+  // Gửi câu hỏi chat sang BE, rồi nối câu trả lời AI vào modal.
   const sendChat = useCallback(async () => {
     if (!selectedRound || !eventId || !chatInput.trim()) return;
     const nextMessages = [...chatMessages, { role: 'user', content: chatInput.trim() }];
@@ -257,9 +262,11 @@ const ScoringAnalytics = () => {
         </div>
       </div>
 
+      {/* Chưa chọn event thì chưa thể load analytics. */}
       {!eventId && <Alert variant="info">Choose event in selector above. Then Scoring Analytics loads.</Alert>}
       {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
 
+      {/* Chỉ hiện panel AI khi đã có kết quả AI, đang loading, hoặc có lỗi AI. */}
       {(ai || aiLoading || aiError) && (
         <AiAnalysisPanel
           ai={ai}
@@ -271,6 +278,7 @@ const ScoringAnalytics = () => {
 
       <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <div className="p-3 border-bottom d-flex align-items-center justify-content-between gap-2 flex-wrap">
+          {/* Bộ lọc FE: search text + chọn round + chọn track. */}
           <InputGroup style={{ maxWidth: '300px' }}>
             <InputGroup.Text className="bg-transparent border-end-0">
               <Search size={16} />
@@ -282,6 +290,7 @@ const ScoringAnalytics = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </InputGroup>
+          {/* Dropdown round đổi query param để đồng bộ URL và state màn hình. */}
           <Form.Select style={{ maxWidth: '260px' }} value={selectedRound} onChange={(e) => {
             const next = new URLSearchParams(searchParams); next.set('roundId', e.target.value); next.delete('trackId'); setSearchParams(next);
           }} disabled={!eventId}>
@@ -290,6 +299,7 @@ const ScoringAnalytics = () => {
               <option key={r.id} value={r.id}>{r.name}</option>
             ))}
           </Form.Select>
+          {/* Dropdown track lọc thêm trên dữ liệu variance của round đã chọn. */}
           <Form.Select style={{ maxWidth: 220 }} value={trackId} onChange={(e) => {
             const next = new URLSearchParams(searchParams);
             if (e.target.value) next.set('trackId', e.target.value); else next.delete('trackId');
@@ -305,6 +315,7 @@ const ScoringAnalytics = () => {
             <div className="text-center py-5"><Spinner animation="border" /></div>
           ) : (
             <Table className="mb-0 text-center align-middle" hover>
+              {/* Bảng dưới chỉ render dữ liệu variance đã được FE lọc theo searchTerm. */}
               <thead className="text-start">
                 <tr>
                   <th className="border-top-0 border-bottom text-start py-3">Team Name</th>
@@ -322,6 +333,7 @@ const ScoringAnalytics = () => {
                   <tr><td colSpan={8} className="text-center text-muted py-4">No scoring data for this round</td></tr>
                 )}
                 {filteredData.map((item, idx) => {
+                  // Mỗi dòng là 1 tổ hợp team + criterion, trạng thái cảnh báo dựa trên HIGH_VARIANCE.
                   const variance = Number(item.variance ?? 0);
                   const highVariance = variance > HIGH_VARIANCE;
                   return (
@@ -351,23 +363,24 @@ const ScoringAnalytics = () => {
         </div>
       </Card>
 
+      {/* Modal chat AI: giữ hội thoại theo state FE rồi gửi toàn bộ messages sang BE mỗi lượt. */}
       <Modal show={showChat} onHide={() => setShowChat(false)} size="lg" centered>
         <Modal.Header closeButton>
-          <Modal.Title className="d-flex align-items-center gap-2"><MessageSquare size={18} /> AI Chat về phương sai</Modal.Title>
+              <Modal.Title className="d-flex align-items-center gap-2"><MessageSquare size={18} /> AI Variance Chat</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="small text-muted mb-3">
-            Round: {selectedRound || 'chưa chọn'} {trackId ? `• Track: ${trackId}` : ''}
+            Round: {selectedRound || 'not selected'} {trackId ? `• Track: ${trackId}` : ''}
           </div>
           <div style={{ maxHeight: '50vh', overflowY: 'auto' }} className="mb-3 border rounded p-2 bg-white">
-            {chatMessages.length === 0 && <div className="text-muted text-center py-4">Hỏi về hotspot, variance cao, judge bias, hoặc khuyến nghị xử lý.</div>}
+            {chatMessages.length === 0 && <div className="text-muted text-center py-4">Ask about hotspots, high variance, judge bias, or recommended actions.</div>}
             {chatMessages.map((m, i) => <ChatBubble key={i} role={m.role} content={m.content} />)}
-            {chatLoading && <div className="text-muted small">AI đang trả lời...</div>}
+            {chatLoading && <div className="text-muted small">AI is replying...</div>}
           </div>
           {chatError && <Alert variant="warning">{chatError}</Alert>}
           <InputGroup>
             <Form.Control
-              placeholder="Ví dụ: Vì sao round này variance cao?"
+              placeholder="Example: Why is variance so high in this round?"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') sendChat(); }}

@@ -197,24 +197,24 @@ const CriteriaManagement = () => {
       {/* Panel chọn ngữ cảnh: bắt buộc chọn theo thứ tự Sự kiện → Vòng → Track mới tạo được tiêu chí. */}
       <Card className="mb-3" style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <div className="p-3">
-          <div className="fw-semibold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Chọn phạm vi tiêu chí</div>
+          <div className="fw-semibold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Select criteria scope</div>
           <div className="text-muted mb-3" style={{ fontSize: '0.8125rem' }}>
-            Chọn lần lượt: <strong>Sự kiện</strong> → <strong>Vòng thi</strong> → <strong>Track</strong>. Tiêu chí sẽ gắn vào track của vòng đã chọn.
+            Select in order: <strong>Event</strong> → <strong>Round</strong> → <strong>Track</strong>. Criteria will be attached to the selected round track.
           </div>
           <Row className="g-3">
             <Col md={4}>
-              <Form.Label className="small fw-medium text-muted">1. Sự kiện</Form.Label>
+              <Form.Label className="small fw-medium text-muted">1. Event</Form.Label>
               <Form.Select value={selectedEvent} onChange={(e) => setSelectedEvent(e.target.value)} disabled={loadingEvents}>
-                <option value="">{loadingEvents ? 'Đang tải sự kiện...' : '— Chọn sự kiện —'}</option>
+                <option value="">{loadingEvents ? 'Loading events...' : '— Select an event —'}</option>
                 {events.map((ev) => (
                   <option key={ev.id} value={ev.id}>{ev.title || ev.name}</option>
                 ))}
               </Form.Select>
             </Col>
             <Col md={4}>
-              <Form.Label className="small fw-medium text-muted">2. Vòng thi</Form.Label>
+              <Form.Label className="small fw-medium text-muted">2. Round</Form.Label>
               <Form.Select value={selectedLogicalRound} onChange={(e) => { setSelectedLogicalRound(e.target.value); setSelectedTrack(''); }} disabled={!selectedEvent || loadingRounds}>
-                <option value="">{loadingRounds ? 'Đang tải vòng...' : (selectedEvent ? '— Chọn vòng thi —' : 'Chọn sự kiện trước')}</option>
+                <option value="">{loadingRounds ? 'Loading rounds...' : (selectedEvent ? '— Select a round —' : 'Select event first')}</option>
                 {logicalRounds.map((lr) => (
                   <option key={lr.logicalRoundId} value={lr.logicalRoundId}>{lr.name}</option>
                 ))}
@@ -223,7 +223,7 @@ const CriteriaManagement = () => {
             <Col md={4}>
               <Form.Label className="small fw-medium text-muted">3. Track</Form.Label>
               <Form.Select value={selectedTrack} onChange={(e) => setSelectedTrack(e.target.value)} disabled={!selectedLogicalRound}>
-                <option value="">{selectedLogicalRound ? '— Chọn track —' : 'Chọn vòng trước'}</option>
+                <option value="">{selectedLogicalRound ? '— Select a track —' : 'Select round first'}</option>
                 {trackRounds.map((tr) => (
                   <option key={tr.id} value={tr.trackId}>{trackNameOf(tr.trackId)}</option>
                 ))}
@@ -232,7 +232,7 @@ const CriteriaManagement = () => {
           </Row>
           {resolvedRoundId && (
             <div className="mt-3 d-flex align-items-center gap-2 flex-wrap">
-              <span className="text-muted small">Đang quản lý tiêu chí cho:</span>
+              <span className="text-muted small">Managing criteria for:</span>
               <Badge bg="primary" className="bg-opacity-10 text-primary border border-primary">{events.find((e) => e.id === selectedEvent)?.title || ''}</Badge>
               <span className="text-muted">›</span>
               <Badge bg="info" className="bg-opacity-10 text-info border border-info">{currentLogical?.name || ''}</Badge>

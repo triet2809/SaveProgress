@@ -30,8 +30,8 @@ public class AiProperties {
     private int timeoutMs = 20000;
     /** Upper bound on generated tokens (keeps cost/latency bounded). */
     private int maxOutputTokens = 1500;
-    /** Output language for the AI narrative: "vi" or "en". */
-    private String language = "vi";
+    /** Output language for AI narrative. Keep English for UI consistency. */
+    private String language = "en";
 
     /** True only when the feature is on and a key is actually present. */
     public boolean isUsable() {

@@ -195,7 +195,7 @@ const AppealsInbox = () => {
         </div>
       </Card>
 
-      {/* Modal ghi phản hồi trung gian (đơn vẫn PENDING) */}
+      {/* Intermediate response modal for pending appeals */}
       <Modal show={showRespond} onHide={() => setShowRespond(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title className="d-flex align-items-center gap-2"><Reply size={20} /> Add Response</Modal.Title>
@@ -211,7 +211,7 @@ const AppealsInbox = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal chốt kết luận ACCEPTED / REJECTED */}
+      {/* Final decision modal for ACCEPTED / REJECTED */}
       <Modal show={showResolve} onHide={() => setShowResolve(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Resolve Appeal</Modal.Title>

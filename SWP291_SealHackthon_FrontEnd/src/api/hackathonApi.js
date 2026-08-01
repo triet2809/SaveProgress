@@ -1,14 +1,12 @@
-/**
- * hackathonApi.js — Module API trung tâm cho toàn bộ nghiệp vụ hackathon.
- * Gom các lời gọi REST theo nhóm: events, tracks, rounds, teams, submissions,
- * scores, criteria, rankings, prizes, incidents, notices, join-requests,
- * team chat, support tickets, timeline, appeals, event rules, prize revisions,
- * tie-break decisions... Mọi hàm trả về res.data hoặc ném Error khi !res.ok.
- */
 import { apiDelete, apiDownload, apiGet, apiPatch, apiPost, apiPut } from './client';
 
-// ===== Events (sự kiện hackathon) =====
-// Lấy danh sách sự kiện (params = bộ lọc / phân trang).
+/*
+ * Bản đồ API phía FE.
+ * Các màn hình FE gọi vào file này trước.
+ * File này là cầu nối sang endpoint BE.
+ * Muốn trace luồng thì đi theo thứ tự:
+ *   page/component -> hàm trong hackathonApi.js -> controller BE -> service BE.
+ */
 export async function getEvents(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/events${qs ? `?${qs}` : ''}`);
@@ -16,60 +14,63 @@ export async function getEvents(params = {}) {
   return res.data;
 }
 
-// Lấy chi tiết một sự kiện theo id.
+// Màn chi tiết event bắt đầu gọi từ đây.
 export async function getEvent(id) {
   const res = await apiGet(`/events/${id}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load event');
   return res.data;
 }
 
-// EC tạo sự kiện mới.
+// Tạo event: form FE -> hàm này -> POST /events -> EventController.create -> EventService.create.
 export async function createEvent(payload) {
   const res = await apiPost('/events', payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to create event');
   return res.data;
 }
 
+// Sửa metadata event: modal FE -> PATCH /events/:id -> EventService.update.
 export async function updateEvent(id, payload) {
   const res = await apiPatch(`/events/${id}`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to update event');
   return res.data;
 }
 
-// Mở cổng đăng ký cho sự kiện.
+// Mở đăng ký event: FE action -> POST /events/:id/open-registration -> EventService.openRegistration.
 export async function openEventRegistration(id) {
   const res = await apiPost(`/events/${id}/open-registration`, {});
   if (!res.ok) throw new Error(res.data?.message || 'Failed to open registration');
   return res.data;
 }
 
-// Đóng cổng đăng ký cho sự kiện.
+// Đóng đăng ký event: FE action -> POST /events/:id/close-registration -> EventService.closeRegistration.
 export async function closeEventRegistration(id) {
   const res = await apiPost(`/events/${id}/close-registration`, {});
   if (!res.ok) throw new Error(res.data?.message || 'Failed to close registration');
   return res.data;
 }
 
-// Thiết lập cấu trúc thi đấu (tracks/rounds) cho sự kiện.
+// Dựng competition: FE wizard -> POST /events/:id/setup-competition -> EventService.setupCompetition.
 export async function setupCompetition(id, payload) {
   const res = await apiPost(`/events/${id}/setup-competition`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to set up competition');
   return res.data;
 }
 
-// Đổi trạng thái vòng đời của sự kiện.
+// Đổi trạng thái event: FE status action -> POST /events/:id/status -> EventService.changeStatus.
 export async function changeEventStatus(id, status) {
   const res = await apiPost(`/events/${id}/status`, { status });
   if (!res.ok) throw new Error(res.data?.message || 'Failed to change event status');
   return res.data;
 }
 
+// Xóa event draft: FE action -> DELETE /events/:id -> EventService.delete.
 export async function deleteEvent(id) {
   const res = await apiDelete(`/events/${id}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to delete event');
 }
 
 // ===== Tracks (bảng đấu / hạng mục) =====
+// Nhóm hàm này phục vụ màn chi tiết event, setup competition, phân đội theo track.
 export async function getTracks(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/tracks${qs ? `?${qs}` : ''}`);
@@ -77,30 +78,36 @@ export async function getTracks(params = {}) {
   return res.data;
 }
 
+// Lấy chi tiết 1 track.
 export async function getTrack(id) {
   const res = await apiGet(`/tracks/${id}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load track');
   return res.data;
 }
 
+// Tạo track mới cho event.
 export async function createTrack(payload) {
   const res = await apiPost('/tracks', payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to create track');
   return res.data;
 }
 
+// Cập nhật tên / mô tả / sức chứa track.
 export async function updateTrack(id, payload) {
   const res = await apiPatch(`/tracks/${id}`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to update track');
   return res.data;
 }
 
+// Xóa track.
 export async function deleteTrack(id) {
   const res = await apiDelete(`/tracks/${id}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to delete track');
 }
 
 // ===== Rounds (vòng thi) =====
+// Nhóm hàm này phục vụ màn round, event details, publish/advance flow.
+// Lấy danh sách round theo event hoặc track.
 export async function getRounds(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/rounds${qs ? `?${qs}` : ''}`);
@@ -108,18 +115,21 @@ export async function getRounds(params = {}) {
   return res.data;
 }
 
+// Tạo round đơn.
 export async function createRound(payload) {
   const res = await apiPost('/rounds', payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to create round');
   return res.data;
 }
 
+// Sửa round.
 export async function updateRound(id, payload) {
   const res = await apiPatch(`/rounds/${id}`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to update round');
   return res.data;
 }
 
+// Xóa round khi event còn draft.
 export async function deleteRound(id) {
   const res = await apiDelete(`/rounds/${id}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to delete round');
@@ -183,6 +193,8 @@ export async function deleteTrackJudge(id) {
 }
 
 // ===== Teams (đội thi) =====
+// Nhóm hàm này phục vụ đăng ký team, quản lý thành viên, đổi track, loại đội.
+// Lấy danh sách team theo event / track.
 export async function getTeams(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await apiGet(`/teams${qs ? `?${qs}` : ''}`);
@@ -190,6 +202,7 @@ export async function getTeams(params = {}) {
   return res.data;
 }
 
+// Lấy chi tiết 1 team.
 export async function getTeam(id) {
   const res = await apiGet(`/teams/${id}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load team');
@@ -203,12 +216,14 @@ export async function getMyTeams() {
   return res.data;
 }
 
+// Tạo team mới.
 export async function createTeam(payload) {
   const res = await apiPost('/teams', payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to create team');
   return res.data;
 }
 
+// Sửa thông tin team.
 export async function updateTeam(id, payload) {
   const res = await apiPatch(`/teams/${id}`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to update team');
@@ -222,12 +237,14 @@ export async function moveTeamTrack(id, trackId) {
   return res.data;
 }
 
+// Thêm thành viên vào team.
 export async function addTeamMember(teamId, payload) {
   const res = await apiPost(`/teams/${teamId}/members`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to add team member');
   return res.data;
 }
 
+// Xóa thành viên khỏi team.
 export async function removeTeamMember(teamId, userId) {
   const res = await apiDelete(`/teams/${teamId}/members/${userId}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to remove team member');
@@ -247,14 +264,14 @@ export async function reactivateTeam(id) {
   return res.data;
 }
 
-// Tạo vòng logic (nhóm nhiều vòng con) cho sự kiện.
+// Tạo logical round: 1 vòng logic có nhiều round execution theo track.
 export async function createLogicalRound(payload) {
   const res = await apiPost('/rounds/logical', payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to create logical round');
   return res.data;
 }
 
-// Danh sach logical round theo event (moi logical round gom nhieu track execution trong `trackRounds`).
+// Lấy danh sách logical round theo event.
 export async function getLogicalRounds(eventId) {
   const res = await apiGet(`/logical-rounds?eventId=${encodeURIComponent(eventId)}`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load logical rounds');
@@ -291,26 +308,29 @@ export async function getMyTeamProfiles(targetEventId) {
   return res.data;
 }
 
+// Xem trước tái kích hoạt team profile cũ.
 export async function previewTeamReactivation(profileId, payload) {
   const res = await apiPost(`/team-profiles/${profileId}/reactivation-preview`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to preview team reactivation');
   return res.data;
 }
 
+// Tái kích hoạt team profile cũ cho event mới.
 export async function reactivateTeamProfile(profileId, payload) {
   const res = await apiPost(`/team-profiles/${profileId}/reactivate`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to reactivate previous team');
   return res.data;
 }
 
-// EC chốt kết quả cuối cùng của sự kiện.
+// Chốt kết quả cuối cùng của sự kiện.
 export async function finalizeEventResults(eventId) {
   const res = await apiPost(`/events/${eventId}/finalize-results`, {});
   if (!res.ok) throw new Error(res.data?.message || 'Failed to finalize event results');
   return res.data;
 }
 
-// ===== Seeding (xết hạt giống đội mạnh) =====
+// ===== Seeding (xếp hạt giống đội mạnh) =====
+// Lấy candidate seed theo event / track.
 export async function getSeedCandidates(eventId, trackId) {
   const qs = trackId ? `?${new URLSearchParams({ trackId })}` : '';
   const res = await apiGet(`/events/${eventId}/seed-candidates${qs}`);
@@ -318,18 +338,21 @@ export async function getSeedCandidates(eventId, trackId) {
   return res.data;
 }
 
+// Lấy seed assignments của event.
 export async function getEventSeeds(eventId) {
   const res = await apiGet(`/events/${eventId}/seeds`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load seed assignments');
   return res.data;
 }
 
+// Lưu quyết định seed cho 1 team.
 export async function setEventSeed(eventId, teamId, payload) {
   const res = await apiPut(`/events/${eventId}/teams/${teamId}/seed`, payload);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to save seed decision');
   return res.data;
 }
 
+// Gỡ quyết định seed.
 export async function removeEventSeed(eventId, teamId) {
   const res = await apiDelete(`/events/${eventId}/teams/${teamId}/seed`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to remove seed decision');

@@ -66,15 +66,17 @@ public class RoundService {
                 lifecycleService, timelineService, null);
     }
 
-    /** Legacy constructor retained for isolated unit tests that do not exercise lifecycle hooks. */
+    // Constructor cũ giữ lại cho test đơn lẻ, không cần lifecycle hooks.
     public RoundService(RoundRepository r, TrackRepository t, AuditLogRepository a, UserRepository u) {
         this.roundRepository=r; this.trackRepository=t; this.auditLogRepository=a; this.userRepository=u;
         this.lifecycleService=null; this.timelineService=null;
         this.definitionRepository=null;
     }
 
+    // Luồng publish kết quả: kiểm tra đúng event, ghi version kết quả, mở appeal window.
     @Transactional
     public RoundResponse publishResults(UUID eventId, UUID roundId, Authentication auth) {
+        // Luồng publish kết quả: FE bấm publish -> BE kiểm tra round đúng event -> lưu version kết quả -> mở cửa sổ appeal.
         Round round = findOrThrow(roundId);
         if (!round.getTrack().getEvent().getId().equals(eventId)) {
             throw ApiException.badRequest("Round does not belong to the selected event");
@@ -110,8 +112,10 @@ public class RoundService {
         return response(round);
     }
 
+    // Luồng advance: chỉ chạy khi round đã READY_TO_ADVANCE sau khi hết appeal.
     @Transactional
     public RoundResponse advance(UUID eventId, UUID roundId) {
+        // Luồng advance: chỉ chạy khi round đã tới trạng thái READY_TO_ADVANCE sau khi hết appeal.
         Round round = findOrThrow(roundId);
         if (!round.getTrack().getEvent().getId().equals(eventId)) throw ApiException.badRequest("Round does not belong to the selected event");
         lifecycleService.advance(round);
@@ -131,8 +135,10 @@ public class RoundService {
         return response(round);
     }
 
+    // Luồng resume: coordinator cho round chạy tiếp sau khi xử lý appeal xong.
     @Transactional
     public RoundResponse resume(UUID eventId, UUID roundId) {
+        // Luồng resume: coordinator cho round chạy lại sau khi xử lý appeal xong.
         Round round = findOrThrow(roundId);
         if (!round.getTrack().getEvent().getId().equals(eventId)) throw ApiException.badRequest("Round does not belong to the selected event");
         lifecycleService.resume(round);
@@ -146,8 +152,10 @@ public class RoundService {
         return response(round);
     }
 
+    // Lấy danh sách round theo track để FE render tab Rounds.
     @Transactional
     public Page<RoundResponse> listByTrack(UUID trackId, Pageable pageable) {
+        // Lấy danh sách round theo track để FE hiển thị bảng và sắp xếp theo sequenceNumber.
         Pageable effectivePageable = pageable.getSort().isSorted()
                 ? pageable
                 : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("sequenceNumber").ascending());
@@ -160,19 +168,25 @@ public class RoundService {
         return roundRepository.findByTrackId(trackId, effectivePageable).map(this::refreshAndMap);
     }
 
+    // Lấy danh sách round theo event cho màn tổng quan.
     @Transactional
     public Page<RoundResponse> listByEvent(UUID eventId, Pageable pageable) {
+        // Lấy toàn bộ round của event cho các màn tổng quan / analytics.
         if (eventId == null) throw ApiException.badRequest("eventId is required");
         return roundRepository.findByTrackEventId(eventId, pageable).map(this::refreshAndMap);
     }
 
+    // Lấy 1 round theo ID.
     @Transactional
     public RoundResponse get(UUID id) {
+        // Lấy 1 round theo ID.
         return refreshAndMap(findOrThrow(id));
     }
 
+    // Tạo round đơn cho track cụ thể.
     @Transactional
     public RoundResponse create(CreateRoundRequest req) {
+        // Tạo round đơn cho track cụ thể, thường dùng cho flow cũ hoặc test.
         Track track = trackRepository.findById(req.trackId())
                 .orElseThrow(() -> ApiException.notFound("Track not found: " + req.trackId()));
         ensureEditable(track);
@@ -198,8 +212,10 @@ public class RoundService {
         return RoundMapper.toResponse(round);
     }
 
+    // Tạo logical round: 1 vòng logic có thể gồm nhiều track execution.
     @Transactional
     public LogicalRoundResponse createLogical(CreateLogicalRoundRequest req) {
+        // Tạo logical round: 1 vòng logic có thể gồm nhiều track execution.
         if (definitionRepository == null) throw new IllegalStateException("Logical round repository is unavailable");
         if (new HashSet<>(req.trackIds()).size() != req.trackIds().size()) {
             throw ApiException.badRequest("Duplicate track selection is not allowed");
@@ -248,8 +264,10 @@ public class RoundService {
                 saved.stream().map(RoundMapper::toResponse).toList());
     }
 
+    // Cập nhật round nhưng không đổi name/sequence qua endpoint này.
     @Transactional
     public RoundResponse update(UUID id, UpdateRoundRequest req) {
+        // Cập nhật round, nhưng không cho đổi tên / sequence qua endpoint này vì đó là dữ liệu dùng chung cho logical round.
         Round round = findOrThrow(id);
         ensureEditable(round.getTrack());
         if (req.name() != null || req.sequenceNumber() != null) {
@@ -265,14 +283,17 @@ public class RoundService {
         return RoundMapper.toResponse(round);
     }
 
+    // Xóa round chỉ khi event còn draft.
     @Transactional
     public void delete(UUID id) {
+        // Xóa round chỉ khi event còn draft.
         Round round = findOrThrow(id);
         ensureDraft(round.getTrack());
         roundRepository.delete(round);
         log.info("Round deleted: id={}", id);
     }
 
+    // Helper: lấy sequence tiếp theo nếu FE không truyền.
     private int resolveSequenceNumber(UUID trackId, Integer requestedSequenceNumber) {
         if (requestedSequenceNumber != null) {
             if (roundRepository.existsByTrackIdAndSequenceNumber(trackId, requestedSequenceNumber)) {
@@ -285,11 +306,13 @@ public class RoundService {
                 .orElse(1);
     }
 
+    // Helper: ném lỗi nếu round không tồn tại.
     private Round findOrThrow(UUID id) {
         return roundRepository.findById(id)
                 .orElseThrow(() -> ApiException.notFound("Round not found: " + id));
     }
 
+    // Helper cũ để khớp logical round khi round đơn vẫn được tạo theo kiểu legacy.
     private RoundDefinition resolveLegacyDefinition(Track track, String name, int sequence) {
         if (definitionRepository == null) return null;
         return definitionRepository.findByEventIdAndNameIgnoreCaseAndSequenceNumber(
@@ -298,16 +321,19 @@ public class RoundService {
                         .event(track.getEvent()).name(name).sequenceNumber(sequence).build()));
     }
 
+    // Helper: refresh lifecycle rồi map sang response.
     private RoundResponse refreshAndMap(Round round) {
         if (lifecycleService != null) lifecycleService.refresh(round);
         return response(round);
     }
 
+    // Helper: map entity round sang DTO response, kèm thời gian còn lại nếu có lifecycle service.
     private RoundResponse response(Round round) {
         return lifecycleService == null ? RoundMapper.toResponse(round)
                 : RoundMapper.toResponse(round, lifecycleService.remainingSeconds(round));
     }
 
+    // Helper: chỉ cho sửa round khi event chưa completed/cancelled.
     private void ensureEditable(Track track) {
         EventStatus status = track.getEvent().getStatus();
         if (status == EventStatus.completed || status == EventStatus.cancelled) {
@@ -315,6 +341,7 @@ public class RoundService {
         }
     }
 
+    // Helper: chỉ cho xóa round khi event vẫn draft.
     private void ensureDraft(Track track) {
         EventStatus status = track.getEvent().getStatus();
         if (status != EventStatus.draft) {
@@ -322,6 +349,7 @@ public class RoundService {
         }
     }
 
+    // Helper: build request timeline cho round.
     private TimelineEventRequest request(Round round, TimelineEventType type, TimelineScope scope,
                                          String title, String description, TimelineSourceType sourceType,
                                          UUID sourceId, String key) {

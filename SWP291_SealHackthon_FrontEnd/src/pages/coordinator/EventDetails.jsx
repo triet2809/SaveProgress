@@ -7,7 +7,7 @@ import {
   getEvent, getTracks, getLogicalRounds, getTeams, createLogicalRound, createTrack, updateTrack,
 } from '../../api/hackathonApi';
 
-const listOf = (data) => data?.content || data || [];
+const listOf = (data) => data?.content || data || []; // Chuẩn hóa response phân trang / mảng thường
 
 const EventDetails = () => {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ const EventDetails = () => {
   const [rounds, setRounds] = useState([]);
   const [teams, setTeams] = useState([]);
 
-  const [activeTab, setActiveTab] = useState('Rounds'); // 'Rounds' | 'Teams'
+  const [activeTab, setActiveTab] = useState('Rounds'); // Tab đang mở trong màn chi tiết event
 
   const [showRoundModal, setShowRoundModal] = useState(false);
   const [savingRound, setSavingRound] = useState(false);
@@ -28,8 +28,17 @@ const EventDetails = () => {
 
   const [showGeneratorModal, setShowGeneratorModal] = useState(false);
 
-  const trackName = (trackId) => tracks.find((t) => t.id === trackId)?.name || 'Unassigned';
+  const trackName = (trackId) => tracks.find((t) => t.id === trackId)?.name || 'Unassigned'; // Tìm tên track để render badge
 
+  /*
+   * Hàm nạp dữ liệu chính của màn Event Details.
+   * FE gọi song song nhiều API:
+   * - getEvent(): lấy metadata event
+   * - getTracks(): lấy danh sách track
+   * - getTeams(): lấy danh sách team
+   * - getLogicalRounds(): lấy cấu trúc round logic
+   * Sau khi đủ dữ liệu thì render các tab Rounds / Teams / Tracks.
+   */
   const loadAll = async () => {
     try {
       setLoading(true);
@@ -43,8 +52,6 @@ const EventDetails = () => {
       const trackList = listOf(tk);
       setTracks(trackList);
       setTeams(listOf(tm));
-      // Logical round = 1 vòng thi cấp sự kiện, gồm nhiều track execution (trackRounds).
-      // Hiển thị theo logical round → mỗi vòng 1 hàng (không phải mỗi track 1 hàng).
       const logical = await getLogicalRounds(id).then(listOf).catch(() => []);
       setRounds(logical);
     } catch (err) {
@@ -55,12 +62,16 @@ const EventDetails = () => {
   };
 
   useEffect(() => {
-    // loadAll intentionally synchronizes server state for the selected event.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  /*
+   * Tạo logical round từ modal.
+   * FE validate dữ liệu cơ bản trước.
+   * Sau đó gọi createLogicalRound() sang BE.
+   * BE sẽ tạo 1 round logic và các track execution liên quan.
+   */
   const handleSaveRound = async () => {
     if (!newRound.name || !newRound.trackIds.length || !newRound.submissionDeadline) {
       alert('Please fill round name, select at least one track, and set the submission deadline');
@@ -86,8 +97,11 @@ const EventDetails = () => {
     }
   };
 
-  // Track generator -> creates BE tracks for this event (one per name).
-  // Team distribution has no BE endpoint; teams get a trackId when created (BE gap).
+  /*
+   * Tạo hàng loạt track cho event hiện tại.
+   * FE lặp qua từng tên track rồi gọi createTrack().
+   * Xong thì reload lại màn để thấy track mới.
+   */
   const handleGenerateTracks = async (category, trackNames, _teams, maxTeams = null) => {
     try {
       setError('');
@@ -101,7 +115,10 @@ const EventDetails = () => {
     }
   };
 
-  // Inline edit of a track's capacity (null = unlimited).
+  /*
+   * Cập nhật sức chứa tối đa của track.
+   * FE đổi ô input -> gọi updateTrack() -> BE lưu maxTeams mới.
+   */
   const handleUpdateTrackCap = async (track, raw) => {
     const val = raw === '' || raw == null ? null : parseInt(raw, 10);
     if (val != null && (Number.isNaN(val) || val < 1)) { setError('Max teams must be a positive number or left blank.'); return; }
@@ -180,7 +197,7 @@ const EventDetails = () => {
         </Col>
       </Row>
 
-      {/* Tabs */}
+      {/* Tabs: chỉ đổi vùng hiển thị, không gọi API mới ngay khi bấm tab. */}
       <div className="d-flex gap-4 mb-4 border-bottom pb-2">
         <div 
           className={`cursor-pointer fw-medium pb-2 ${activeTab === 'Rounds' ? 'text-primary border-bottom border-primary border-2' : 'text-muted'}`}
@@ -233,7 +250,7 @@ const EventDetails = () => {
                   <tr><td colSpan={5} className="text-center py-4 text-muted">No rounds yet.</td></tr>
                 ) : rounds.map((round) => {
                   const trackRounds = round.trackRounds || [];
-                  // Deadline chung: lấy của track execution đầu tiên (các track thường dùng chung deadline).
+                  // Deadline chung: lấy từ track execution đầu tiên để hiển thị nhanh ở bảng tổng quan.
                   const deadline = trackRounds.find((tr) => tr.submissionDeadline)?.submissionDeadline;
                   return (
                   <tr key={round.logicalRoundId}>
@@ -343,7 +360,7 @@ const EventDetails = () => {
         </Card>
       )}
 
-      {/* Add Round Modal */}
+      {/* Modal tạo round: FE validate trước, rồi gọi createLogicalRound sang BE. */}
       <Modal show={showRoundModal} onHide={() => setShowRoundModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Create New Round</Modal.Title>
@@ -393,7 +410,7 @@ const EventDetails = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Track Generator Modal */}
+      {/* Modal sinh track: nhập tên track rồi tạo hàng loạt trên BE. */}
       <TrackGeneratorModal
         show={showGeneratorModal}
         onHide={() => setShowGeneratorModal(false)}

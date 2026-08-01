@@ -5,16 +5,17 @@ import { Users, Shuffle } from 'lucide-react';
 const TrackGeneratorModal = ({ show, onHide, teams, onGenerate }) => {
   const [trackCount, setTrackCount] = useState(2);
   const [trackNames, setTrackNames] = useState(['Track A', 'Track B']);
-  // Blank = unlimited teams per track.
+  // Để trống = không giới hạn số team cho mỗi track.
   const [maxTeams, setMaxTeams] = useState('');
   
   const availableTeams = teams;
 
+  // Đổi số lượng track thì FE tự sinh tên mặc định Track A, Track B, ...
   const handleTrackCountChange = (e) => {
     const count = parseInt(e.target.value) || 1;
     setTrackCount(count);
     
-    // Auto-generate default names
+    // Tạo tên mặc định theo alphabet để user sửa nhanh.
     const newNames = Array(count).fill('').map((_, i) => {
       const letter = String.fromCharCode(65 + i); // A, B, C...
       return `Track ${letter}`;
@@ -22,12 +23,15 @@ const TrackGeneratorModal = ({ show, onHide, teams, onGenerate }) => {
     setTrackNames(newNames);
   };
 
+  // Sửa tên từng track ngay trên state FE.
   const handleNameChange = (index, value) => {
     const newNames = [...trackNames];
     newNames[index] = value;
     setTrackNames(newNames);
   };
 
+  // Bấm generate: FE gom dữ liệu rồi gọi callback onGenerate từ màn cha.
+  // Modal này không tự gọi API trực tiếp; EventDetails mới là nơi gọi createTrack().
   const handleGenerate = () => {
     const cap = maxTeams === '' ? null : parseInt(maxTeams, 10);
     onGenerate('All', trackNames, availableTeams, cap);
@@ -74,6 +78,7 @@ const TrackGeneratorModal = ({ show, onHide, teams, onGenerate }) => {
           </Col>
         </Row>
 
+        {/* Khối này chỉ hiển thị thống kê FE để coordinator ước lượng chia track. */}
         <Alert variant="info" className="mt-4 mb-4 d-flex justify-content-between align-items-center">
           <div>
             <strong>Available Teams: </strong> {availableTeams.length} teams
@@ -84,6 +89,7 @@ const TrackGeneratorModal = ({ show, onHide, teams, onGenerate }) => {
         </Alert>
 
         <div className="mb-3 fw-medium">2. Name Your Tracks</div>
+        {/* Danh sách input tên track được render động theo trackCount. */}
         <div className="p-3 rounded" style={{ backgroundColor: 'var(--cf-bg-main)', border: '1px solid var(--cf-border-color)' }}>
           <Row className="g-3">
             {trackNames.map((name, index) => (

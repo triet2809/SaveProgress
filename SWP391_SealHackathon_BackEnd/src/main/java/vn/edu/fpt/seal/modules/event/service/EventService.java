@@ -53,9 +53,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Service quản lý vòng đời sự kiện: CRUD sự kiện, chuyển trạng thái có kiểm soát,
- * mở/đóng đăng ký và dựng toàn bộ cấu trúc cuộc thi (track + vòng thi + phân bổ đội).
- * Phối hợp nhiều service khác: seeding, lifecycle, recognition, timeline, audit.
+ * Service quản lý vòng đời sự kiện.
+ * Luồng chính: tạo event -> mở đăng ký -> đóng đăng ký -> dựng competition -> chuyển trạng thái hoàn tất.
+ * Các bước này gọi xuống nhiều service phụ như seeding, lifecycle, recognition, timeline và audit.
  */
 @Slf4j
 @Service
@@ -75,9 +75,7 @@ public class EventService {
     private final TimelineService timelineService;
     private final RoundDefinitionRepository roundDefinitionRepository;
 
-    /**
-     * Constructor rút gọn (không có recognition/timeline/roundDefinition) — dùng cho test/tương thích.
-     */
+    // Constructor ngắn cho test / tương thích khi chưa có đủ dependency.
     public EventService(EventRepository events, TrackRepository tracks,
                         RoundRepository rounds, TeamRepository teams,
                         RoundParticipantRepository participants,
@@ -88,9 +86,7 @@ public class EventService {
         this(events, tracks, rounds, teams, participants, members, audits, users, lifecycle, seeding, null, null, null);
     }
 
-    /**
-     * Constructor rút gọn có recognition nhưng thiếu timeline/roundDefinition — tương thích.
-     */
+    // Constructor ngắn hơn nhưng có recognition, vẫn giữ tương thích cũ.
     public EventService(EventRepository events, TrackRepository tracks,
                         RoundRepository rounds, TeamRepository teams,
                         RoundParticipantRepository participants,
@@ -101,9 +97,7 @@ public class EventService {
         this(events, tracks, rounds, teams, participants, members, audits, users, lifecycle, seeding, recognition, null, null);
     }
 
-    /**
-     * Constructor chính (Spring inject đầy đủ các phụ thuộc).
-     */
+    // Constructor chính do Spring inject đầy đủ dependency.
     @Autowired
     public EventService(EventRepository events, TrackRepository tracks,
                         RoundRepository rounds, TeamRepository teams,
@@ -128,10 +122,10 @@ public class EventService {
         this.roundDefinitionRepository = roundDefinitionRepository;
     }
 
-    /** Default track name auto-created while registration is open. */
+    // Track mặc định tự tạo khi mở đăng ký.
     private static final String GENERAL_TRACK = "General";
 
-    /** A team needs at least this many members to compete; smaller teams are eliminated at registration close. */
+    // Đội phải có tối thiểu số thành viên này, nếu không sẽ bị loại khi đóng đăng ký.
     private static final int MIN_TEAM_SIZE = 3;
 
     // Status transition rules:
@@ -148,14 +142,9 @@ public class EventService {
             EventStatus.cancelled, EnumSet.noneOf(EventStatus.class)
     );
 
-    /**
-     * Liệt kê sự kiện (tùy chọn lọc theo trạng thái), kèm số liệu thống kê.
-     *
-     * @param status   trạng thái cần lọc, null = tất cả
-     * @param pageable thông tin phân trang
-     * @return trang sự kiện đã map sang DTO
-     */
+    // Lấy danh sách event, có thể lọc theo status, rồi gắn thêm count để FE render.
     @Transactional(readOnly = true)
+    // Lấy danh sách event theo status và map sang DTO có kèm thống kê để FE render bảng.
     public Page<EventResponse> list(EventStatus status, Pageable pageable) {
         Page<Event> page = (status == null)
                 ? eventRepository.findAll(pageable)
@@ -163,24 +152,14 @@ public class EventService {
         return page.map(this::toResponseWithCounts);
     }
 
-    /**
-     * Lấy chi tiết sự kiện theo ID kèm số liệu thống kê.
-     *
-     * @param id ID sự kiện
-     * @return DTO sự kiện
-     * @throws ApiException nếu không tìm thấy
-     */
+    // Lấy chi tiết 1 event theo ID.
     @Transactional(readOnly = true)
+    // Lấy chi tiết 1 event theo ID cho màn Event Details.
     public EventResponse get(UUID id) {
         return toResponseWithCounts(findOrThrow(id));
     }
 
-    /**
-     * Map Event sang DTO kèm đếm số track, số vòng và số đội tham gia.
-     *
-     * @param e entity sự kiện
-     * @return DTO kèm số liệu thống kê
-     */
+    // Map entity event sang response và đếm track / round / team.
     private EventResponse toResponseWithCounts(Event e) {
         UUID eventId = e.getId();
         long tracks = trackRepository.countByEventId(eventId);
@@ -189,14 +168,9 @@ public class EventService {
         return EventMapper.toResponse(e, (int) tracks, (int) rounds, participants);
     }
 
-    /**
-     * Tạo sự kiện mới ở trạng thái draft.
-     *
-     * @param req dữ liệu tạo
-     * @return sự kiện đã tạo
-     * @throws ApiException nếu tiêu đề đã tồn tại
-     */
+    // Tạo event mới ở trạng thái draft.
     @Transactional
+    // Tạo event nháp mới, validate title và khởi tạo trạng thái ban đầu.
     public EventResponse create(CreateEventRequest req) {
         String title = req.title().trim();
         if (eventRepository.existsByTitleIgnoreCase(title)) {
@@ -218,16 +192,9 @@ public class EventService {
         return toResponseWithCounts(e);
     }
 
-    /**
-     * Cập nhật thông tin sự kiện (cập nhật một phần — chỉ trường khác null).
-     * Không cho phép sửa khi sự kiện đã completed hoặc cancelled.
-     *
-     * @param id  ID sự kiện
-     * @param req dữ liệu cập nhật
-     * @return sự kiện sau cập nhật
-     * @throws ApiException nếu không tìm thấy, trạng thái không cho sửa, hoặc tiêu đề trùng
-     */
+    // Sửa metadata event. Chỉ update field nào FE gửi lên.
     @Transactional
+    // Cập nhật metadata event, chỉ áp dụng field nào FE gửi lên.
     public EventResponse update(UUID id, UpdateEventRequest req) {
         Event e = findOrThrow(id);
         if (e.getStatus() == EventStatus.completed || e.getStatus() == EventStatus.cancelled) {
@@ -265,28 +232,14 @@ public class EventService {
         return toResponseWithCounts(e);
     }
 
-    /**
-     * Thay đổi trạng thái sự kiện (không có thông tin người thực hiện).
-     *
-     * @param id     ID sự kiện
-     * @param target trạng thái đích
-     * @return sự kiện sau đổi trạng thái
-     */
+    // Đổi trạng thái event, không cần actor.
     @Transactional
     public EventResponse changeStatus(UUID id, EventStatus target) {
         return changeStatus(id, target, null);
     }
 
-    /**
-     * Thay đổi trạng thái sự kiện theo bảng chuyển đổi hợp lệ ({@code ALLOWED_TRANSITIONS}).
-     * Ghi timeline; khi hoàn tất event thì kiểm tra điều kiện trao giải và chạy đánh giá recognition.
-     *
-     * @param id             ID sự kiện
-     * @param target         trạng thái đích
-     * @param authentication thông tin người thực hiện (có thể null)
-     * @return sự kiện sau đổi trạng thái
-     * @throws ApiException nếu chuyển trạng thái không hợp lệ
-     */
+    // Đổi trạng thái event theo bảng chuyển đổi hợp lệ.
+    // Nếu target = completed thì còn kiểm tra awards và chạy recognition.
     @Transactional
     public EventResponse changeStatus(UUID id, EventStatus target, Authentication authentication) {
         Event e = findOrThrow(id);
@@ -339,13 +292,9 @@ public class EventService {
         return EventMapper.toResponse(e);
     }
 
-    /**
-     * Xóa sự kiện — chỉ cho phép khi đang ở trạng thái draft (nếu khác thì dùng cancel).
-     *
-     * @param id ID sự kiện
-     * @throws ApiException nếu không tìm thấy hoặc trạng thái không phải draft
-     */
+    // Xóa event, chỉ cho xóa khi đang draft.
     @Transactional
+    // Xóa event nháp, chặn xóa nếu event đã qua giai đoạn draft.
     public void delete(UUID id) {
         Event e = findOrThrow(id);
         if (e.getStatus() != EventStatus.draft) {
@@ -355,12 +304,9 @@ public class EventService {
         log.info("Event deleted: id={}", id);
     }
 
-    /**
-     * Open registration: draft -> published. Ensures a "General" track exists so
-     * teams can register into the event before the organiser has designed the
-     * thematic tracks.
-     */
+    // Mở đăng ký: draft -> published. Đồng thời đảm bảo có track General.
     @Transactional
+    // Mở đăng ký: draft -> published và đảm bảo có track General.
     public EventResponse openRegistration(UUID id) {
         Event e = findOrThrow(id);
         if (e.getStatus() != EventStatus.draft) {
@@ -375,18 +321,15 @@ public class EventService {
         return toResponseWithCounts(e);
     }
 
-    /**
-     * Close registration: published -> ongoing. After this, teams can no longer
-     * join (enforced in TeamService), and the organiser can build the competition.
-     */
+    // Đóng đăng ký: published -> ongoing. Từ đây team không còn được join nữa.
     @Transactional
+    // Đóng đăng ký: loại team thiếu người rồi chuyển event sang ongoing.
     public EventResponse closeRegistration(UUID id, Authentication auth) {
         Event e = findOrThrow(id);
         if (e.getStatus() != EventStatus.published) {
             throw ApiException.badRequest("Registration can only be closed when published (current: " + e.getStatus() + ")");
         }
-        // Teams that never reached the minimum size are eliminated when the form
-        // closes: an under-strength team cannot compete. This leaves an audit trail.
+        // Đội không đủ member tối thiểu thì bị loại khi đóng form.
         List<Team> teams = teamRepository.findByTrackEventId(e.getId());
         int eliminated = 0;
         for (Team t : teams) {
@@ -426,13 +369,10 @@ public class EventService {
                 .build());
     }
 
-    /**
-     * One-shot competition builder, run after registration closes (status=ongoing).
-     * Creates thematic tracks, distributes registered teams round-robin, then for
-     * each track generates R elimination rounds with an auto-computed topN funnel
-     * and seeds round 1 with every team in that track.
-     */
+    // Dựng competition sau khi đóng đăng ký.
+    // Tạo track / round / seed team vào round 1.
     @Transactional
+    // Dựng competition từ roundPlan FE gửi lên: tạo cấu trúc round/track và seed team.
     public SetupCompetitionResponse setupCompetition(UUID id, SetupCompetitionRequest req) {
         Event e = findOrThrow(id);
         if (e.getStatus() != EventStatus.ongoing) {
