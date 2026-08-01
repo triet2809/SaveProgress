@@ -53,4 +53,14 @@ public class ApiException extends RuntimeException {
     public static ApiException forbidden(String message) {
         return new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", message);
     }
+
+    /** Tạo lỗi 500 Internal Server Error (lỗi cấu hình/hệ thống). */
+    public static ApiException internal(String message) {
+        return new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", message);
+    }
+
+    /** Tạo lỗi 503 Service Unavailable (tính năng chưa cấu hình/không khả dụng). */
+    public static ApiException serviceUnavailable(String message) {
+        return new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "SERVICE_UNAVAILABLE", message);
+    }
 }

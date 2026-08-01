@@ -4,9 +4,11 @@ import { Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { Zap } from 'lucide-react';
 import loginStyles from './Login.module.css';
 import { useTheme } from '../../context/ThemeContext';
-import { registerFpt, registerExternal } from '../../api/authApi';
+import { registerFpt, registerExternal, loginWithGoogle } from '../../api/authApi';
 import { getCampuses } from '../../api/universityApi';
 import { FPT_CAMPUSES } from '../../config/registerConfig';
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
+import GoogleProfileModal from '../../components/auth/GoogleProfileModal';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -23,6 +25,10 @@ const Register = () => {
   const [campuses, setCampuses] = useState(FPT_CAMPUSES);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // Google pha 2: luu idToken + thong tin khi BE yeu cau bo sung ho so.
+  const [pendingToken, setPendingToken] = useState(null);
+  const [googleInfo, setGoogleInfo] = useState(null);
+  const [profileError, setProfileError] = useState('');
 
   useEffect(() => {
     setForceTheme('light');
@@ -73,6 +79,62 @@ const Register = () => {
       navigate('/pending-approval');
     } catch {
       setError('Could not connect to the server');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Dang ky bang Google: BE tao tai khoan pending, dieu huong sang trang cho duyet.
+  const handleGoogle = async (idToken) => {
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await loginWithGoogle(idToken);
+      if (!res.ok) {
+        setError(res.data?.message || 'Google sign-up failed');
+        return;
+      }
+      const auth = res.data?.data || res.data;
+      // User Google moi hoan toan: BE yeu cau bo sung MSSV/campus (pha 2).
+      if (auth?.user?.profileCompletionRequired) {
+        setPendingToken(idToken);
+        setGoogleInfo({ email: auth.user.email, fullName: auth.user.fullName });
+        setProfileError('');
+        return;
+      }
+      // Tai khoan moi (hoac chua duyet): chua co token -> cho admin duyet.
+      if (!auth?.accessToken) {
+        navigate('/pending-approval');
+        return;
+      }
+      // Tai khoan da duoc duyet tu truoc: luu token va vao thang dashboard.
+      localStorage.setItem('seal_access_token', auth.accessToken);
+      localStorage.setItem('seal_refresh_token', auth.refreshToken || '');
+      localStorage.setItem('seal_token_type', auth.tokenType || 'Bearer');
+      localStorage.setItem('seal_user', JSON.stringify(auth.user || {}));
+      navigate(auth.user?.onboardingRequired ? '/onboarding' : '/', { replace: true });
+    } catch {
+      setError('Could not connect to the server');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Pha 2: gui ho so bo sung kem lai idToken -> BE tao tai khoan pending day du.
+  const handleProfileSubmit = async (profile) => {
+    setSubmitting(true);
+    setProfileError('');
+    try {
+      const res = await loginWithGoogle(pendingToken, profile);
+      if (!res.ok) {
+        setProfileError(res.data?.message || 'Could not complete profile');
+        return;
+      }
+      setPendingToken(null);
+      setGoogleInfo(null);
+      navigate('/pending-approval');
+    } catch {
+      setProfileError('Could not connect to the server');
     } finally {
       setSubmitting(false);
     }
@@ -196,6 +258,24 @@ const Register = () => {
                 {submitting ? <><Spinner size="sm" className="me-2" />Creating...</> : 'Create Account'}
               </Button>
             </Form>
+
+            <div className="d-flex align-items-center my-3">
+              <hr className="flex-grow-1" />
+              <span className="px-2 text-muted small">or</span>
+              <hr className="flex-grow-1" />
+            </div>
+
+            <GoogleSignInButton onCredential={handleGoogle} onError={setError} text="signup_with" />
+
+            <GoogleProfileModal
+              show={!!pendingToken}
+              email={googleInfo?.email}
+              fullName={googleInfo?.fullName}
+              submitting={submitting}
+              error={profileError}
+              onSubmit={handleProfileSubmit}
+              onHide={() => { setPendingToken(null); setGoogleInfo(null); }}
+            />
 
             <div className="text-center mt-4">
               <span className="text-muted">Already have an account? </span>

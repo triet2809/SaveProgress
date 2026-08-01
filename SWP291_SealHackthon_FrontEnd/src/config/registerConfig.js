@@ -2,6 +2,10 @@
 // API base doc tu bien moi truong Vite (VITE_API_BASE_URL), mac dinh localhost:8080.
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
+// Google OAuth Client ID (Web) — lay tu Google Cloud Console.
+// Set VITE_GOOGLE_CLIENT_ID trong file .env cua frontend.
+export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
 // Truong FPT University (uid co dinh theo seed DB).
 export const FPT_UNIVERSITY_ID = '11111111-1111-1111-1111-111111111111';
 

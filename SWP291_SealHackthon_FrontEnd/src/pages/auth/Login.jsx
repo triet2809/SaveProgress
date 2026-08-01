@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { Zap, Users, Award, Calendar } from 'lucide-react';
-import { login } from '../../api/authApi';
+import { login, loginWithGoogle } from '../../api/authApi';
 import { getMyTeams } from '../../api/hackathonApi';
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
+import GoogleProfileModal from '../../components/auth/GoogleProfileModal';
 import styles from './Login.module.css';
 import { useTheme } from '../../context/ThemeContext';
 import { getDashboardRoles, routeForRole, setActiveRole } from '../../utils/authSession';
@@ -27,11 +29,34 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // Luu Google ID token khi BE yeu cau bo sung ho so (pha 2).
+  const [pendingToken, setPendingToken] = useState(null);
+  const [googleInfo, setGoogleInfo] = useState(null);
+  const [profileError, setProfileError] = useState('');
 
   useEffect(() => {
     setForceTheme('light');
     return () => setForceTheme(null);
   }, [setForceTheme]);
+
+  // Luu token + dieu huong sau khi xac thuc thanh cong (dung chung cho email va Google).
+  const completeLogin = async (auth) => {
+    localStorage.setItem('seal_access_token', auth.accessToken);
+    localStorage.setItem('seal_refresh_token', auth.refreshToken || '');
+    localStorage.setItem('seal_token_type', auth.tokenType || 'Bearer');
+    localStorage.setItem('seal_user', JSON.stringify(auth.user || {}));
+    if (auth.user?.onboardingRequired) {
+      navigate('/onboarding', { replace: true });
+      return;
+    }
+    const dashboardRoles = getDashboardRoles(auth.user);
+    const dest = dashboardRoles.length > 1
+      ? '/select-role'
+      : dashboardRoles.length === 1
+        ? (setActiveRole(dashboardRoles[0]), routeForRole(dashboardRoles[0]))
+        : await resolveParticipantRoute();
+    navigate(dest, { replace: true });
+  };
 
   const handleStandardLogin = async (e) => {
     e.preventDefault();
@@ -48,23 +73,61 @@ const Login = () => {
         setError('Login response is missing the access token');
         return;
       }
-      localStorage.setItem('seal_access_token', auth.accessToken);
-      localStorage.setItem('seal_refresh_token', auth.refreshToken || '');
-      localStorage.setItem('seal_token_type', auth.tokenType || 'Bearer');
-      localStorage.setItem('seal_user', JSON.stringify(auth.user || {}));
-      if (auth.user?.onboardingRequired) {
-        navigate('/onboarding', { replace: true });
-        return;
-      }
-      const dashboardRoles = getDashboardRoles(auth.user);
-      const dest = dashboardRoles.length > 1
-        ? '/select-role'
-        : dashboardRoles.length === 1
-          ? (setActiveRole(dashboardRoles[0]), routeForRole(dashboardRoles[0]))
-          : await resolveParticipantRoute();
-      navigate(dest, { replace: true });
+      await completeLogin(auth);
     } catch {
       setError('Could not connect to the server');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Nhan Google ID token tu nut GIS -> gui backend -> dang nhap hoac bao cho duyet.
+  const handleGoogle = async (idToken) => {
+    setSubmitting(true);
+    setError('');
+    try {
+      const result = await loginWithGoogle(idToken);
+      if (!result.ok) {
+        setError(result.data?.message || 'Google sign-in failed');
+        return;
+      }
+      const auth = result.data?.data || result.data;
+      // User Google moi hoan toan: BE yeu cau bo sung MSSV/campus (pha 2).
+      if (auth?.user?.profileCompletionRequired) {
+        setPendingToken(idToken);
+        setGoogleInfo({ email: auth.user.email, fullName: auth.user.fullName });
+        setProfileError('');
+        return;
+      }
+      // Tai khoan Google da co o trang thai pending: chua co token, cho admin duyet.
+      if (!auth?.accessToken) {
+        navigate('/pending-approval', { replace: true });
+        return;
+      }
+      await completeLogin(auth);
+    } catch {
+      setError('Could not connect to the server');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Pha 2: gui ho so bo sung kem lai idToken -> BE tao tai khoan pending day du.
+  const handleProfileSubmit = async (profile) => {
+    setSubmitting(true);
+    setProfileError('');
+    try {
+      const result = await loginWithGoogle(pendingToken, profile);
+      if (!result.ok) {
+        setProfileError(result.data?.message || 'Could not complete profile');
+        return;
+      }
+      // Tao xong -> tai khoan pending, cho admin duyet.
+      setPendingToken(null);
+      setGoogleInfo(null);
+      navigate('/pending-approval', { replace: true });
+    } catch {
+      setProfileError('Could not connect to the server');
     } finally {
       setSubmitting(false);
     }
@@ -153,6 +216,24 @@ const Login = () => {
                 {submitting ? <><Spinner size="sm" className="me-2" />Signing in...</> : 'Sign In'}
               </Button>
             </Form>
+
+            <div className="d-flex align-items-center my-3">
+              <hr className="flex-grow-1" />
+              <span className="text-muted px-2 small">OR</span>
+              <hr className="flex-grow-1" />
+            </div>
+
+            <GoogleSignInButton onCredential={handleGoogle} onError={setError} />
+
+            <GoogleProfileModal
+              show={!!pendingToken}
+              email={googleInfo?.email}
+              fullName={googleInfo?.fullName}
+              submitting={submitting}
+              error={profileError}
+              onSubmit={handleProfileSubmit}
+              onHide={() => { setPendingToken(null); setGoogleInfo(null); }}
+            />
 
             <div className="text-center mt-2 mb-3">
               <span className="text-muted">Don't have an account? </span>

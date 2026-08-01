@@ -39,11 +39,14 @@ app:
       access-token-expiration-minutes: 60
       refresh-token-expiration-days: 7
       issuer: seal-hackathon
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
   cors:
     allowed-origins:
       - http://localhost:5173
       - http://127.0.0.1:5173
       - http://192.168.100.214:5173
+      - "*"
       - http://192.168.1.4:5173
       - http://localhost:3000
   invitation:
@@ -55,6 +58,17 @@ app:
     privacy-version: ${APP_PRIVACY_VERSION:2026-01}
     terms-url: ${APP_TERMS_URL:https://example.invalid/terms}
     privacy-url: ${APP_PRIVACY_URL:https://example.invalid/privacy}
+
+seal:
+  ai:
+    enabled: ${SEAL_AI_ENABLED:true}
+    provider: gemini
+    model: ${SEAL_AI_MODEL:gemini-3.1-flash-lite}
+    api-key: ${SEAL_AI_API_KEY:}
+    base-url: ${SEAL_AI_BASE_URL:https://generativelanguage.googleapis.com}
+    timeout-ms: 20000
+    max-output-tokens: 1500
+    language: ${SEAL_AI_LANGUAGE:vi}
 
 springdoc:
   api-docs:

@@ -12,6 +12,7 @@ import vn.edu.fpt.seal.modules.auth.dto.AuthResponse;
 import vn.edu.fpt.seal.modules.auth.dto.LoginRequest;
 import vn.edu.fpt.seal.modules.auth.dto.RefreshRequest;
 import vn.edu.fpt.seal.modules.auth.dto.RegisterRequest;
+import vn.edu.fpt.seal.modules.auth.dto.GoogleLoginRequest;
 import vn.edu.fpt.seal.modules.auth.service.AuthService;
 import vn.edu.fpt.seal.modules.auth.service.AccountActivationService;
 import vn.edu.fpt.seal.modules.auth.dto.ActivationRequest;
@@ -82,6 +83,19 @@ public class AuthController {
     @Operation(summary = "Login with email + password")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
         return ResponseEntity.ok(authService.login(req));
+    }
+
+    /**
+     * Đăng nhập/đăng ký bằng Google (Google Identity Services).
+     * Frontend gửi Google ID token; backend xác minh và cấp token hệ thống.
+     *
+     * @param req yêu cầu chứa Google ID token
+     * @return phản hồi xác thực (token nếu approved, hoặc thông tin pending nếu chờ duyệt)
+     */
+    @PostMapping("/google")
+    @Operation(summary = "Login or register with Google ID token")
+    public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleLoginRequest req) {
+        return ResponseEntity.ok(authService.loginWithGoogle(req));
     }
 
     /**

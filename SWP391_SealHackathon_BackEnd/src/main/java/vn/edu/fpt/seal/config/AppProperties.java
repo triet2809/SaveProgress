@@ -31,6 +31,15 @@ public class AppProperties {
     public static class Security {
         /** Cấu hình JWT. */
         private Jwt jwt = new Jwt();
+        /** Cấu hình đăng nhập Google. */
+        private Google google = new Google();
+    }
+
+    /** Cấu hình xác thực Google OAuth / OpenID Connect. */
+    @Data
+    public static class Google {
+        /** OAuth 2.0 Client ID dùng để xác minh audience của Google ID token. */
+        private String clientId;
     }
 
     /** Cấu hình sinh và xác thực JSON Web Token. */
@@ -49,8 +58,8 @@ public class AppProperties {
     /** Cấu hình CORS cho phép gọi API từ frontend. */
     @Data
     public static class Cors {
-        /** Danh sách origin được phép truy cập API. */
-        private List<String> allowedOrigins = List.of("http://localhost:5173");
+        /** Danh sách origin được phép truy cập API. Dùng ["*"] để cho phép mọi nguồn (LAN). */
+        private List<String> allowedOrigins = List.of("*");
     }
 
     /** Cấu hình liên quan đến lời mời tham gia đội thi. */

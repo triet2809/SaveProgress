@@ -36,6 +36,7 @@ public record AuthResponse(
      * @param mustChangePassword       true nếu bắt buộc đổi mật khẩu ở lần đăng nhập tới
      * @param termsAcceptanceRequired  true nếu cần chấp nhận điều khoản mới
      * @param onboardingRequired       true nếu cần hoàn tất bước onboarding
+     * @param profileCompletionRequired true nếu là tài khoản Google mới cần bổ sung MSSV/campus trước khi tạo
      */
     @Builder
     public record UserSummary(
@@ -52,6 +53,7 @@ public record AuthResponse(
             List<String> roles,
             boolean mustChangePassword,
             boolean termsAcceptanceRequired,
-            boolean onboardingRequired
+            boolean onboardingRequired,
+            boolean profileCompletionRequired
     ) {}
 }

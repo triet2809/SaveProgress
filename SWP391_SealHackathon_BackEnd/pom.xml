@@ -106,6 +106,13 @@
             <version>5.3.0</version>
         </dependency>
 
+        <!-- Google API client for verifying Google ID tokens -->
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

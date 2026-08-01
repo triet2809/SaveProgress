@@ -11,6 +11,7 @@ import vn.edu.fpt.seal.common.enums.RoleName;
 import vn.edu.fpt.seal.common.enums.StudentType;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.auth.dto.AuthResponse;
+import vn.edu.fpt.seal.modules.auth.dto.GoogleLoginRequest;
 import vn.edu.fpt.seal.modules.auth.dto.LoginRequest;
 import vn.edu.fpt.seal.modules.auth.dto.RefreshRequest;
 import vn.edu.fpt.seal.modules.auth.dto.RegisterRequest;
@@ -23,6 +24,8 @@ import vn.edu.fpt.seal.modules.user.entity.User;
 import vn.edu.fpt.seal.modules.user.repository.RoleRepository;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 import vn.edu.fpt.seal.security.JwtService;
+import vn.edu.fpt.seal.security.GoogleTokenVerifier;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import vn.edu.fpt.seal.config.AppProperties;
 
 import java.time.LocalDateTime;
@@ -47,6 +50,7 @@ public class AuthService {
     private final UniversityRepository universityRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final GoogleTokenVerifier googleTokenVerifier;
     private final AppProperties appProperties;
 
     /**
@@ -114,6 +118,118 @@ public class AuthService {
         log.info("User registered (pending approval): {}", user.getEmail());
 
         return buildPendingResponse(user);
+    }
+
+    /**
+     * Đăng nhập/đăng ký bằng Google ID token.
+     * Xác minh token với Google, sau đó:
+     * <ul>
+     *   <li>Nếu đã có tài khoản theo googleSub → đăng nhập.</li>
+     *   <li>Nếu email đã tồn tại (tài khoản local) → liên kết googleSub vào tài khoản đó.</li>
+     *   <li>Nếu chưa có → tạo mới ở trạng thái pending (chờ duyệt).</li>
+     * </ul>
+     *
+     * @param req yêu cầu Google (idToken + hồ sơ bổ sung ở pha 2)
+     * @return phản hồi xác thực (kèm token nếu approved, pending nếu chưa duyệt,
+     *         hoặc cờ profileCompletionRequired nếu là người dùng mới cần bổ sung hồ sơ)
+     * @throws ApiException nếu token không hợp lệ hoặc tài khoản bị từ chối
+     */
+    @Transactional
+    public AuthResponse loginWithGoogle(GoogleLoginRequest req) {
+        GoogleIdToken.Payload payload = googleTokenVerifier.verify(req.idToken());
+        String sub = payload.getSubject();
+        String email = payload.getEmail() == null ? null : payload.getEmail().toLowerCase().trim();
+        Object nameClaim = payload.get("name");
+        String fullName = nameClaim != null ? nameClaim.toString().trim() : (email != null ? email : "Google User");
+
+        if (email == null || email.isBlank()) {
+            throw ApiException.unauthorized("Google account has no email");
+        }
+
+        // 1) Tìm theo googleSub trước (đăng nhập lần sau)
+        User user = userRepository.findByGoogleSub(sub).orElse(null);
+
+        // 2) Chưa có googleSub → thử liên kết theo email (tài khoản local cũ)
+        if (user == null) {
+            user = userRepository.findByEmail(email).orElse(null);
+            if (user != null) {
+                // Liên kết danh tính Google vào tài khoản hiện có
+                user.setGoogleSub(sub);
+                user = userRepository.save(user);
+                log.info("Linked Google identity to existing account: {}", email);
+            }
+        }
+
+        // 3) Vẫn chưa có → người dùng mới hoàn toàn
+        if (user == null) {
+            // Pha 1: chưa gửi hồ sơ → chưa tạo tài khoản, yêu cầu frontend thu thập
+            // loại sinh viên + MSSV + campus (Google không cung cấp các thông tin này).
+            if (req.studentType() == null) {
+                return buildProfileCompletionResponse(email, fullName);
+            }
+            // Pha 2: đã có hồ sơ → tạo tài khoản pending đầy đủ.
+            return buildPendingResponse(createGoogleUser(sub, email, fullName, req));
+        }
+
+        // Tài khoản đã tồn tại: chặn đăng nhập nếu chưa được duyệt
+        if (user.getStatus() == AccountStatus.pending) {
+            return buildPendingResponse(user);
+        }
+        if (user.getStatus() == AccountStatus.rejected) {
+            throw ApiException.forbidden("Your account has been rejected");
+        }
+        return buildAuthResponse(user);
+    }
+
+    /**
+     * Tạo tài khoản Google mới ở trạng thái pending với hồ sơ đầy đủ (pha 2).
+     * Phân giải campus/university theo loại sinh viên giống luồng đăng ký thường.
+     */
+    private User createGoogleUser(String sub, String email, String fullName, GoogleLoginRequest req) {
+        StudentType type = req.studentType();
+        Campus campus = null;
+        University university = null;
+
+        if (req.campusId() != null) {
+            campus = campusRepository.findWithUniversityById(req.campusId())
+                    .orElseThrow(() -> ApiException.notFound("Campus not found"));
+            university = campus.getUniversity();
+        } else if (req.universityId() != null) {
+            university = universityRepository.findById(req.universityId())
+                    .orElseThrow(() -> ApiException.notFound("University not found"));
+        } else if (type == StudentType.external) {
+            String universityName = req.universityName() == null ? null : req.universityName().trim();
+            if (universityName == null || universityName.isBlank()) {
+                throw ApiException.badRequest("University name is required for external students");
+            }
+            university = universityRepository.findByNameIgnoreCase(universityName)
+                    .orElseGet(() -> universityRepository.save(University.builder()
+                            .name(universityName)
+                            .country("Vietnam")
+                            .build()));
+        }
+
+        Role defaultRole = roleRepository.findByName(RoleName.TEAM_MEMBER)
+                .orElseThrow(() -> new IllegalStateException("Default role team_member not seeded"));
+        User created = User.builder()
+                .email(email)
+                .fullName(fullName)
+                .googleSub(sub)
+                .authProvider("google")
+                .studentType(type)
+                .studentId(req.studentId())
+                .university(university)
+                .campus(campus)
+                .isGuest(false)
+                .status(AccountStatus.pending)
+                .termsAcceptedAt(LocalDateTime.now(ZoneOffset.UTC))
+                .termsVersion(appProperties.getLegal().getTermsVersion())
+                .privacyVersion(appProperties.getLegal().getPrivacyVersion())
+                .roles(new HashSet<>(List.of(defaultRole)))
+                .build();
+        User saved = userRepository.save(created);
+        log.info("Google user registered with profile (pending approval): {}", email);
+        return saved;
     }
 
     /**
@@ -345,6 +461,25 @@ public class AuthService {
                         .mustChangePassword(user.isMustChangePassword())
                         .termsAcceptanceRequired(termsAcceptanceRequired(user))
                         .onboardingRequired(false)
+                        .build())
+                .build();
+    }
+
+    /**
+     * Dựng {@link AuthResponse} cho pha 1 đăng nhập Google: người dùng mới chưa có
+     * tài khoản. Chưa tạo bản ghi, chỉ báo frontend cần thu thập thêm hồ sơ
+     * (loại sinh viên, MSSV, campus) rồi gọi lại pha 2.
+     *
+     * @param email    email lấy từ Google (đã xác minh)
+     * @param fullName tên hiển thị lấy từ Google
+     * @return phản hồi mang cờ profileCompletionRequired = true, không kèm token
+     */
+    private AuthResponse buildProfileCompletionResponse(String email, String fullName) {
+        return AuthResponse.builder()
+                .user(AuthResponse.UserSummary.builder()
+                        .email(email)
+                        .fullName(fullName)
+                        .profileCompletionRequired(true)
                         .build())
                 .build();
     }

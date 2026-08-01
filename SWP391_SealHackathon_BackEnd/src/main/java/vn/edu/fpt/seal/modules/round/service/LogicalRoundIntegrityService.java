@@ -7,6 +7,7 @@ import vn.edu.fpt.seal.common.enums.RoundLifecycleState;
 import vn.edu.fpt.seal.common.enums.RoundParticipantStatus;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.appeal.repository.AppealRepository;
+import vn.edu.fpt.seal.modules.team.entity.Team;
 import vn.edu.fpt.seal.modules.criteria.repository.RoundCriterionRepository;
 import vn.edu.fpt.seal.modules.judge.repository.RoundJudgeRepository;
 import vn.edu.fpt.seal.modules.participant.entity.RoundParticipant;
@@ -156,7 +157,11 @@ public class LogicalRoundIntegrityService {
                 if (participants.existsByRoundLogicalRoundIdAndTeamId(targetLogicalRoundId, teamId)) {
                     throw ApiException.conflict("Team is already assigned in this logical round");
                 }
-                participants.save(RoundParticipant.builder().round(execution).team(promotion.getTeam())
+                Team team = promotion.getTeam();
+                if (!team.getTrack().getId().equals(execution.getTrack().getId())) {
+                    team.setTrack(execution.getTrack());
+                }
+                participants.save(RoundParticipant.builder().round(execution).team(team)
                         .status(RoundParticipantStatus.active).build());
             }
         }

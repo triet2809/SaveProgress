@@ -57,6 +57,14 @@ export function login({ email, password }) {
   return postJson('/auth/login', { email, password });
 }
 
+// Đăng nhập/đăng ký bằng Google.
+// Pha 1: chỉ truyền idToken. Nếu là user mới, BE trả profileCompletionRequired.
+// Pha 2: truyền thêm profile { studentType, studentId, campusId, universityName }
+// để BE tạo tài khoản pending đầy đủ MSSV/campus.
+export function loginWithGoogle(idToken, profile) {
+  return postJson('/auth/google', { idToken, ...(profile || {}) });
+}
+
 // Đăng xuất: báo server thu hồi refresh token rồi xóa phiên local (luôn chạy dù API lỗi).
 export async function logout() {
   const refreshToken = localStorage.getItem('seal_refresh_token');

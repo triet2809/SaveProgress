@@ -6,6 +6,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.fpt.seal.common.exception.ApiException;
+import vn.edu.fpt.seal.common.enums.AuditAction;
+import vn.edu.fpt.seal.modules.audit.entity.AuditLog;
+import vn.edu.fpt.seal.modules.audit.repository.AuditLogRepository;
 import vn.edu.fpt.seal.modules.criteria.entity.RoundCriterion;
 import vn.edu.fpt.seal.modules.criteria.repository.RoundCriterionRepository;
 import vn.edu.fpt.seal.modules.judge.repository.RoundJudgeRepository;
@@ -24,7 +27,7 @@ import java.util.UUID;
 
 @Service @RequiredArgsConstructor
 public class ScoreService {
-    private final ScoreRepository scoreRepository; private final SubmissionRepository submissionRepository; private final RoundCriterionRepository criterionRepository; private final UserRepository userRepository; private final RoundJudgeRepository roundJudgeRepository; private final AuthorizationService authorizationService;
+    private final ScoreRepository scoreRepository; private final SubmissionRepository submissionRepository; private final RoundCriterionRepository criterionRepository; private final UserRepository userRepository; private final RoundJudgeRepository roundJudgeRepository; private final AuthorizationService authorizationService; private final AuditLogRepository auditLogRepository;
     @Transactional(readOnly=true) public Page<ScoreResponse> list(UUID submissionId, UUID judgeId, Pageable pageable, Authentication auth){
         CurrentUser user=authorizationService.current(auth);
         boolean coordinator=authorizationService.isCoordinator(user);
@@ -47,9 +50,28 @@ public class ScoreService {
         boolean coordinator=auth.getAuthorities().stream().anyMatch(a->a.getAuthority().equals("ROLE_COORDINATOR"));
         if(!coordinator && !roundJudgeRepository.existsByRoundIdAndUserId(sub.getRound().getId(), judgeId)) throw ApiException.forbidden("Judge is not assigned to this submission round");
         User judge=userRepository.findById(judgeId).orElseThrow(()->ApiException.notFound("Judge not found: "+judgeId));
-        Score score=scoreRepository.findBySubmissionIdAndJudgeIdAndCriterionId(sub.getId(),judgeId,criterion.getId()).orElseGet(()->Score.builder().submission(sub).judge(judge).criterion(criterion).build());
+        boolean isUpdate = true;
+        Score score = scoreRepository.findBySubmissionIdAndJudgeIdAndCriterionId(sub.getId(),judgeId,criterion.getId()).orElse(null);
+        if (score == null) {
+            isUpdate = false;
+            score = Score.builder().submission(sub).judge(judge).criterion(criterion).build();
+        }
+        BigDecimal oldValue = isUpdate ? score.getScore() : null;
         score.setScore(req.score()); score.setWeightedScore(req.score().multiply(criterion.getWeight()).setScale(2, RoundingMode.HALF_UP)); score.setComment(req.comment()==null?score.getComment():req.comment().trim());
-        return ScoreMapper.toResponse(scoreRepository.save(score));
+        score = scoreRepository.save(score);
+        
+        auditLogRepository.save(AuditLog.builder()
+                .user(judge)
+                .team(sub.getTeam())
+                .action(isUpdate ? AuditAction.UPDATE_SCORE : AuditAction.SCORE_SUBMISSION)
+                .targetType("score")
+                .targetId(score.getId())
+                .oldValue(oldValue == null ? null : oldValue.toString())
+                .newValue(score.getScore().toString())
+                .details(String.format("Judge %s %s score for sub %s, crit %s", judge.getId(), isUpdate ? "updated" : "submitted", sub.getId(), criterion.getId()))
+                .build());
+        
+        return ScoreMapper.toResponse(score);
     }
     @Transactional public void delete(UUID id, Authentication auth){ Score s=findOrThrow(id); CurrentUser cur=current(auth); boolean coordinator=auth.getAuthorities().stream().anyMatch(a->a.getAuthority().equals("ROLE_COORDINATOR")); if(!coordinator && !s.getJudge().getId().equals(cur.getId())) throw ApiException.forbidden("Only owner judge or coordinator can delete score"); scoreRepository.delete(s); }
     private Score findOrThrow(UUID id){return scoreRepository.findWithRelationsById(id).orElseThrow(()->ApiException.notFound("Score not found: "+id));}

@@ -1,11 +1,109 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Badge, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
-import { Search, BarChart2 } from 'lucide-react';
-import { getRounds, getJudgeVariance, getTracks } from '../../api/hackathonApi';
+import { Card, Table, Badge, Form, InputGroup, Spinner, Alert, Button, Modal } from 'react-bootstrap';
+import { Search, BarChart2, Sparkles, RefreshCw, MessageSquare, Send } from 'lucide-react';
+import { getRounds, getJudgeVariance, getTracks, getVarianceAnalysis, chatVariance } from '../../api/hackathonApi';
 import EventSelector from '../../components/coordinator/EventSelector';
 import { useSearchParams } from 'react-router-dom';
 
 const HIGH_VARIANCE = 10;
+
+const TENDENCY_BADGE = {
+  LENIENT: { bg: 'info', label: 'Chấm dễ' },
+  HARSH: { bg: 'dark', label: 'Chấm khó' },
+  INCONSISTENT: { bg: 'warning', label: 'Thiếu nhất quán' },
+  BALANCED: { bg: 'success', label: 'Cân bằng' },
+};
+
+const ChatBubble = ({ role, content }) => (
+  <div className={`d-flex mb-2 ${role === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
+    <div className={`p-2 rounded-3 ${role === 'user' ? 'bg-primary text-white' : 'bg-light text-dark'}`} style={{ maxWidth: '85%', whiteSpace: 'pre-wrap' }}>
+      {content}
+    </div>
+  </div>
+);
+
+// Panel diễn giải AI. Thống kê từ code hiển thị luôn; phần AI chỉ khi có.
+const AiAnalysisPanel = ({ ai, loading, error, onRefresh }) => {
+  const stats = ai?.stats;
+  const narrative = ai?.ai;
+
+  return (
+    <Card className="mb-4" style={{ border: '1px solid var(--cf-border, #e5e7eb)', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)' }}>
+      <div className="p-3 border-bottom d-flex align-items-center justify-content-between">
+        <div className="d-flex align-items-center gap-2 fw-bold" style={{ color: 'var(--cf-text-primary)' }}>
+          <Sparkles size={18} /> AI Phân tích phương sai
+        </div>
+        <Button variant="outline-secondary" size="sm" className="d-flex align-items-center gap-2"
+          disabled={loading} onClick={onRefresh}>
+          <RefreshCw size={14} /> Làm mới
+        </Button>
+      </div>
+
+      <div className="p-3">
+        {loading && (
+          <div className="text-center py-4"><Spinner animation="border" /> <span className="ms-2">Đang phân tích...</span></div>
+        )}
+
+        {!loading && error && (
+          <Alert variant="warning" className="mb-3">
+            AI không khả dụng: {error}. Hiển thị thống kê tính bằng code bên dưới.
+          </Alert>
+        )}
+
+        {!loading && stats && (
+          <>
+            <div className="d-flex flex-wrap gap-3 mb-3">
+              <Badge bg="secondary" className="px-3 py-2">Nhóm chấm: {stats.groupCount}</Badge>
+              <Badge bg="danger" className="px-3 py-2">Phương sai cao: {stats.highVarianceCount}</Badge>
+              <Badge bg="info" className="px-3 py-2">Phương sai TB: {Number(stats.avgVariance ?? 0).toFixed(2)}</Badge>
+            </div>
+
+            {narrative?.summary && (
+              <div className="mb-3">
+                <div className="fw-bold mb-1">Tổng quan</div>
+                <div style={{ color: 'var(--cf-text-secondary)' }}>{narrative.summary}</div>
+              </div>
+            )}
+
+            {narrative?.recommendations?.length > 0 && (
+              <div className="mb-3">
+                <div className="fw-bold mb-1">Khuyến nghị</div>
+                <ul className="mb-0">
+                  {narrative.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {narrative?.judgeNotes?.length > 0 && (
+              <div className="mb-3">
+                <div className="fw-bold mb-1">Ghi chú giám khảo</div>
+                <ul className="mb-0">
+                  {narrative.judgeNotes.map((n, i) => <li key={i}>{n}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {stats.judgeBiases?.length > 0 && (
+              <div className="mb-2">
+                <div className="fw-bold mb-2">Xu hướng chấm của giám khảo</div>
+                <div className="d-flex flex-wrap gap-2">
+                  {stats.judgeBiases.map((b) => {
+                    const t = TENDENCY_BADGE[b.tendency] || { bg: 'secondary', label: b.tendency };
+                    return (
+                      <Badge key={b.judgeId} bg={t.bg} className="px-2 py-2">
+                        {b.judgeName}: {t.label} ({Number(b.avgDeviation ?? 0) > 0 ? '+' : ''}{Number(b.avgDeviation ?? 0).toFixed(1)})
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Card>
+  );
+};
 
 const ScoringAnalytics = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,11 +114,29 @@ const ScoringAnalytics = () => {
   const [rounds, setRounds] = useState([]);
   const [tracks, setTracks] = useState([]);
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [ai, setAi] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState('');
+
   useEffect(() => {
+    if (!eventId) {
+      setRounds([]);
+      setTracks([]);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
     (async () => {
+      setLoading(true);
       try {
         const [data, trackData] = await Promise.all([
           getRounds({ eventId, size: 100 }), getTracks({ eventId, size: 100 }),
@@ -30,18 +146,19 @@ const ScoringAnalytics = () => {
         setTracks(trackData.content || trackData || []);
         if (list.length && !selectedRound) {
           const next = new URLSearchParams(searchParams);
-          next.set('roundId', list[0].id); setSearchParams(next);
+          next.set('roundId', list[0].id);
+          setSearchParams(next);
         }
-        else setLoading(false);
       } catch (err) {
         setError(err.message);
+      } finally {
         setLoading(false);
       }
     })();
   }, [eventId, selectedRound, searchParams, setSearchParams]);
 
   const loadVariance = useCallback(async (roundId) => {
-    if (!roundId) return;
+    if (!roundId || !eventId) return;
     setLoading(true);
     setError('');
     try {
@@ -55,10 +172,51 @@ const ScoringAnalytics = () => {
   }, [eventId, trackId]);
 
   useEffect(() => {
-    // Synchronize analytics with the URL-selected round.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (selectedRound) loadVariance(selectedRound);
-  }, [selectedRound, loadVariance]);
+    if (selectedRound && eventId) loadVariance(selectedRound);
+  }, [selectedRound, eventId, loadVariance]);
+
+  useEffect(() => {
+    setAi(null);
+    setAiError('');
+    setChatMessages([]);
+    setChatInput('');
+    setChatError('');
+  }, [selectedRound, trackId]);
+
+  const runAiAnalysis = useCallback(async ({ refresh = false } = {}) => {
+    if (!selectedRound) return;
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const data = await getVarianceAnalysis(selectedRound, { eventId, trackId, refresh });
+      setAi(data);
+      if (data && data.aiAvailable === false && data.aiError) {
+        setAiError(data.aiError);
+      }
+    } catch (err) {
+      setAiError(err.message);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [selectedRound, eventId, trackId]);
+
+  const sendChat = useCallback(async () => {
+    if (!selectedRound || !eventId || !chatInput.trim()) return;
+    const nextMessages = [...chatMessages, { role: 'user', content: chatInput.trim() }];
+    setChatMessages(nextMessages);
+    setChatInput('');
+    setChatLoading(true);
+    setChatError('');
+    try {
+      const data = await chatVariance(selectedRound, { eventId, trackId, messages: nextMessages });
+      setChatMessages([...nextMessages, { role: 'assistant', content: data.reply || 'No reply' }]);
+      if (data && data.aiAvailable === false && data.aiError) setChatError(data.aiError);
+    } catch (err) {
+      setChatError(err.message);
+    } finally {
+      setChatLoading(false);
+    }
+  }, [chatInput, chatMessages, eventId, selectedRound, trackId]);
 
   const filteredData = rows.filter((item) =>
     (item.teamName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -66,9 +224,9 @@ const ScoringAnalytics = () => {
   );
 
   return (
-    <>
-    <EventSelector />
-    {eventId && <div className="py-2">
+    <div className="py-2">
+      <EventSelector />
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>Scoring Analytics</h1>
@@ -78,13 +236,41 @@ const ScoringAnalytics = () => {
           <Badge bg="warning" text="dark" className="px-3 py-2 d-flex align-items-center gap-2">
             <BarChart2 size={16} /> Needs Review (High Variance)
           </Badge>
+          <Button
+            variant="outline-primary"
+            className="d-flex align-items-center gap-2"
+            disabled={!selectedRound || !eventId}
+            onClick={() => runAiAnalysis({ refresh: false })}
+          >
+            {aiLoading ? <Spinner animation="border" size="sm" /> : <Sparkles size={16} />}
+            AI Analysis
+          </Button>
+          <Button
+            variant="primary"
+            className="d-flex align-items-center gap-2"
+            disabled={!selectedRound || !eventId}
+            onClick={() => setShowChat(true)}
+          >
+            <MessageSquare size={16} />
+            AI Chat
+          </Button>
         </div>
       </div>
 
+      {!eventId && <Alert variant="info">Choose event in selector above. Then Scoring Analytics loads.</Alert>}
       {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
 
+      {(ai || aiLoading || aiError) && (
+        <AiAnalysisPanel
+          ai={ai}
+          loading={aiLoading}
+          error={aiError}
+          onRefresh={() => runAiAnalysis({ refresh: true })}
+        />
+      )}
+
       <Card style={{ border: 'none', borderRadius: 'var(--cf-radius-lg)', backgroundColor: 'var(--cf-bg-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <div className="p-3 border-bottom d-flex align-items-center justify-content-between gap-2">
+        <div className="p-3 border-bottom d-flex align-items-center justify-content-between gap-2 flex-wrap">
           <InputGroup style={{ maxWidth: '300px' }}>
             <InputGroup.Text className="bg-transparent border-end-0">
               <Search size={16} />
@@ -98,7 +284,7 @@ const ScoringAnalytics = () => {
           </InputGroup>
           <Form.Select style={{ maxWidth: '260px' }} value={selectedRound} onChange={(e) => {
             const next = new URLSearchParams(searchParams); next.set('roundId', e.target.value); next.delete('trackId'); setSearchParams(next);
-          }}>
+          }} disabled={!eventId}>
             {rounds.length === 0 && <option value="">No rounds available</option>}
             {rounds.map((r) => (
               <option key={r.id} value={r.id}>{r.name}</option>
@@ -108,7 +294,7 @@ const ScoringAnalytics = () => {
             const next = new URLSearchParams(searchParams);
             if (e.target.value) next.set('trackId', e.target.value); else next.delete('trackId');
             setSearchParams(next);
-          }}>
+          }} disabled={!eventId}>
             <option value="">All Tracks</option>
             {tracks.filter((track) => !selectedRound || rounds.find((round) => round.id === selectedRound)?.trackId === track.id)
               .map((track) => <option key={track.id} value={track.id}>{track.name}</option>)}
@@ -164,8 +350,35 @@ const ScoringAnalytics = () => {
           )}
         </div>
       </Card>
-    </div>}
-    </>
+
+      <Modal show={showChat} onHide={() => setShowChat(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="d-flex align-items-center gap-2"><MessageSquare size={18} /> AI Chat về phương sai</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="small text-muted mb-3">
+            Round: {selectedRound || 'chưa chọn'} {trackId ? `• Track: ${trackId}` : ''}
+          </div>
+          <div style={{ maxHeight: '50vh', overflowY: 'auto' }} className="mb-3 border rounded p-2 bg-white">
+            {chatMessages.length === 0 && <div className="text-muted text-center py-4">Hỏi về hotspot, variance cao, judge bias, hoặc khuyến nghị xử lý.</div>}
+            {chatMessages.map((m, i) => <ChatBubble key={i} role={m.role} content={m.content} />)}
+            {chatLoading && <div className="text-muted small">AI đang trả lời...</div>}
+          </div>
+          {chatError && <Alert variant="warning">{chatError}</Alert>}
+          <InputGroup>
+            <Form.Control
+              placeholder="Ví dụ: Vì sao round này variance cao?"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') sendChat(); }}
+            />
+            <Button onClick={sendChat} disabled={chatLoading || !chatInput.trim() || !selectedRound || !eventId}>
+              <Send size={16} />
+            </Button>
+          </InputGroup>
+        </Modal.Body>
+      </Modal>
+    </div>
   );
 };
 

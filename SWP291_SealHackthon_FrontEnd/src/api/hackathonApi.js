@@ -646,6 +646,28 @@ export async function getJudgeVariance(eventId, roundId, trackId) {
   return res.data;
 }
 
+// AI phân tích phương sai điểm chấm: thống kê tính bằng code, AI chỉ diễn giải.
+// refresh=true để bỏ qua cache, gọi lại LLM.
+export async function getVarianceAnalysis(roundId, { eventId, trackId, refresh = false } = {}) {
+  const qs = new URLSearchParams({ ...(eventId ? { eventId } : {}), ...(trackId ? { trackId } : {}), ...(refresh ? { refresh: 'true' } : {}) }).toString();
+  const res = await apiPost(`/reports/rounds/${roundId}/variance-analysis${qs ? `?${qs}` : ''}`);
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to load variance analysis');
+  return res.data;
+}
+
+export async function chatVariance(roundId, { eventId, trackId, messages = [] } = {}) {
+  const qs = new URLSearchParams({ eventId, ...(trackId ? { trackId } : {}) }).toString();
+  const res = await apiPost(`/reports/rounds/${roundId}/variance-chat?${qs}`, {
+    roundId,
+    eventId,
+    trackId: trackId || null,
+    messages,
+    refresh: false,
+  });
+  if (!res.ok) throw new Error(res.data?.message || 'Failed to chat with variance AI');
+  return res.data;
+}
+
 export async function getAnonymizedDataset(roundId) {
   const res = await apiGet(`/reports/rounds/${roundId}/anonymized-dataset`);
   if (!res.ok) throw new Error(res.data?.message || 'Failed to load anonymized dataset');

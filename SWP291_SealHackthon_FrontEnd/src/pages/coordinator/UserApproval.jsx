@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, Table, Button, Badge, Modal, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
-import { Check, X, Eye, Search } from 'lucide-react';
-import { getPendingUsers, approveUser, rejectUser } from '../../api/userApi';
+import { Check, X, Eye, Search, Upload } from 'lucide-react';
+import { getPendingUsers, approveUser, rejectUser, importUsers } from '../../api/userApi';
 
 const roleLabel = (roles) => (roles && roles.length ? roles.join(', ') : 'Team Member');
 const userType = (u) => {
@@ -26,6 +26,11 @@ const UserApproval = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  // Import Excel: file input ẩn + trạng thái đang import + kết quả tổng hợp.
+  const fileInputRef = useRef(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const [importError, setImportError] = useState('');
 
   const load = async () => {
     try {
@@ -37,6 +42,8 @@ const UserApproval = () => {
         name: u.fullName || u.email,
         email: u.email,
         type: userType(u),
+        studentId: u.studentId || '—',
+        campus: u.campusName || u.universityName || '—',
         requestedRole: roleLabel(u.roles),
         date: fmtDate(u.createdAt),
       }));
@@ -77,6 +84,37 @@ const UserApproval = () => {
     }
   };
 
+  // Import Excel: mở hộp chọn file khi bấm nút Import.
+  const handleImportClick = () => {
+    setImportError('');
+    setImportResult(null);
+    fileInputRef.current?.click();
+  };
+
+  // Gửi file Excel lên BE, hiện kết quả tổng hợp, rồi refresh danh sách pending.
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    setImportError('');
+    setImportResult(null);
+    try {
+      const res = await importUsers(file);
+      if (!res.ok) {
+        setImportError(res.data?.message || 'Import failed');
+        return;
+      }
+      setImportResult(res.value);
+      await load();
+    } catch (err) {
+      setImportError(err.message || 'Could not connect to the server');
+    } finally {
+      setImporting(false);
+      // Reset input để chọn lại cùng file được nếu cần.
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const filteredUsers = useMemo(() => pendingUsers.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -90,7 +128,21 @@ const UserApproval = () => {
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--cf-text-primary)' }}>User Approval</h1>
           <div style={{ color: 'var(--cf-text-secondary)', fontSize: '0.875rem' }}>Review and approve pending account requests</div>
         </div>
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
+          <Button variant="primary" className="d-inline-flex align-items-center gap-2" disabled={importing} onClick={handleImportClick}>
+            {importing ? <><Spinner animation="border" size="sm" /> Importing...</> : <><Upload size={16} /> Import from Excel</>}
+          </Button>
+        </div>
       </div>
+
+      {importError && <Alert variant="danger" onClose={() => setImportError('')} dismissible>{importError}</Alert>}
 
       {error && <Alert variant="danger">{error}</Alert>}
       {actionError && <Alert variant="danger" onClose={() => setActionError('')} dismissible>{actionError}</Alert>}
@@ -117,6 +169,8 @@ const UserApproval = () => {
                 <th className="border-top-0 border-bottom">Name</th>
                 <th className="border-top-0 border-bottom">Email</th>
                 <th className="border-top-0 border-bottom">User Type</th>
+                <th className="border-top-0 border-bottom">Student ID</th>
+                <th className="border-top-0 border-bottom">Campus</th>
                 <th className="border-top-0 border-bottom">Requested Role</th>
                 <th className="border-top-0 border-bottom">Date</th>
                 <th className="border-top-0 border-bottom text-end">Actions</th>
@@ -124,10 +178,10 @@ const UserApproval = () => {
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={6} className="text-center py-4"><Spinner animation="border" size="sm" /></td></tr>
+                <tr><td colSpan={8} className="text-center py-4"><Spinner animation="border" size="sm" /></td></tr>
               )}
               {!loading && filteredUsers.length === 0 && (
-                <tr><td colSpan={6} className="text-center py-4 text-muted">No pending requests.</td></tr>
+                <tr><td colSpan={8} className="text-center py-4 text-muted">No pending requests.</td></tr>
               )}
               {!loading && filteredUsers.map((user) => (
                 <tr key={user.id}>
@@ -136,6 +190,8 @@ const UserApproval = () => {
                   <td className="py-3">
                     <Badge bg="secondary" className="bg-opacity-25 text-secondary border">{user.type}</Badge>
                   </td>
+                  <td className="py-3">{user.studentId}</td>
+                  <td className="py-3">{user.campus}</td>
                   <td className="py-3 fw-medium">{user.requestedRole}</td>
                   <td className="py-3">{user.date}</td>
                   <td className="py-3 text-end">
@@ -184,6 +240,16 @@ const UserApproval = () => {
               </p>
 
               <p>
+                <strong>Student ID:</strong>{' '}
+                {selectedUser.studentId}
+              </p>
+
+              <p>
+                <strong>Campus:</strong>{' '}
+                {selectedUser.campus}
+              </p>
+
+              <p>
                 <strong>Requested Role:</strong>{' '}
                 {selectedUser.requestedRole}
               </p>
@@ -203,6 +269,53 @@ const UserApproval = () => {
           >
             Close
           </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={!!importResult} onHide={() => setImportResult(null)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Import Result</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {importResult && (
+            <>
+              <div className="d-flex gap-3 mb-3">
+                <Badge bg="secondary">Total: {importResult.totalRows}</Badge>
+                <Badge bg="success">Created: {importResult.created}</Badge>
+                <Badge bg="warning" text="dark">Skipped: {importResult.skipped}</Badge>
+                <Badge bg="danger">Failed: {importResult.failed}</Badge>
+              </div>
+              <div className="table-responsive" style={{ maxHeight: '360px', overflowY: 'auto' }}>
+                <Table size="sm" hover>
+                  <thead>
+                    <tr>
+                      <th>Row</th>
+                      <th>Email</th>
+                      <th>Status</th>
+                      <th>Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(importResult.results || []).map((r, i) => (
+                      <tr key={i}>
+                        <td>{r.row}</td>
+                        <td>{r.email || '—'}</td>
+                        <td>
+                          <Badge bg={r.status === 'created' ? 'success' : r.status === 'skipped' ? 'warning' : 'danger'} text={r.status === 'skipped' ? 'dark' : undefined}>
+                            {r.status}
+                          </Badge>
+                        </td>
+                        <td className="small text-muted">{r.message || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setImportResult(null)}>Close</Button>
         </Modal.Footer>
       </Modal>
     </div>

@@ -95,6 +95,33 @@ export function apiDelete(path) {
 }
 
 /**
+ * Upload file qua multipart/form-data (KHÔNG tự set Content-Type để trình duyệt
+ * tự thêm boundary). Dùng cho import Excel. Trả về { ok, status, data }.
+ */
+export async function apiUpload(path, formData) {
+  const headers = {};
+  const accessToken = getAccessToken();
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const res = await fetch(`${API_BASE_URL}${path}`, { method: 'POST', headers, body: formData });
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+  if (res.status === 401) {
+    handleUnauthorizedResponse();
+  }
+  if (res.status === 449) {
+    const onboardingPath = '/onboarding';
+    if (window.location.pathname !== onboardingPath) {
+      window.location.href = onboardingPath;
+    }
+  }
+  return { ok: res.ok, status: res.status, data };
+}
+
+/**
  * Tải tài nguyên dạng text (ví dụ CSV) thay vì JSON.
  * Vẫn xử lý 401/449 như request thường; trả về { ok, status, text, headers }.
  */

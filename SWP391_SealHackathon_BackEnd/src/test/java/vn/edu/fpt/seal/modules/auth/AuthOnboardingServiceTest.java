@@ -19,6 +19,7 @@ import vn.edu.fpt.seal.modules.user.entity.User;
 import vn.edu.fpt.seal.modules.user.repository.RoleRepository;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 import vn.edu.fpt.seal.security.JwtService;
+import vn.edu.fpt.seal.security.GoogleTokenVerifier;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -35,6 +36,7 @@ class AuthOnboardingServiceTest {
     @Mock UniversityRepository universities;
     @Mock PasswordEncoder encoder;
     @Mock JwtService jwt;
+    @Mock GoogleTokenVerifier googleTokenVerifier;
 
     AppProperties properties;
     AuthService service;
@@ -44,7 +46,7 @@ class AuthOnboardingServiceTest {
         properties = new AppProperties();
         properties.getLegal().setTermsVersion("terms-v2");
         properties.getLegal().setPrivacyVersion("privacy-v2");
-        service = new AuthService(users, roles, campuses, universities, encoder, jwt, properties);
+        service = new AuthService(users, roles, campuses, universities, encoder, jwt, googleTokenVerifier, properties);
         lenient().when(jwt.generateAccessToken(any(), anyString(), anyList(), anyBoolean())).thenReturn("access");
         lenient().when(jwt.generateAccessToken(any(), anyString(), anyList(), anyBoolean(), anyLong())).thenReturn("access");
         lenient().when(jwt.generateRefreshToken(any())).thenReturn("refresh");

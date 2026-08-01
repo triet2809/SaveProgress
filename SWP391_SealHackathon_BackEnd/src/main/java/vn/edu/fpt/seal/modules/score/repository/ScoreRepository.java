@@ -23,6 +23,7 @@ import vn.edu.fpt.seal.modules.score.entity.Score; import java.math.BigDecimal; 
                 cr.name as criterionName,
                 cr.weight as criterionWeight,
                 sc.judge.id as judgeId,
+                sc.judge.fullName as judgeName,
                 sc.score as score,
                 sc.weightedScore as weightedScore
             from Score sc
@@ -44,6 +45,7 @@ import vn.edu.fpt.seal.modules.score.entity.Score; import java.math.BigDecimal; 
         String getCriterionName();
         BigDecimal getCriterionWeight();
         UUID getJudgeId();
+        String getJudgeName();
         BigDecimal getScore();
         BigDecimal getWeightedScore();
     }

@@ -21,6 +21,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByEmail(String email);
 
     @EntityGraph(attributePaths = {"roles", "campus", "university"})
+    Optional<User> findByGoogleSub(String googleSub);
+
+    @EntityGraph(attributePaths = {"roles", "campus", "university"})
     Page<User> findAll(Pageable pageable);
 
     @EntityGraph(attributePaths = {"roles", "campus", "university"})

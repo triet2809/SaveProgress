@@ -416,19 +416,24 @@ public class SeedingService {
 
     private List<Round> finalRounds(UUID eventId) {
         return rounds.findByTrackEventId(eventId, Pageable.unpaged()).stream()
-                .collect(Collectors.groupingBy(r -> r.getTrack().getId()))
-                .values().stream()
-                .map(list -> list.stream().max(Comparator.comparingInt(Round::getSequenceNumber)).orElseThrow())
+                .filter(round -> round.getLogicalRound() != null && round.getLogicalRound().isFinalRound())
                 .toList();
     }
 
     private void requireRoundsForActiveTracks(UUID eventId, List<Round> finalRounds) {
         Set<UUID> finalizedTrackIds = finalRounds.stream().map(round -> round.getTrack().getId())
                 .collect(Collectors.toSet());
+        // A track is considered "resolved" if it has any final round OR any round that has been ADVANCED (multi-round promotion).
+        Set<UUID> resolvedTrackIds = new HashSet<>(finalizedTrackIds);
+        for (Round r : rounds.findByTrackEventId(eventId, Pageable.unpaged())) {
+            if (r.getLifecycleState() == RoundLifecycleState.ADVANCED) {
+                resolvedTrackIds.add(r.getTrack().getId());
+            }
+        }
         Set<UUID> activeTrackIds = teams.findByTrackEventId(eventId).stream()
                 .filter(team -> team.getStatus() == TeamStatus.active)
                 .map(team -> team.getTrack().getId()).collect(Collectors.toSet());
-        if (!finalizedTrackIds.containsAll(activeTrackIds)) {
+        if (!resolvedTrackIds.containsAll(activeTrackIds)) {
             throw ApiException.conflict("Every active competition track requires a final round");
         }
     }

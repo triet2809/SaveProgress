@@ -2,7 +2,7 @@
  * userApi.js — Các lời gọi API quản lý người dùng: hồ sơ cá nhân (me),
  * duyệt/từ chối user đang chờ, cập nhật trạng thái và vai trò (roles).
  */
-import { apiGet, apiPatch, apiPost, apiPut } from './client';
+import { apiGet, apiPatch, apiPost, apiPut, apiUpload } from './client';
 
 // Helper: chuẩn hoá dữ liệu phân trang -> lấy mảng items (data.content hoặc chính data).
 const pageItems = (data) => data?.content || data || [];
@@ -52,6 +52,15 @@ export function getPendingUsers() {
 // Tạo user mới (dùng bởi EC khi thêm nhân sự).
 export async function createUser(payload) {
   const result = await apiPost('/users', payload);
+  return { ...result, value: result.data ?? null };
+}
+
+// Import hàng loạt sinh viên trường ngoài từ file Excel (.xlsx/.xls).
+// Trả về tổng hợp created/skipped/failed + chi tiết từng dòng.
+export async function importUsers(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const result = await apiUpload('/users/import', formData);
   return { ...result, value: result.data ?? null };
 }
 
