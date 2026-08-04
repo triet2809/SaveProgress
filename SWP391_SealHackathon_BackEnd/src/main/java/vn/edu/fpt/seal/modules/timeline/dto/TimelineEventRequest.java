@@ -1,6 +1,7 @@
 package vn.edu.fpt.seal.modules.timeline.dto;
 
 import vn.edu.fpt.seal.modules.timeline.*;
+
 import java.util.UUID;
 
 public record TimelineEventRequest(

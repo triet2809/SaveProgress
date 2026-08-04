@@ -176,6 +176,8 @@ public class EventService {
         if (eventRepository.existsByTitleIgnoreCase(title)) {
             throw ApiException.conflict("Event title already exists");
         }
+        validateEventDates(req.registrationStart(), req.registrationEnd(),
+                req.eventStart(), req.eventEnd());
         Event e = Event.builder()
                 .title(title)
                 .description(req.description())
@@ -200,6 +202,11 @@ public class EventService {
         if (e.getStatus() == EventStatus.completed || e.getStatus() == EventStatus.cancelled) {
             throw ApiException.badRequest("Cannot edit event in status " + e.getStatus());
         }
+        validateEventDates(
+                req.registrationStart() != null ? req.registrationStart() : e.getRegistrationStart(),
+                req.registrationEnd()   != null ? req.registrationEnd()   : e.getRegistrationEnd(),
+                req.eventStart()        != null ? req.eventStart()        : e.getEventStart(),
+                req.eventEnd()          != null ? req.eventEnd()          : e.getEventEnd());
         if (req.title() != null) {
             String title = req.title().trim();
             if (!title.equalsIgnoreCase(e.getTitle())
@@ -724,6 +731,22 @@ public class EventService {
         if (seq == total) return "Final";
         if (seq == total - 1) return "Semifinal";
         return "Round " + seq;
+    }
+
+    private void validateEventDates(LocalDateTime registrationStart, LocalDateTime registrationEnd,
+                                     LocalDateTime eventStart, LocalDateTime eventEnd) {
+        if (registrationStart != null && registrationEnd != null
+                && !registrationStart.isBefore(registrationEnd)) {
+            throw ApiException.badRequest("registrationStart must be before registrationEnd");
+        }
+        if (registrationEnd != null && eventStart != null
+                && registrationEnd.isAfter(eventStart)) {
+            throw ApiException.badRequest("registrationEnd must not be after eventStart");
+        }
+        if (eventStart != null && eventEnd != null
+                && !eventStart.isBefore(eventEnd)) {
+            throw ApiException.badRequest("eventStart must be before eventEnd");
+        }
     }
 
     private Event findOrThrow(UUID id) {

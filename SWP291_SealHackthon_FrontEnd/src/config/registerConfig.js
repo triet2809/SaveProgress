@@ -4,7 +4,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localho
 
 // Google OAuth Client ID (Web) — lay tu Google Cloud Console.
 // Set VITE_GOOGLE_CLIENT_ID trong file .env cua frontend.
-export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '927861082057-kumjvapoq2osq3ij81o8p8eku60bhnat.apps.googleusercontent.com';
 
 // Truong FPT University (uid co dinh theo seed DB).
 export const FPT_UNIVERSITY_ID = '11111111-1111-1111-1111-111111111111';
