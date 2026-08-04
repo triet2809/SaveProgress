@@ -11,7 +11,7 @@ public record CreateLogicalRoundRequest(
         @NotBlank @Size(max = 255) String name,
         @Min(1) Integer sequenceNumber,
         @NotNull @Future LocalDateTime submissionDeadline,
-        @NotNull @Min(1) Integer topNToPromote,
+        @NotNull @Min(1) @Max(500) Integer topNToPromote,
         Boolean finalRound,
         @Min(1) Integer defaultTopNToPromote) {
     public CreateLogicalRoundRequest(List<UUID> trackIds, String name, Integer sequenceNumber,

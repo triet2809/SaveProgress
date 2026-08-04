@@ -1,6 +1,7 @@
 package vn.edu.fpt.seal.modules.round.dto;
 
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,6 +15,6 @@ public record CreateRoundRequest(
         @NotBlank @Size(max = 255) String name,
         @Min(1) Integer sequenceNumber,
         @NotNull @Future LocalDateTime submissionDeadline,
-        @NotNull @Min(1) Integer topNToPromote
+        @NotNull @Min(1) @Max(500) Integer topNToPromote
 ) {
 }
