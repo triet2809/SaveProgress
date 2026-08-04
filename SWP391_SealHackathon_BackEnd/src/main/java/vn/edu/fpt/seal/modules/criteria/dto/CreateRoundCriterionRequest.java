@@ -6,13 +6,13 @@ import java.util.UUID;
 
 /**
  * DTO đầu vào tạo tiêu chí cho vòng thi.
- * roundId bắt buộc; templateId tuỳ chọn (nếu tạo từ mẫu); trọng số >= 0.
+ * roundId bắt buộc; templateId tuỳ chọn (nếu tạo từ mẫu); trọng số > 0.
  */
 public record CreateRoundCriterionRequest(
         @NotNull UUID roundId,
         UUID templateId,
         @NotBlank @Size(max = 255) String name,
-        @NotNull @DecimalMin("0.00") BigDecimal weight,
+        @NotNull @DecimalMin(value = "0.01", message = "weight must be greater than 0") BigDecimal weight,
         @Size(max = 10000) String description,
         @Size(max = 50) String status
 ) {}
