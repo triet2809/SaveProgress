@@ -47,6 +47,9 @@ public class PrizeService {
         if (tm != null && tm.getStatus() == TeamStatus.disqualified) {
             throw ApiException.badRequest("Cannot award a prize to a disqualified team");
         }
+        if (tm != null && repo.existsByEventIdAndTeamIdAndNameIgnoreCase(e.getId(), tm.getId(), r.name().trim())) {
+            throw ApiException.conflict("A prize with this name has already been awarded to this team in this event");
+        }
         validateScope(e,tr,tm);
         Prize prize=repo.save(Prize.builder().event(e).track(tr).team(tm).name(r.name().trim())
                 .prizeAmount(r.prizeAmount()).description(trim(r.description())).awardedAt(r.awardedAt()).build());
