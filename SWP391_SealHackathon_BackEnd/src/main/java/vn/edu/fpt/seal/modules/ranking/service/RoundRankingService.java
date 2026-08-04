@@ -70,6 +70,11 @@ public class RoundRankingService {
         Round round = roundRepository.findById(roundId).orElseThrow(() -> ApiException.notFound("Round not found: " + roundId));
         boolean applyPromotion = req != null && Boolean.TRUE.equals(req.applyPromotion());
         if (lifecycleService != null) lifecycleService.requireRankingRecalculationAllowed(round);
+        BigDecimal weightSum = criterionRepository.sumWeightByRoundId(roundId);
+        if (weightSum.compareTo(BigDecimal.ONE) != 0) {
+            throw ApiException.badRequest(
+                    "Criterion weights must sum to 1.0 before recalculating rankings (current sum: " + weightSum.toPlainString() + ")");
+        }
         List<RoundRankingRepository.RoundScoreRow> rows = rankingRepository.calculateRows(roundId);
 
         // Requirement #8: build a per-team, per-criterion lookup so ties on the
