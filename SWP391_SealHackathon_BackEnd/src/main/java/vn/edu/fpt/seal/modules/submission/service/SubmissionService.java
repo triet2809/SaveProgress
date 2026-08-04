@@ -95,6 +95,7 @@ public class SubmissionService {
         Submission s = created ? Submission.builder().round(round).team(team).build() : existing;
         String oldReview = s.getReviewStatus();
         apply(s, req.repoUrl(), req.demoUrl(), req.slideUrl(), req.reportUrl(), req.apiMetadata(), req.projectName(), req.version(), req.reviewStatus());
+        ensureAtLeastOneUrl(s);
         s = submissionRepository.save(s);
         recordSubmission(s, created ? TimelineEventType.SUBMISSION_CREATED : TimelineEventType.SUBMISSION_UPDATED,
                 created ? "Submission created" : "Submission updated",
@@ -109,6 +110,7 @@ public class SubmissionService {
         Submission s = findOrThrow(id); ensureCanSubmit(s.getTeam(), auth); ensureSubmissionOpen(s.getRound());
         String oldReview = s.getReviewStatus();
         apply(s, req.repoUrl(), req.demoUrl(), req.slideUrl(), req.reportUrl(), req.apiMetadata(), req.projectName(), req.version(), req.reviewStatus());
+        ensureAtLeastOneUrl(s);
         recordSubmission(s, TimelineEventType.SUBMISSION_UPDATED, "Submission updated",
                 "The team updated its round submission",
                 "update:" + java.util.Objects.hash(req.projectName(), req.version(), req.reviewStatus()));
@@ -138,6 +140,11 @@ public class SubmissionService {
         boolean coordinator = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_COORDINATOR")); if (coordinator) return;
         if (!(auth.getPrincipal() instanceof CurrentUser currentUser)) throw ApiException.forbidden("Invalid principal");
         if (!teamMemberRepository.existsByTeamIdAndUserId(team.getId(), currentUser.getId())) throw ApiException.forbidden("Only team members can submit for this team");
+    }
+    private void ensureAtLeastOneUrl(Submission s) {
+        if (s.getRepoUrl() == null && s.getDemoUrl() == null && s.getSlideUrl() == null && s.getReportUrl() == null) {
+            throw ApiException.badRequest("At least one URL (repoUrl, demoUrl, slideUrl, or reportUrl) is required");
+        }
     }
     private String blankToNull(String s) { return s == null || s.isBlank() ? null : s.trim(); }
     private void recordSubmission(Submission s, TimelineEventType type, String title, String description, String suffix) {
