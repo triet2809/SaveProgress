@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.edu.fpt.seal.common.enums.TeamStatus;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.event.entity.Event;
 import vn.edu.fpt.seal.modules.event.repository.EventRepository;
@@ -42,7 +43,11 @@ public class PrizeService {
     public PrizeResponse create(CreatePrizeRequest r) {
         Event e=eventRepo.findById(r.eventId()).orElseThrow(()->ApiException.notFound("Event not found: "+r.eventId()));
         lifecycleService.requireAwardsAllowed(e.getId()); seedingService.requireEventFinalized(e.getId());
-        Track tr=track(r.trackId()); Team tm=team(r.teamId()); validateScope(e,tr,tm);
+        Track tr=track(r.trackId()); Team tm=team(r.teamId());
+        if (tm != null && tm.getStatus() == TeamStatus.disqualified) {
+            throw ApiException.badRequest("Cannot award a prize to a disqualified team");
+        }
+        validateScope(e,tr,tm);
         Prize prize=repo.save(Prize.builder().event(e).track(tr).team(tm).name(r.name().trim())
                 .prizeAmount(r.prizeAmount()).description(trim(r.description())).awardedAt(r.awardedAt()).build());
         record(prize, TimelineEventType.PRIZE_CONFIGURED);
