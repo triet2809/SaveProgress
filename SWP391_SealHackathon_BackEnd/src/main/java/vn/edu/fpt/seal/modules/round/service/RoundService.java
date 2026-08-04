@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.fpt.seal.common.enums.EventStatus;
 import vn.edu.fpt.seal.common.exception.ApiException;
+import vn.edu.fpt.seal.modules.event.entity.Event;
 import vn.edu.fpt.seal.modules.round.dto.CreateRoundRequest;
 import vn.edu.fpt.seal.modules.round.dto.CreateLogicalRoundRequest;
 import vn.edu.fpt.seal.modules.round.dto.LogicalRoundResponse;
@@ -31,6 +32,7 @@ import vn.edu.fpt.seal.modules.timeline.*;
 import vn.edu.fpt.seal.modules.timeline.dto.TimelineEventRequest;
 import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -190,6 +192,7 @@ public class RoundService {
         Track track = trackRepository.findById(req.trackId())
                 .orElseThrow(() -> ApiException.notFound("Track not found: " + req.trackId()));
         ensureEditable(track);
+        validateSubmissionDeadline(req.submissionDeadline(), track.getEvent());
 
         String name = req.name().trim();
         UUID trackId = track.getId();
@@ -227,6 +230,7 @@ public class RoundService {
             throw ApiException.badRequest("All selected tracks must belong to the same event");
         }
         tracks.forEach(this::ensureEditable);
+        validateSubmissionDeadline(req.submissionDeadline(), tracks.get(0).getEvent());
         String name = req.name().trim();
         if (definitionRepository.existsByEventIdAndNameIgnoreCase(eventId, name)) {
             throw ApiException.conflict("Logical round name already exists in this event");
@@ -275,6 +279,7 @@ public class RoundService {
                     "Shared round name and sequence must be changed through the logical-round update endpoint");
         }
         if (req.submissionDeadline() != null) {
+            validateSubmissionDeadline(req.submissionDeadline(), round.getTrack().getEvent());
             round.setSubmissionDeadline(req.submissionDeadline());
         }
         if (req.topNToPromote() != null) {
@@ -304,6 +309,15 @@ public class RoundService {
         return roundRepository.findTopByTrackIdOrderBySequenceNumberDesc(trackId)
                 .map(r -> r.getSequenceNumber() + 1)
                 .orElse(1);
+    }
+
+    private void validateSubmissionDeadline(LocalDateTime deadline, Event event) {
+        if (event.getEventStart() != null && deadline.isBefore(event.getEventStart())) {
+            throw ApiException.badRequest("submissionDeadline must not be before event start");
+        }
+        if (event.getEventEnd() != null && deadline.isAfter(event.getEventEnd())) {
+            throw ApiException.badRequest("submissionDeadline must not be after event end");
+        }
     }
 
     // Helper: ném lỗi nếu round không tồn tại.
