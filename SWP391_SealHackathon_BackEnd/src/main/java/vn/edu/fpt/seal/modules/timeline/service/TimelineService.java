@@ -13,19 +13,26 @@ import vn.edu.fpt.seal.modules.event.repository.EventRepository;
 import vn.edu.fpt.seal.modules.round.entity.Round;
 import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
 import vn.edu.fpt.seal.modules.team.entity.Team;
-import vn.edu.fpt.seal.modules.team.repository.*;
-import vn.edu.fpt.seal.modules.timeline.*;
-import vn.edu.fpt.seal.modules.timeline.dto.*;
+import vn.edu.fpt.seal.modules.team.repository.TeamMemberRepository;
+import vn.edu.fpt.seal.modules.team.repository.TeamRepository;
+import vn.edu.fpt.seal.modules.timeline.TimelineEventType;
+import vn.edu.fpt.seal.modules.timeline.TimelineScope;
+import vn.edu.fpt.seal.modules.timeline.TimelineSourceType;
 import vn.edu.fpt.seal.modules.timeline.dto.TimelineDtos.Response;
+import vn.edu.fpt.seal.modules.timeline.dto.TimelineEventRequest;
 import vn.edu.fpt.seal.modules.timeline.entity.TimelineEvent;
 import vn.edu.fpt.seal.modules.timeline.repository.TimelineEventRepository;
 import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
-import vn.edu.fpt.seal.security.*;
-import java.time.*;
+import vn.edu.fpt.seal.security.AuthorizationService;
+import vn.edu.fpt.seal.security.CurrentUser;
+
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.*;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class TimelineService {
     private static final Set<TimelineEventType> COORDINATOR_ONLY = EnumSet.of(
             TimelineEventType.RESULT_RECALCULATION_REQUIRED, TimelineEventType.RECOGNITION_REVOKED);
@@ -70,7 +77,9 @@ public class TimelineService {
         }
     }
 
-    /** Compatibility adapter for Batch 9 hooks created before the typed request API. */
+    /**
+     * Compatibility adapter for Batch 9 hooks created before the typed request API.
+     */
     @Transactional
     public TimelineEvent record(Event event, UUID teamId, UUID roundId, UUID trackId, String eventType,
                                 TimelineScope scope, String title, String description, String sourceType,
@@ -183,16 +192,21 @@ public class TimelineService {
                 || (track != null && round != null && !round.getTrack().getId().equals(trackId))) hierarchy();
     }
 
-    private void hierarchy() { throw ApiException.badRequest("Timeline filter hierarchy does not match the event"); }
+    private void hierarchy() {
+        throw ApiException.badRequest("Timeline filter hierarchy does not match the event");
+    }
+
     private CurrentUser currentOrNull(Authentication auth) {
         return auth != null && auth.getPrincipal() instanceof CurrentUser user ? user : null;
     }
+
     private Response toResponse(TimelineEvent i) {
         return new Response(i.getId(), i.getEvent().getId(), i.getTeam() == null ? null : i.getTeam().getId(),
                 i.getRound() == null ? null : i.getRound().getId(), i.getTrack() == null ? null : i.getTrack().getId(),
                 i.getEventType(), i.getVisibilityScope(), i.getTitle(), i.getDescription(),
                 i.getStatusSnapshot(), i.getOccurredAt());
     }
+
     private static String safe(String value, int max) {
         if (value == null) return null;
         String clean = value.replaceAll("(?i)(password|token|secret|invite[_ -]?code)\\s*[:=]\\s*\\S+", "[redacted]")

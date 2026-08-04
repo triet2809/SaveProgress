@@ -3,10 +3,10 @@ package vn.edu.fpt.seal.modules.round.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.edu.fpt.seal.common.entity.BaseEntity;
+import vn.edu.fpt.seal.common.enums.RoundLifecycleState;
 import vn.edu.fpt.seal.modules.track.entity.Track;
 
 import java.time.LocalDateTime;
-import vn.edu.fpt.seal.common.enums.RoundLifecycleState;
 
 @Entity
 @Table(name = "rounds", uniqueConstraints = @UniqueConstraint(

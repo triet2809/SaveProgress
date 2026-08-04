@@ -2,12 +2,7 @@ package vn.edu.fpt.seal.modules.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.DataFormatter;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -186,7 +181,9 @@ public class UserImportService {
                 .build();
     }
 
-    /** Tìm trường theo tên (không phân biệt hoa thường); tạo mới nếu chưa có. */
+    /**
+     * Tìm trường theo tên (không phân biệt hoa thường); tạo mới nếu chưa có.
+     */
     private University resolveUniversity(String universityName) {
         return universityRepo.findByNameIgnoreCase(universityName)
                 .orElseGet(() -> universityRepo.save(University.builder()

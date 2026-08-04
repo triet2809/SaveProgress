@@ -2,6 +2,7 @@ package vn.edu.fpt.seal.modules.notice.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+
 import java.util.UUID;
 
 public record CreateNoticeRequest(
@@ -12,4 +13,5 @@ public record CreateNoticeRequest(
         UUID targetEventId,
         UUID targetTrackId,
         UUID targetTeamId
-) {}
+) {
+}

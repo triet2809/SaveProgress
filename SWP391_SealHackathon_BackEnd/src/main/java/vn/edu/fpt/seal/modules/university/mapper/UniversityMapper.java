@@ -1,1 +1,19 @@
-package vn.edu.fpt.seal.modules.university.mapper; import vn.edu.fpt.seal.modules.university.dto.*; import vn.edu.fpt.seal.modules.university.entity.*; public final class UniversityMapper{private UniversityMapper(){} public static UniversityResponse toResponse(University u){return UniversityResponse.builder().id(u.getId()).name(u.getName()).shortName(u.getShortName()).country(u.getCountry()).createdAt(u.getCreatedAt()).updatedAt(u.getUpdatedAt()).build();} public static CampusResponse toResponse(Campus c){return CampusResponse.builder().id(c.getId()).universityId(c.getUniversity().getId()).universityName(c.getUniversity().getName()).name(c.getName()).address(c.getAddress()).city(c.getCity()).createdAt(c.getCreatedAt()).updatedAt(c.getUpdatedAt()).build();}}
+package vn.edu.fpt.seal.modules.university.mapper;
+
+import vn.edu.fpt.seal.modules.university.dto.CampusResponse;
+import vn.edu.fpt.seal.modules.university.dto.UniversityResponse;
+import vn.edu.fpt.seal.modules.university.entity.Campus;
+import vn.edu.fpt.seal.modules.university.entity.University;
+
+public final class UniversityMapper {
+    private UniversityMapper() {
+    }
+
+    public static UniversityResponse toResponse(University u) {
+        return UniversityResponse.builder().id(u.getId()).name(u.getName()).shortName(u.getShortName()).country(u.getCountry()).createdAt(u.getCreatedAt()).updatedAt(u.getUpdatedAt()).build();
+    }
+
+    public static CampusResponse toResponse(Campus c) {
+        return CampusResponse.builder().id(c.getId()).universityId(c.getUniversity().getId()).universityName(c.getUniversity().getName()).name(c.getName()).address(c.getAddress()).city(c.getCity()).createdAt(c.getCreatedAt()).updatedAt(c.getUpdatedAt()).build();
+    }
+}

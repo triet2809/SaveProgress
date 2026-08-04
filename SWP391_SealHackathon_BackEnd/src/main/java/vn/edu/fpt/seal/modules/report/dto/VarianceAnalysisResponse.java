@@ -8,12 +8,12 @@ import java.util.UUID;
 
 /**
  * AI-assisted inter-judge variance analysis for a round.
- *
+ * <p>
  * Design boundary (agreed): the numbers are all computed in code
  * ({@code stats}); the LLM only interprets them into a narrative
  * ({@code ai}). If the LLM is disabled/unavailable, {@code stats} is still
  * returned with {@code aiAvailable=false} and an optional {@code aiError}.
- *
+ * <p>
  * Names shown here are the REAL team/judge names (the endpoint is
  * coordinator-only). The data sent to the external LLM is anonymized; the AI
  * narrative is de-anonymized (aliases mapped back to real names) before it
@@ -28,7 +28,9 @@ public record VarianceAnalysisResponse(
         String aiError
 ) {
 
-    /** Purely code-computed statistics (deterministic, reproducible). */
+    /**
+     * Purely code-computed statistics (deterministic, reproducible).
+     */
     @Builder
     public record Stats(
             int groupCount,
@@ -36,9 +38,12 @@ public record VarianceAnalysisResponse(
             BigDecimal avgVariance,
             List<Hotspot> hotspots,
             List<JudgeBias> judgeBiases
-    ) {}
+    ) {
+    }
 
-    /** One (team, criterion) group where judges disagreed most. */
+    /**
+     * One (team, criterion) group where judges disagreed most.
+     */
     @Builder
     public record Hotspot(
             UUID teamId,
@@ -57,9 +62,12 @@ public record VarianceAnalysisResponse(
             String pattern,
             /** Real name of the single outlier judge, if the pattern is OUTLIER. */
             String outlierJudge
-    ) {}
+    ) {
+    }
 
-    /** Per-judge tendency across the whole round. */
+    /**
+     * Per-judge tendency across the whole round.
+     */
     @Builder
     public record JudgeBias(
             UUID judgeId,
@@ -71,13 +79,17 @@ public record VarianceAnalysisResponse(
             String tendency,
             /** How many groups this judge was the extreme scorer in. */
             int outlierCount
-    ) {}
+    ) {
+    }
 
-    /** LLM-generated narrative. Null when AI is unavailable. */
+    /**
+     * LLM-generated narrative. Null when AI is unavailable.
+     */
     @Builder
     public record Ai(
             String summary,
             List<String> recommendations,
             List<String> judgeNotes
-    ) {}
+    ) {
+    }
 }

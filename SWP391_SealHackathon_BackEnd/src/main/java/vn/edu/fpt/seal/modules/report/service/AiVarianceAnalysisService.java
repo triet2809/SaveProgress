@@ -20,15 +20,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Orchestrates the AI layer of the variance analysis.
- *
+ * <p>
  * Pipeline:
- *   1. get code-computed {@link Stats} (never sent raw names to the LLM)
- *   2. ANONYMIZE: replace real team/judge names with stable aliases
- *      ("Team 1", "Judge A") before building the prompt
- *   3. call the {@link LlmClient} (Gemini) for a JSON narrative
- *   4. DE-ANONYMIZE: map aliases in the narrative back to real names
- *   5. cache the result in-memory keyed by roundId + hash(stats)
- *
+ * 1. get code-computed {@link Stats} (never sent raw names to the LLM)
+ * 2. ANONYMIZE: replace real team/judge names with stable aliases
+ * ("Team 1", "Judge A") before building the prompt
+ * 3. call the {@link LlmClient} (Gemini) for a JSON narrative
+ * 4. DE-ANONYMIZE: map aliases in the narrative back to real names
+ * 5. cache the result in-memory keyed by roundId + hash(stats)
+ * <p>
  * Degradation: if AI is disabled/unavailable or the call fails, the response
  * still carries the full {@link Stats} with {@code aiAvailable=false} and an
  * {@code aiError} note. The endpoint never fails just because the LLM did.
@@ -43,10 +43,13 @@ public class AiVarianceAnalysisService {
     private final AiProperties props;
     private final ObjectMapper mapper;
 
-    /** cacheKey -> (statsHash, cached response). One entry per round+track. */
+    /**
+     * cacheKey -> (statsHash, cached response). One entry per round+track.
+     */
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
-    private record CacheEntry(int statsHash, VarianceAnalysisResponse response) {}
+    private record CacheEntry(int statsHash, VarianceAnalysisResponse response) {
+    }
 
     public VarianceAnalysisResponse analyze(UUID eventId, UUID roundId, UUID trackId, boolean forceRefresh) {
         Stats stats = statsService.compute(eventId, roundId, trackId);
@@ -149,16 +152,16 @@ public class AiVarianceAnalysisService {
                 PRE-COMPUTED statistics about inter-judge scoring disagreement for \
                 one round. Do NOT recompute any numbers; trust the values given. \
                 Your job is to interpret them for a coordinator.
-
+                
                 Explain, in %s, what the disagreement patterns mean and what the \
                 coordinator should do. Be concrete and concise. Distinguish a \
                 single outlier judge from a genuine two-way split from a general \
                 spread. Point out judges who are systematically lenient/harsh or \
                 inconsistent across the round.
-
+                
                 Refer to teams and judges ONLY by the aliases given (e.g. \
                 "Team 1", "Judge A"). Never invent names.
-
+                
                 Return ONLY valid JSON, no markdown, with this exact shape:
                 {
                   "summary": "2-4 sentence overview of the round's consensus",
@@ -236,7 +239,9 @@ public class AiVarianceAnalysisService {
         return out;
     }
 
-    /** Some models wrap JSON in ```json fences despite instructions. */
+    /**
+     * Some models wrap JSON in ```json fences despite instructions.
+     */
     private static String stripCodeFence(String s) {
         String t = s.trim();
         if (t.startsWith("```")) {
@@ -342,7 +347,9 @@ public class AiVarianceAnalysisService {
             return sb.toString();
         }
 
-        /** Replace every alias occurrence in AI text with the real name. */
+        /**
+         * Replace every alias occurrence in AI text with the real name.
+         */
         String deAnonymize(String text) {
             if (text == null || text.isEmpty()) return text;
             String result = text;

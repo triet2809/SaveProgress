@@ -91,12 +91,12 @@ public class AuthorizationService {
         UUID trackId = incident.getTrack() != null
                 ? incident.getTrack().getId()
                 : incident.getTeam() != null
-                    ? incident.getTeam().getTrack().getId()
-                    : incident.getRound() != null
-                        ? incident.getRound().getTrack().getId()
-                        : incident.getSubmission() != null
-                            ? incident.getSubmission().getTeam().getTrack().getId()
-                            : null;
+                ? incident.getTeam().getTrack().getId()
+                : incident.getRound() != null
+                ? incident.getRound().getTrack().getId()
+                : incident.getSubmission() != null
+                ? incident.getSubmission().getTeam().getTrack().getId()
+                : null;
         return isAssignedMentor(user, trackId);
     }
 

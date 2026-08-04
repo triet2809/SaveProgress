@@ -7,4 +7,5 @@ import jakarta.validation.constraints.NotBlank;
  *
  * @param refreshToken chuỗi refresh token hợp lệ, bắt buộc không được rỗng
  */
-public record RefreshRequest(@NotBlank String refreshToken) {}
+public record RefreshRequest(@NotBlank String refreshToken) {
+}

@@ -8,7 +8,7 @@ import java.util.UUID;
 
 /**
  * Anonymized scoring dataset export (requirement #12).
- *
+ * <p>
  * Team and judge identities are replaced with stable pseudonyms ("Team 1",
  * "Judge A") so the data can be shared for analysis/research without exposing
  * who scored whom or which real team is which. The mapping is NOT included on
@@ -30,5 +30,6 @@ public record AnonymizedDatasetResponse(
             BigDecimal criterionWeight,
             BigDecimal score,
             BigDecimal weightedScore
-    ) {}
+    ) {
+    }
 }

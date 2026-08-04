@@ -1,26 +1,37 @@
 package vn.edu.fpt.seal.modules.casework.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.edu.fpt.seal.common.enums.*;
+import vn.edu.fpt.seal.common.enums.IncidentStatus;
+import vn.edu.fpt.seal.common.enums.IncidentType;
 import vn.edu.fpt.seal.common.exception.ApiException;
-import vn.edu.fpt.seal.modules.casework.dto.*;
-import vn.edu.fpt.seal.modules.incident.dto.*;
+import vn.edu.fpt.seal.modules.casework.dto.CaseResponse;
+import vn.edu.fpt.seal.modules.casework.dto.CreateCaseRequest;
+import vn.edu.fpt.seal.modules.casework.dto.UpdateCaseStatusRequest;
+import vn.edu.fpt.seal.modules.incident.dto.CreateIncidentRequest;
+import vn.edu.fpt.seal.modules.incident.dto.IncidentResponse;
+import vn.edu.fpt.seal.modules.incident.dto.UpdateIncidentStatusRequest;
 import vn.edu.fpt.seal.modules.incident.entity.IncidentReport;
 import vn.edu.fpt.seal.modules.incident.repository.IncidentReportRepository;
 import vn.edu.fpt.seal.modules.incident.service.IncidentService;
 import vn.edu.fpt.seal.security.AuthorizationService;
-import java.util.*;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
 /**
  * Service nghiệp vụ cho "case" (vụ việc).
  * Case là lớp bọc lại IncidentReport: chuyển đổi thuật ngữ case sang incident,
  * uỷ quyền xử lý thực tế cho IncidentService, rồi ánh xạ kết quả ngược lại CaseResponse.
  */
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class CaseService {
     private final IncidentReportRepository incidents;
     private final IncidentService incidentService;
@@ -29,6 +40,7 @@ public class CaseService {
     /**
      * Liệt kê case có phân trang.
      * Nếu không phải coordinator và không truyền eventId thì chỉ xem case của chính mình (bảo mật phạm vi).
+     *
      * @throws ApiException nếu không có eventId lẫn reporterId
      */
     @Transactional(readOnly = true)
@@ -42,7 +54,9 @@ public class CaseService {
         return new PageImpl<>(visible, pageable, visible.size());
     }
 
-    /** Lấy chi tiết một case theo id. @throws ApiException nếu không tìm thấy */
+    /**
+     * Lấy chi tiết một case theo id. @throws ApiException nếu không tìm thấy
+     */
     @Transactional(readOnly = true)
     public CaseResponse get(UUID id, Authentication auth) {
         IncidentReport incident = incidents.findWithRelationsById(id).orElseThrow(() -> ApiException.notFound("Case not found"));
@@ -52,6 +66,7 @@ public class CaseService {
     /**
      * Tạo case mới.
      * Ánh xạ category (thuật ngữ case) sang IncidentType tương ứng, sau đó uỷ quyền cho IncidentService tạo incident.
+     *
      * @return CaseResponse với trạng thái mặc định "open"
      */
     @Transactional
@@ -73,6 +88,7 @@ public class CaseService {
     /**
      * Cập nhật trạng thái case.
      * Ánh xạ status dạng case sang IncidentStatus rồi uỷ quyền cho IncidentService.
+     *
      * @throws ApiException nếu trạng thái không hợp lệ
      */
     @Transactional
@@ -91,13 +107,28 @@ public class CaseService {
                 source.reporterId(), source.reporterEmail(), source.createdAt(), source.updatedAt());
     }
 
-    /** Chuẩn hóa IncidentStatus nội bộ sang chuỗi trạng thái case hiển thị cho client. */
+    /**
+     * Chuẩn hóa IncidentStatus nội bộ sang chuỗi trạng thái case hiển thị cho client.
+     */
     private String normalize(IncidentStatus status) {
-        return switch (status) { case reported -> "open"; case under_review -> "in_progress"; case resolved -> "resolved"; case rejected -> "rejected"; };
+        return switch (status) {
+            case reported -> "open";
+            case under_review -> "in_progress";
+            case resolved -> "resolved";
+            case rejected -> "rejected";
+        };
     }
-    /** Kiểm tra người dùng có quyền COORDINATOR không. */
-    private boolean hasCoordinator(Authentication a) { return a != null && a.getAuthorities().stream().anyMatch(x -> x.getAuthority().equals("ROLE_COORDINATOR")); }
-    /** Ánh xạ IncidentReport sang CaseResponse; xử lý null-safe cho các quan hệ tuỳ chọn. */
+
+    /**
+     * Kiểm tra người dùng có quyền COORDINATOR không.
+     */
+    private boolean hasCoordinator(Authentication a) {
+        return a != null && a.getAuthorities().stream().anyMatch(x -> x.getAuthority().equals("ROLE_COORDINATOR"));
+    }
+
+    /**
+     * Ánh xạ IncidentReport sang CaseResponse; xử lý null-safe cho các quan hệ tuỳ chọn.
+     */
     private CaseResponse map(IncidentReport i) {
         return new CaseResponse("INC-" + i.getId(), "incident", i.getCategory(), i.getTitle(), i.getDescription(), normalize(i.getStatus()),
                 i.getEvent().getId(), i.getRound() == null ? null : i.getRound().getId(), i.getTrack() == null ? null : i.getTrack().getId(),

@@ -35,7 +35,9 @@ public class LogicalRoundPromotion {
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    /** Immutable published-result provenance used to justify this promotion. */
+    /**
+     * Immutable published-result provenance used to justify this promotion.
+     */
     @Column(name = "source_result_version_id", nullable = false, updatable = false)
     private UUID sourceResultVersionId;
 

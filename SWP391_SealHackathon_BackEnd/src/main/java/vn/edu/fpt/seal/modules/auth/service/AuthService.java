@@ -1,5 +1,6 @@
 package vn.edu.fpt.seal.modules.auth.service;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,11 +11,8 @@ import vn.edu.fpt.seal.common.enums.AccountStatus;
 import vn.edu.fpt.seal.common.enums.RoleName;
 import vn.edu.fpt.seal.common.enums.StudentType;
 import vn.edu.fpt.seal.common.exception.ApiException;
-import vn.edu.fpt.seal.modules.auth.dto.AuthResponse;
-import vn.edu.fpt.seal.modules.auth.dto.GoogleLoginRequest;
-import vn.edu.fpt.seal.modules.auth.dto.LoginRequest;
-import vn.edu.fpt.seal.modules.auth.dto.RefreshRequest;
-import vn.edu.fpt.seal.modules.auth.dto.RegisterRequest;
+import vn.edu.fpt.seal.config.AppProperties;
+import vn.edu.fpt.seal.modules.auth.dto.*;
 import vn.edu.fpt.seal.modules.university.entity.Campus;
 import vn.edu.fpt.seal.modules.university.entity.University;
 import vn.edu.fpt.seal.modules.university.repository.CampusRepository;
@@ -23,10 +21,8 @@ import vn.edu.fpt.seal.modules.user.entity.Role;
 import vn.edu.fpt.seal.modules.user.entity.User;
 import vn.edu.fpt.seal.modules.user.repository.RoleRepository;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
-import vn.edu.fpt.seal.security.JwtService;
 import vn.edu.fpt.seal.security.GoogleTokenVerifier;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import vn.edu.fpt.seal.config.AppProperties;
+import vn.edu.fpt.seal.security.JwtService;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -131,7 +127,7 @@ public class AuthService {
      *
      * @param req yêu cầu Google (idToken + hồ sơ bổ sung ở pha 2)
      * @return phản hồi xác thực (kèm token nếu approved, pending nếu chưa duyệt,
-     *         hoặc cờ profileCompletionRequired nếu là người dùng mới cần bổ sung hồ sơ)
+     * hoặc cờ profileCompletionRequired nếu là người dùng mới cần bổ sung hồ sơ)
      * @throws ApiException nếu token không hợp lệ hoặc tài khoản bị từ chối
      */
     @Transactional

@@ -11,4 +11,5 @@ public record LogicalRoundResponse(
         boolean finalRound,
         Integer defaultTopNToPromote,
         String lifecycleState,
-        List<RoundResponse> trackRounds) {}
+        List<RoundResponse> trackRounds) {
+}

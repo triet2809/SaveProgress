@@ -12,14 +12,16 @@ import vn.edu.fpt.seal.modules.audit.entity.AuditLog;
 import vn.edu.fpt.seal.modules.audit.repository.AuditLogRepository;
 import vn.edu.fpt.seal.modules.event.entity.Event;
 import vn.edu.fpt.seal.modules.event.repository.EventRepository;
+import vn.edu.fpt.seal.modules.recognition.service.TeamRecognitionService;
 import vn.edu.fpt.seal.modules.team.dto.TeamResponse;
-import vn.edu.fpt.seal.modules.team.entity.*;
+import vn.edu.fpt.seal.modules.team.entity.Team;
+import vn.edu.fpt.seal.modules.team.entity.TeamMember;
 import vn.edu.fpt.seal.modules.team.mapper.TeamMapper;
-import vn.edu.fpt.seal.modules.team.repository.*;
+import vn.edu.fpt.seal.modules.team.repository.TeamMemberRepository;
+import vn.edu.fpt.seal.modules.team.repository.TeamRepository;
 import vn.edu.fpt.seal.modules.teamprofile.dto.TeamProfileDtos;
 import vn.edu.fpt.seal.modules.teamprofile.entity.TeamProfile;
 import vn.edu.fpt.seal.modules.teamprofile.repository.TeamProfileRepository;
-import vn.edu.fpt.seal.modules.recognition.service.TeamRecognitionService;
 import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
 import vn.edu.fpt.seal.modules.user.entity.User;
@@ -176,8 +178,8 @@ public class TeamProfileService {
     }
 
     private TeamProfileDtos.PreviewResponse validate(TeamProfile profile,
-                                                      TeamProfileDtos.ReactivationRequest request,
-                                                      Authentication authentication) {
+                                                     TeamProfileDtos.ReactivationRequest request,
+                                                     Authentication authentication) {
         CurrentUser caller = current(authentication);
         Team source = team(request.sourceTeamId());
         if (source.getTeamProfile() == null || !source.getTeamProfile().getId().equals(profile.getId())) {
@@ -216,7 +218,8 @@ public class TeamProfileService {
         }
         if (returningIds.size() > MAX_TEAM_SIZE) missing.add("A team can have at most five members");
         if (!returningIds.contains(request.leaderId())) missing.add("The selected leader must be returning");
-        if (!historicalByUser.containsKey(request.leaderId())) missing.add("The selected leader must belong to the source roster");
+        if (!historicalByUser.containsKey(request.leaderId()))
+            missing.add("The selected leader must belong to the source roster");
         if (returningIds.stream().filter(historicalByUser::containsKey)
                 .map(historicalByUser::get).map(TeamMember::getUser)
                 .anyMatch(user -> user.getStatus() != AccountStatus.approved)) {

@@ -33,6 +33,7 @@ public class TeamChatService {
     /**
      * Lấy tối đa 100 tin nhắn của một đội.
      * Chỉ thành viên đội hoặc coordinator mới được đọc.
+     *
      * @throws ApiException nếu đội không tồn tại hoặc ngoài phạm vi truy cập
      */
     @Transactional(readOnly = true)
@@ -52,6 +53,7 @@ public class TeamChatService {
     /**
      * Gửi tin nhắn mới vào khung chat của đội.
      * Chỉ thành viên đội được phép gửi; nội dung được trim trước khi lưu.
+     *
      * @param senderId id người gửi (lấy từ principal)
      * @throws ApiException nếu đội/người gửi không tồn tại hoặc người gửi không phải thành viên
      */
@@ -72,7 +74,9 @@ public class TeamChatService {
                 .build()));
     }
 
-    /** Ánh xạ thực thể TeamChatMessage sang DTO Response kèm thông tin người gửi. */
+    /**
+     * Ánh xạ thực thể TeamChatMessage sang DTO Response kèm thông tin người gửi.
+     */
     private TeamChatMessageResponse map(TeamChatMessage message) {
         var sender = message.getSender();
         return new TeamChatMessageResponse(

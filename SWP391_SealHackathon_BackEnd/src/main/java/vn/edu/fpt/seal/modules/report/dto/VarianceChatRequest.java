@@ -13,5 +13,6 @@ public record VarianceChatRequest(
         List<Message> messages,
         boolean refresh
 ) {
-    public record Message(String role, String content) {}
+    public record Message(String role, String content) {
+    }
 }

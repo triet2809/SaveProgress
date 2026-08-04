@@ -2,14 +2,14 @@ package vn.edu.fpt.seal.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,11 +17,11 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
-import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 
 /**
  * Filter chạy một lần cho mỗi request, chịu trách nhiệm xác thực dựa trên JWT.
@@ -35,9 +35,13 @@ import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    /** Dịch vụ xử lý JWT (phân tích, xác minh, kiểm tra revoke). */
+    /**
+     * Dịch vụ xử lý JWT (phân tích, xác minh, kiểm tra revoke).
+     */
     private final JwtService jwtService;
-    /** Repository người dùng để kiểm tra trạng thái/securityVersion (có thể null trong test). */
+    /**
+     * Repository người dùng để kiểm tra trạng thái/securityVersion (có thể null trong test).
+     */
     private final UserRepository userRepository;
 
     /**

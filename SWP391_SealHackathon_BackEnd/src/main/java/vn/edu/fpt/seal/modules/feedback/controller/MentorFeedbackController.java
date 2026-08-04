@@ -1,2 +1,54 @@
-package vn.edu.fpt.seal.modules.feedback.controller; import jakarta.validation.Valid; import lombok.RequiredArgsConstructor; import org.springframework.data.domain.*; import org.springframework.http.ResponseEntity; import org.springframework.security.access.prepost.PreAuthorize; import org.springframework.security.core.Authentication; import org.springframework.web.bind.annotation.*; import vn.edu.fpt.seal.modules.feedback.dto.*; import vn.edu.fpt.seal.modules.feedback.service.MentorFeedbackService; import java.util.UUID;
-@RestController @RequestMapping("/mentor-feedbacks") @RequiredArgsConstructor public class MentorFeedbackController{private final MentorFeedbackService service; @GetMapping @PreAuthorize("isAuthenticated()") public ResponseEntity<Page<MentorFeedbackResponse>> list(@RequestParam(required=false) UUID trackMentorId,@RequestParam(required=false) UUID teamId,@RequestParam(required=false) UUID roundId,Pageable p){return ResponseEntity.ok(service.list(trackMentorId,teamId,roundId,p));} @GetMapping("/{id}") @PreAuthorize("isAuthenticated()") public ResponseEntity<MentorFeedbackResponse> get(@PathVariable UUID id){return ResponseEntity.ok(service.get(id));} @PostMapping @PreAuthorize("hasAnyRole('MENTOR','COORDINATOR')") public ResponseEntity<MentorFeedbackResponse> create(@Valid @RequestBody CreateMentorFeedbackRequest r,Authentication a){return ResponseEntity.ok(service.create(r,a));} @PatchMapping("/{id}") @PreAuthorize("hasAnyRole('MENTOR','COORDINATOR')") public ResponseEntity<MentorFeedbackResponse> update(@PathVariable UUID id,@Valid @RequestBody UpdateMentorFeedbackRequest r,Authentication a){return ResponseEntity.ok(service.update(id,r,a));} @DeleteMapping("/{id}") @PreAuthorize("hasAnyRole('MENTOR','COORDINATOR')") public ResponseEntity<Void> delete(@PathVariable UUID id,Authentication a){service.delete(id,a); return ResponseEntity.noContent().build();}}
+package vn.edu.fpt.seal.modules.feedback.controller;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import vn.edu.fpt.seal.modules.feedback.dto.CreateMentorFeedbackRequest;
+import vn.edu.fpt.seal.modules.feedback.dto.MentorFeedbackResponse;
+import vn.edu.fpt.seal.modules.feedback.dto.UpdateMentorFeedbackRequest;
+import vn.edu.fpt.seal.modules.feedback.service.MentorFeedbackService;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/mentor-feedbacks")
+@RequiredArgsConstructor
+public class MentorFeedbackController {
+    private final MentorFeedbackService service;
+
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Page<MentorFeedbackResponse>> list(@RequestParam(required = false) UUID trackMentorId, @RequestParam(required = false) UUID teamId, @RequestParam(required = false) UUID roundId, Pageable p) {
+        return ResponseEntity.ok(service.list(trackMentorId, teamId, roundId, p));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MentorFeedbackResponse> get(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.get(id));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('MENTOR','COORDINATOR')")
+    public ResponseEntity<MentorFeedbackResponse> create(@Valid @RequestBody CreateMentorFeedbackRequest r, Authentication a) {
+        return ResponseEntity.ok(service.create(r, a));
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MENTOR','COORDINATOR')")
+    public ResponseEntity<MentorFeedbackResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateMentorFeedbackRequest r, Authentication a) {
+        return ResponseEntity.ok(service.update(id, r, a));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MENTOR','COORDINATOR')")
+    public ResponseEntity<Void> delete(@PathVariable UUID id, Authentication a) {
+        service.delete(id, a);
+        return ResponseEntity.noContent().build();
+    }
+}

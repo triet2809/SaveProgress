@@ -1,25 +1,27 @@
 package vn.edu.fpt.seal.modules.support.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.edu.fpt.seal.common.enums.EventStatus;
+import vn.edu.fpt.seal.common.enums.TeamStatus;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.support.dto.CreateSupportTicketRequest;
 import vn.edu.fpt.seal.modules.support.dto.SupportTicketResponse;
 import vn.edu.fpt.seal.modules.support.dto.UpdateSupportTicketStatusRequest;
 import vn.edu.fpt.seal.modules.support.entity.SupportTicket;
 import vn.edu.fpt.seal.modules.support.repository.SupportTicketRepository;
-import vn.edu.fpt.seal.modules.user.repository.UserRepository;
-import vn.edu.fpt.seal.security.AuthorizationService;
-import org.springframework.beans.factory.annotation.Autowired;
 import vn.edu.fpt.seal.modules.team.entity.Team;
-import vn.edu.fpt.seal.common.enums.EventStatus;
-import vn.edu.fpt.seal.common.enums.TeamStatus;
 import vn.edu.fpt.seal.modules.team.repository.TeamMemberRepository;
-import vn.edu.fpt.seal.modules.timeline.*;
+import vn.edu.fpt.seal.modules.timeline.TimelineEventType;
+import vn.edu.fpt.seal.modules.timeline.TimelineScope;
+import vn.edu.fpt.seal.modules.timeline.TimelineSourceType;
 import vn.edu.fpt.seal.modules.timeline.dto.TimelineEventRequest;
 import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
+import vn.edu.fpt.seal.modules.user.repository.UserRepository;
+import vn.edu.fpt.seal.security.AuthorizationService;
 
 import java.util.List;
 import java.util.Map;
@@ -38,8 +40,10 @@ public class SupportTicketService {
     private final SupportTicketRepository repository;
     private final UserRepository userRepository;
     private final AuthorizationService authorizationService;
-    @Autowired private TimelineService timeline;
-    @Autowired private TeamMemberRepository teamMembers;
+    @Autowired
+    private TimelineService timeline;
+    @Autowired
+    private TeamMemberRepository teamMembers;
 
     @Transactional(readOnly = true)
     public List<SupportTicketResponse> list(UUID requesterId, Authentication authentication) {
@@ -120,6 +124,7 @@ public class SupportTicketService {
                 ticket.getCategory(), ticket.getPriority(), ticket.getSubject(), ticket.getDescription(),
                 ticket.getStatus(), ticket.getCreatedAt(), ticket.getUpdatedAt());
     }
+
     private void record(SupportTicket ticket, TimelineEventType type, String title, String description, String suffix) {
         if (timeline == null || teamMembers == null) return;
         Team team = teamMembers.findByUserIdOrderByJoinedAtDesc(ticket.getRequester().getId()).stream()

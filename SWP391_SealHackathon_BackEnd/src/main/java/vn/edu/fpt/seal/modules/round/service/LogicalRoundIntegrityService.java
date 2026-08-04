@@ -7,23 +7,27 @@ import vn.edu.fpt.seal.common.enums.RoundLifecycleState;
 import vn.edu.fpt.seal.common.enums.RoundParticipantStatus;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.appeal.repository.AppealRepository;
-import vn.edu.fpt.seal.modules.team.entity.Team;
 import vn.edu.fpt.seal.modules.criteria.repository.RoundCriterionRepository;
 import vn.edu.fpt.seal.modules.judge.repository.RoundJudgeRepository;
 import vn.edu.fpt.seal.modules.participant.entity.RoundParticipant;
 import vn.edu.fpt.seal.modules.participant.repository.RoundParticipantRepository;
 import vn.edu.fpt.seal.modules.ranking.repository.RoundRankingRepository;
-import vn.edu.fpt.seal.modules.resultversion.repository.RoundResultVersionRepository;
-import vn.edu.fpt.seal.modules.resultversion.repository.RoundResultVersionEntryRepository;
 import vn.edu.fpt.seal.modules.resultversion.entity.RoundResultVersion;
 import vn.edu.fpt.seal.modules.resultversion.entity.RoundResultVersionEntry;
+import vn.edu.fpt.seal.modules.resultversion.repository.RoundResultVersionEntryRepository;
+import vn.edu.fpt.seal.modules.resultversion.repository.RoundResultVersionRepository;
 import vn.edu.fpt.seal.modules.round.dto.LogicalRoundProgressionDtos.*;
 import vn.edu.fpt.seal.modules.round.dto.LogicalRoundResponse;
 import vn.edu.fpt.seal.modules.round.dto.UpdateLogicalRoundRequest;
-import vn.edu.fpt.seal.modules.round.entity.*;
+import vn.edu.fpt.seal.modules.round.entity.LogicalRoundPromotion;
+import vn.edu.fpt.seal.modules.round.entity.Round;
+import vn.edu.fpt.seal.modules.round.entity.RoundDefinition;
 import vn.edu.fpt.seal.modules.round.mapper.RoundMapper;
-import vn.edu.fpt.seal.modules.round.repository.*;
+import vn.edu.fpt.seal.modules.round.repository.LogicalRoundPromotionRepository;
+import vn.edu.fpt.seal.modules.round.repository.RoundDefinitionRepository;
+import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
 import vn.edu.fpt.seal.modules.submission.repository.SubmissionRepository;
+import vn.edu.fpt.seal.modules.team.entity.Team;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,10 +64,14 @@ public class LogicalRoundIntegrityService {
         boolean finalRound = request.finalRound() == null ? definition.isFinalRound() : request.finalRound();
         definitions.findByEventIdAndNameIgnoreCase(definition.getEvent().getId(), name)
                 .filter(other -> !other.getId().equals(id))
-                .ifPresent(other -> { throw ApiException.conflict("Logical round name already exists in this event"); });
+                .ifPresent(other -> {
+                    throw ApiException.conflict("Logical round name already exists in this event");
+                });
         definitions.findByEventIdAndSequenceNumber(definition.getEvent().getId(), sequence)
                 .filter(other -> !other.getId().equals(id))
-                .ifPresent(other -> { throw ApiException.conflict("Logical round sequence already exists in this event"); });
+                .ifPresent(other -> {
+                    throw ApiException.conflict("Logical round sequence already exists in this event");
+                });
         if (sequence != definition.getSequenceNumber()
                 && (promotions.existsBySourceLogicalRoundId(id)
                 || promotions.existsByTargetLogicalRoundId(id))) {
@@ -148,7 +156,8 @@ public class LogicalRoundIntegrityService {
                 throw ApiException.badRequest("Final-round assignments must target its single track");
             }
             for (UUID teamId : assignment.teamIds()) {
-                if (!requestTeams.add(teamId)) throw ApiException.conflict("Team assigned more than once in this logical round");
+                if (!requestTeams.add(teamId))
+                    throw ApiException.conflict("Team assigned more than once in this logical round");
                 LogicalRoundPromotion promotion = promotions
                         .findByTargetLogicalRoundIdOrderByTeamNameAsc(targetLogicalRoundId).stream()
                         .filter(p -> p.getTeam().getId().equals(teamId)).findFirst()
@@ -213,9 +222,11 @@ public class LogicalRoundIntegrityService {
             throw ApiException.conflict("Locked round track execution cannot be deleted");
         }
         if (participants.existsByRoundId(id)) throw ApiException.conflict("Round track execution has assigned teams");
-        if (submissions.existsByRoundId(id)) throw ApiException.conflict("Round track execution has submissions or scores");
+        if (submissions.existsByRoundId(id))
+            throw ApiException.conflict("Round track execution has submissions or scores");
         if (rankings.existsByRoundId(id)) throw ApiException.conflict("Round track execution has scoring results");
-        if (resultVersions.existsByRoundId(id)) throw ApiException.conflict("Round track execution has published result versions");
+        if (resultVersions.existsByRoundId(id))
+            throw ApiException.conflict("Round track execution has published result versions");
         if (appeals.existsByRoundId(id)) throw ApiException.conflict("Round track execution has appeals");
         if (criteria.existsByRoundId(id)) throw ApiException.conflict("Round track execution has criteria");
         if (roundJudges.existsByRoundId(id)) throw ApiException.conflict("Round track execution has judge assignments");

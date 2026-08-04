@@ -8,7 +8,7 @@ import java.util.UUID;
 
 /**
  * Inter-judge variance dashboard (requirement #13).
- *
+ * <p>
  * One row per (team, criterion) pair in a round, reporting how much the
  * assigned judges disagreed: the number of judges, their mean score,
  * population variance and standard deviation, the min/max and the spread
@@ -31,4 +31,5 @@ public record JudgeVarianceResponse(
         BigDecimal minScore,
         BigDecimal maxScore,
         BigDecimal spread
-) {}
+) {
+}

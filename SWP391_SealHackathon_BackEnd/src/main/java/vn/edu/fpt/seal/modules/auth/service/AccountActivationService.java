@@ -11,10 +11,15 @@ import vn.edu.fpt.seal.modules.auth.entity.AccountActivationToken;
 import vn.edu.fpt.seal.modules.auth.repository.AccountActivationTokenRepository;
 import vn.edu.fpt.seal.modules.user.entity.User;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
+
 import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.time.*;
-import java.util.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Base64;
+import java.util.HexFormat;
 
 /**
  * Service quản lý token kích hoạt tài khoản.
@@ -45,7 +50,8 @@ public class AccountActivationService {
         // Xóa token cũ chưa dùng để tránh nhiều token hợp lệ cùng lúc
         tokenRepository.deleteActiveByUserId(user.getId());
         // Sinh 32 byte ngẫu nhiên bằng SecureRandom rồi mã hóa Base64 URL-safe làm token gốc
-        byte[] bytes = new byte[32]; new SecureRandom().nextBytes(bytes);
+        byte[] bytes = new byte[32];
+        new SecureRandom().nextBytes(bytes);
         String raw = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         // Chỉ lưu hash của token vào DB, không lưu token gốc
         AccountActivationToken entity = AccountActivationToken.builder().user(user).tokenHash(hash(raw))
@@ -62,7 +68,9 @@ public class AccountActivationService {
      * @throws ApiException nếu token không hợp lệ hoặc đã hết hạn
      */
     @Transactional(readOnly = true)
-    public void validate(String raw) { findValid(raw, false); }
+    public void validate(String raw) {
+        findValid(raw, false);
+    }
 
     /**
      * Kích hoạt tài khoản: kiểm tra mật khẩu, xác thực token, đặt mật khẩu và
@@ -78,7 +86,8 @@ public class AccountActivationService {
     public void activate(String raw, String password, String confirm) {
         if (!password.equals(confirm)) throw ApiException.badRequest("Passwords do not match");
         // Yêu cầu mật khẩu 8-72 ký tự, có cả chữ và số
-        if (!password.matches("^(?=.*[A-Za-z])(?=.*\\d).{8,72}$")) throw ApiException.badRequest("Password must be 8-72 characters and contain letters and numbers");
+        if (!password.matches("^(?=.*[A-Za-z])(?=.*\\d).{8,72}$"))
+            throw ApiException.badRequest("Password must be 8-72 characters and contain letters and numbers");
         // Khóa bản ghi token (for update) để tránh dùng token chồng chéo
         AccountActivationToken token = findValid(raw, true);
         User user = token.getUser();
@@ -108,7 +117,8 @@ public class AccountActivationService {
      */
     private AccountActivationToken findValid(String raw, boolean lockForUpdate) {
         // Kiểm tra định dạng token cơ bản trước khi truy DB
-        if (raw == null || !raw.matches("^[A-Za-z0-9_-]{32,}$")) throw ApiException.badRequest("Invalid or expired activation token");
+        if (raw == null || !raw.matches("^[A-Za-z0-9_-]{32,}$"))
+            throw ApiException.badRequest("Invalid or expired activation token");
         String tokenHash = hash(raw);
         AccountActivationToken token = (lockForUpdate
                 ? tokenRepository.findByTokenHashForUpdate(tokenHash)
@@ -127,8 +137,11 @@ public class AccountActivationService {
      * @return chuỗi hex của hash SHA-256
      */
     private String hash(String value) {
-        try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8))); }
-        catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     /**
@@ -137,5 +150,6 @@ public class AccountActivationService {
      * @param raw       token gốc dùng để gửi cho người dùng
      * @param expiresAt thời điểm hết hạn
      */
-    public record IssuedToken(String raw, LocalDateTime expiresAt) {}
+    public record IssuedToken(String raw, LocalDateTime expiresAt) {
+    }
 }

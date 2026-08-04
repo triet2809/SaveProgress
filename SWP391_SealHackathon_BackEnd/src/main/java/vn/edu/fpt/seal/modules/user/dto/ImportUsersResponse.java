@@ -36,5 +36,6 @@ public record ImportUsersResponse(
             String email,
             String status,
             String message
-    ) {}
+    ) {
+    }
 }

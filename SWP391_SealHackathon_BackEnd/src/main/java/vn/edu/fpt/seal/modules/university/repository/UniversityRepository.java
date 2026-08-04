@@ -10,5 +10,6 @@ import java.util.UUID;
 @Repository
 public interface UniversityRepository extends JpaRepository<University, UUID> {
     boolean existsByNameIgnoreCase(String name);
+
     Optional<University> findByNameIgnoreCase(String name);
 }

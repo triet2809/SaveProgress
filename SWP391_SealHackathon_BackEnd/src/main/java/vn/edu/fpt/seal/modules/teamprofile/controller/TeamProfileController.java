@@ -10,7 +10,8 @@ import vn.edu.fpt.seal.modules.team.dto.TeamResponse;
 import vn.edu.fpt.seal.modules.teamprofile.dto.TeamProfileDtos;
 import vn.edu.fpt.seal.modules.teamprofile.service.TeamProfileService;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/team-profiles")

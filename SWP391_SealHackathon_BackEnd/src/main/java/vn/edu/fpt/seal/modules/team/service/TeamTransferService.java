@@ -87,7 +87,8 @@ public class TeamTransferService {
         List<Team> eligible = new ArrayList<>();
         for (Team team : eventTeams) {
             String reason = ineligibleReason(team);
-            if (reason == null) eligible.add(team); else excluded.add(excluded(team, reason));
+            if (reason == null) eligible.add(team);
+            else excluded.add(excluded(team, reason));
         }
         eligible.sort(Comparator.comparing(team -> team.getId().toString()));
         if (request.randomSeed() != null) Collections.shuffle(eligible, new Random(request.randomSeed()));
@@ -132,7 +133,7 @@ public class TeamTransferService {
     public TeamTransferDtos.TransferResult applyBalance(UUID eventId, TeamTransferDtos.BalanceRequest request) {
         TeamTransferDtos.TransferResult preview = previewBalance(eventId, request);
         Map<UUID, Team> byId = teams.findAllById(preview.moves().stream()
-                .map(TeamTransferDtos.TeamMove::teamId).toList()).stream()
+                        .map(TeamTransferDtos.TeamMove::teamId).toList()).stream()
                 .collect(Collectors.toMap(Team::getId, Function.identity()));
         Map<UUID, Track> trackById = targetTracks(eventId, request.targetTrackIds()).stream()
                 .collect(Collectors.toMap(Track::getId, Function.identity()));
@@ -160,13 +161,15 @@ public class TeamTransferService {
     private String ineligibleReason(Team team) {
         if (team.getStatus() != TeamStatus.active) return "Team is not active";
         EventStatus status = team.getTrack().getEvent().getStatus();
-        if (status != EventStatus.draft && status != EventStatus.published) return "Event lifecycle locks team transfers";
+        if (status != EventStatus.draft && status != EventStatus.published)
+            return "Event lifecycle locks team transfers";
         if (submissions.existsByTeamId(team.getId())) return "Team has submissions";
         if (participants.existsByTeamId(team.getId())) return "Team participates in a round";
         if (rankings.existsByTeamId(team.getId())) return "Team has ranking data";
         if (resultEntries.existsByTeamId(team.getId())) return "Team has published result data";
         if (finishes.existsByTeamId(team.getId())) return "Team has finalized historical results";
-        if (seeds.existsByEventIdAndTeamId(team.getTrack().getEvent().getId(), team.getId())) return "Team has seed metadata";
+        if (seeds.existsByEventIdAndTeamId(team.getTrack().getEvent().getId(), team.getId()))
+            return "Team has seed metadata";
         return null;
     }
 

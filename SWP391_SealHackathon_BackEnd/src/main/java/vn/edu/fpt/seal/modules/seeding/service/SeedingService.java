@@ -7,33 +7,45 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.edu.fpt.seal.common.enums.*;
+import vn.edu.fpt.seal.common.enums.AuditAction;
+import vn.edu.fpt.seal.common.enums.EventStatus;
+import vn.edu.fpt.seal.common.enums.RoundLifecycleState;
+import vn.edu.fpt.seal.common.enums.TeamStatus;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.appeal.repository.AppealRepository;
 import vn.edu.fpt.seal.modules.audit.entity.AuditLog;
 import vn.edu.fpt.seal.modules.audit.repository.AuditLogRepository;
 import vn.edu.fpt.seal.modules.event.entity.Event;
 import vn.edu.fpt.seal.modules.event.repository.EventRepository;
-import vn.edu.fpt.seal.modules.resultversion.entity.*;
-import vn.edu.fpt.seal.modules.resultversion.repository.*;
 import vn.edu.fpt.seal.modules.recognition.service.TeamRecognitionService;
+import vn.edu.fpt.seal.modules.resultversion.entity.RoundResultVersion;
+import vn.edu.fpt.seal.modules.resultversion.entity.RoundResultVersionEntry;
+import vn.edu.fpt.seal.modules.resultversion.repository.RoundResultVersionEntryRepository;
+import vn.edu.fpt.seal.modules.resultversion.repository.RoundResultVersionRepository;
 import vn.edu.fpt.seal.modules.round.entity.Round;
 import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
 import vn.edu.fpt.seal.modules.round.service.CompetitionLifecycleService;
 import vn.edu.fpt.seal.modules.seeding.dto.SeedingDtos;
-import vn.edu.fpt.seal.modules.seeding.entity.*;
-import vn.edu.fpt.seal.modules.seeding.repository.*;
-import vn.edu.fpt.seal.modules.team.entity.*;
-import vn.edu.fpt.seal.modules.team.repository.*;
+import vn.edu.fpt.seal.modules.seeding.entity.EventSeedAssignment;
+import vn.edu.fpt.seal.modules.seeding.entity.EventTeamFinish;
+import vn.edu.fpt.seal.modules.seeding.repository.EventSeedAssignmentRepository;
+import vn.edu.fpt.seal.modules.seeding.repository.EventTeamFinishRepository;
+import vn.edu.fpt.seal.modules.team.entity.Team;
+import vn.edu.fpt.seal.modules.team.entity.TeamMember;
+import vn.edu.fpt.seal.modules.team.repository.TeamMemberRepository;
+import vn.edu.fpt.seal.modules.team.repository.TeamRepository;
+import vn.edu.fpt.seal.modules.timeline.TimelineEventType;
+import vn.edu.fpt.seal.modules.timeline.TimelineScope;
+import vn.edu.fpt.seal.modules.timeline.TimelineSourceType;
+import vn.edu.fpt.seal.modules.timeline.dto.TimelineEventRequest;
+import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
 import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
 import vn.edu.fpt.seal.modules.user.entity.User;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 import vn.edu.fpt.seal.security.CurrentUser;
-import vn.edu.fpt.seal.modules.timeline.*;
-import vn.edu.fpt.seal.modules.timeline.dto.TimelineEventRequest;
-import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
 
-import java.time.*;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -61,7 +73,8 @@ public class SeedingService {
     private final CompetitionLifecycleService lifecycle;
     private final TeamRecognitionService recognitionService;
     private final Clock clock;
-    @Autowired private TimelineService timeline;
+    @Autowired
+    private TimelineService timeline;
 
     public SeedingService(EventRepository events, RoundRepository rounds,
                           RoundResultVersionRepository versions,
@@ -240,7 +253,7 @@ public class SeedingService {
         Map<UUID, List<vn.edu.fpt.seal.modules.recognition.dto.RecognitionDtos.Summary>>
                 recognitionsByTeam = recognitionService == null ? Map.of()
                 : recognitionService.activeByTeamIds(
-                        currentTeams.stream().map(Team::getId).toList());
+                currentTeams.stream().map(Team::getId).toList());
 
         List<SeedingDtos.Candidate> candidates = new ArrayList<>();
         for (Team team : currentTeams) {

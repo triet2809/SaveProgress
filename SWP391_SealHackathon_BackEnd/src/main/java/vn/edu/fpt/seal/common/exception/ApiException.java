@@ -13,9 +13,13 @@ import org.springframework.http.HttpStatus;
  */
 @Getter
 public class ApiException extends RuntimeException {
-    /** Mã HTTP status trả về cho client. */
+    /**
+     * Mã HTTP status trả về cho client.
+     */
     private final HttpStatus status;
-    /** Mã lỗi dạng chuỗi (ví dụ NOT_FOUND, CONFLICT) để frontend xử lý theo loại. */
+    /**
+     * Mã lỗi dạng chuỗi (ví dụ NOT_FOUND, CONFLICT) để frontend xử lý theo loại.
+     */
     private final String code;
 
     /**
@@ -29,37 +33,51 @@ public class ApiException extends RuntimeException {
         this.code = code;
     }
 
-    /** Tạo lỗi 404 Not Found (tài nguyên không tồn tại). */
+    /**
+     * Tạo lỗi 404 Not Found (tài nguyên không tồn tại).
+     */
     public static ApiException notFound(String message) {
         return new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND", message);
     }
 
-    /** Tạo lỗi 400 Bad Request (dữ liệu đầu vào không hợp lệ). */
+    /**
+     * Tạo lỗi 400 Bad Request (dữ liệu đầu vào không hợp lệ).
+     */
     public static ApiException badRequest(String message) {
         return new ApiException(HttpStatus.BAD_REQUEST, "BAD_REQUEST", message);
     }
 
-    /** Tạo lỗi 409 Conflict (xung đột trạng thái/dữ liệu). */
+    /**
+     * Tạo lỗi 409 Conflict (xung đột trạng thái/dữ liệu).
+     */
     public static ApiException conflict(String message) {
         return new ApiException(HttpStatus.CONFLICT, "CONFLICT", message);
     }
 
-    /** Tạo lỗi 401 Unauthorized (chưa xác thực). */
+    /**
+     * Tạo lỗi 401 Unauthorized (chưa xác thực).
+     */
     public static ApiException unauthorized(String message) {
         return new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", message);
     }
 
-    /** Tạo lỗi 403 Forbidden (đã xác thực nhưng không đủ quyền). */
+    /**
+     * Tạo lỗi 403 Forbidden (đã xác thực nhưng không đủ quyền).
+     */
     public static ApiException forbidden(String message) {
         return new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", message);
     }
 
-    /** Tạo lỗi 500 Internal Server Error (lỗi cấu hình/hệ thống). */
+    /**
+     * Tạo lỗi 500 Internal Server Error (lỗi cấu hình/hệ thống).
+     */
     public static ApiException internal(String message) {
         return new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", message);
     }
 
-    /** Tạo lỗi 503 Service Unavailable (tính năng chưa cấu hình/không khả dụng). */
+    /**
+     * Tạo lỗi 503 Service Unavailable (tính năng chưa cấu hình/không khả dụng).
+     */
     public static ApiException serviceUnavailable(String message) {
         return new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "SERVICE_UNAVAILABLE", message);
     }

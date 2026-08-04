@@ -6,22 +6,15 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import vn.edu.fpt.seal.modules.auth.dto.AuthResponse;
-import vn.edu.fpt.seal.modules.auth.dto.LoginRequest;
-import vn.edu.fpt.seal.modules.auth.dto.RefreshRequest;
-import vn.edu.fpt.seal.modules.auth.dto.RegisterRequest;
-import vn.edu.fpt.seal.modules.auth.dto.GoogleLoginRequest;
-import vn.edu.fpt.seal.modules.auth.service.AuthService;
+import vn.edu.fpt.seal.modules.auth.dto.*;
 import vn.edu.fpt.seal.modules.auth.service.AccountActivationService;
-import vn.edu.fpt.seal.modules.auth.dto.ActivationRequest;
-import vn.edu.fpt.seal.modules.auth.dto.ActivationValidationResponse;
+import vn.edu.fpt.seal.modules.auth.service.AuthService;
 import vn.edu.fpt.seal.security.CurrentUser;
 
 import java.util.Map;
-import org.springframework.security.core.Authentication;
-import vn.edu.fpt.seal.modules.auth.dto.CompleteOnboardingRequest;
 
 /**
  * Controller xử lý các endpoint xác thực: đăng ký, đăng nhập, làm mới token,
@@ -139,7 +132,7 @@ public class AuthController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Logout current session")
     public ResponseEntity<Map<String, Object>> logout(@RequestHeader(value = "Authorization", required = false) String authorization,
-                                                       @RequestBody(required = false) Map<String, String> body) {
+                                                      @RequestBody(required = false) Map<String, String> body) {
         authService.logout(authorization, body == null ? null : body.get("refreshToken"));
         return ResponseEntity.ok(Map.of("success", true, "message", "Logged out. Access token revoked."));
     }

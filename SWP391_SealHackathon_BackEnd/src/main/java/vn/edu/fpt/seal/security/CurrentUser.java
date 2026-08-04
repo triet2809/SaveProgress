@@ -14,10 +14,16 @@ import java.util.UUID;
 @Value
 @Builder
 public class CurrentUser {
-    /** Định danh người dùng (UUID). */
+    /**
+     * Định danh người dùng (UUID).
+     */
     UUID id;
-    /** Email của người dùng. */
+    /**
+     * Email của người dùng.
+     */
     String email;
-    /** Danh sách tên role của người dùng (ví dụ coordinator, judge). */
+    /**
+     * Danh sách tên role của người dùng (ví dụ coordinator, judge).
+     */
     List<String> roles;
 }

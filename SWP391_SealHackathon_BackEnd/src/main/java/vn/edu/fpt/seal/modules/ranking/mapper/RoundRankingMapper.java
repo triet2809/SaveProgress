@@ -3,13 +3,17 @@ package vn.edu.fpt.seal.modules.ranking.mapper;
 import vn.edu.fpt.seal.modules.ranking.dto.RoundRankingResponse;
 import vn.edu.fpt.seal.modules.ranking.entity.RoundRanking;
 import vn.edu.fpt.seal.modules.recognition.dto.RecognitionDtos;
+
 import java.util.List;
 
 public final class RoundRankingMapper {
-    private RoundRankingMapper() {}
+    private RoundRankingMapper() {
+    }
+
     public static RoundRankingResponse toResponse(RoundRanking r) {
         return toResponse(r, List.of());
     }
+
     public static RoundRankingResponse toResponse(
             RoundRanking r, List<RecognitionDtos.Summary> recognitions) {
         return RoundRankingResponse.builder()

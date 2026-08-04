@@ -9,8 +9,8 @@ import vn.edu.fpt.seal.common.enums.TeamMemberRole;
 import vn.edu.fpt.seal.common.enums.TeamStatus;
 import vn.edu.fpt.seal.modules.team.entity.TeamMember;
 
-import java.util.List;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,14 +38,14 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, UUID> {
 
     @EntityGraph(attributePaths = {"team", "team.track", "team.track.event", "user"})
     @Query("""
-        select tm from TeamMember tm
-        where tm.user.id in :userIds
-          and tm.team.track.event.id = :eventId
-          and tm.team.status = :status
-        """)
+            select tm from TeamMember tm
+            where tm.user.id in :userIds
+              and tm.team.track.event.id = :eventId
+              and tm.team.status = :status
+            """)
     List<TeamMember> findActiveRegistrationsInEvent(@Param("userIds") Collection<UUID> userIds,
-                                                     @Param("eventId") UUID eventId,
-                                                     @Param("status") TeamStatus status);
+                                                    @Param("eventId") UUID eventId,
+                                                    @Param("status") TeamStatus status);
 
     default boolean existsActiveRegistrationInEvent(UUID userId, UUID eventId) {
         return !findActiveRegistrationsInEvent(List.of(userId), eventId, TeamStatus.active).isEmpty();

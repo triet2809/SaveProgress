@@ -1,10 +1,12 @@
 package vn.edu.fpt.seal.modules.user.mapper;
 
 import vn.edu.fpt.seal.modules.user.dto.UserResponse;
-import vn.edu.fpt.seal.modules.user.entity.*;
+import vn.edu.fpt.seal.modules.user.entity.Role;
+import vn.edu.fpt.seal.modules.user.entity.User;
 
 public final class UserMapper {
-    private UserMapper() {}
+    private UserMapper() {
+    }
 
     public static UserResponse toResponse(User u) {
         var campus = u.getCampus();

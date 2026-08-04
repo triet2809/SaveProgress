@@ -18,22 +18,33 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class Submission {
-    @Id @GeneratedValue @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
+    @Id
+    @GeneratedValue
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "round_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "round_id", nullable = false)
     private Round round;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "team_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    @Column(name = "repo_url", length = 500) private String repoUrl;
-    @Column(name = "demo_url", length = 500) private String demoUrl;
-    @Column(name = "slide_url", length = 500) private String slideUrl;
-    @Column(name = "report_url", length = 500) private String reportUrl;
-    @Column(name = "api_metadata", columnDefinition = "text") private String apiMetadata;
-    @Column(name = "project_name", length = 255) private String projectName;
-    @Column(name = "version", length = 50) private String version;
+    @Column(name = "repo_url", length = 500)
+    private String repoUrl;
+    @Column(name = "demo_url", length = 500)
+    private String demoUrl;
+    @Column(name = "slide_url", length = 500)
+    private String slideUrl;
+    @Column(name = "report_url", length = 500)
+    private String reportUrl;
+    @Column(name = "api_metadata", columnDefinition = "text")
+    private String apiMetadata;
+    @Column(name = "project_name", length = 255)
+    private String projectName;
+    @Column(name = "version", length = 50)
+    private String version;
     @Column(name = "review_status", length = 50)
     @Builder.Default
     private String reviewStatus = "pending";
@@ -42,9 +53,11 @@ public class Submission {
     @Builder.Default
     private String status = "draft";
 
-    @CreationTimestamp @Column(name = "submitted_at", nullable = false, updatable = false)
+    @CreationTimestamp
+    @Column(name = "submitted_at", nullable = false, updatable = false)
     private LocalDateTime submittedAt;
 
-    @UpdateTimestamp @Column(name = "updated_at")
+    @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }

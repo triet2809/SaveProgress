@@ -1,27 +1,32 @@
 package vn.edu.fpt.seal.modules.staff.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.edu.fpt.seal.common.enums.*;
+import vn.edu.fpt.seal.common.enums.AccountStatus;
+import vn.edu.fpt.seal.common.enums.StudentType;
 import vn.edu.fpt.seal.common.exception.ApiException;
+import vn.edu.fpt.seal.modules.auth.service.AccountActivationService;
 import vn.edu.fpt.seal.modules.event.entity.Event;
 import vn.edu.fpt.seal.modules.event.repository.EventRepository;
-import vn.edu.fpt.seal.modules.judge.entity.*;
-import vn.edu.fpt.seal.modules.judge.repository.*;
+import vn.edu.fpt.seal.modules.judge.entity.RoundJudge;
+import vn.edu.fpt.seal.modules.judge.entity.TrackJudge;
+import vn.edu.fpt.seal.modules.judge.repository.RoundJudgeRepository;
+import vn.edu.fpt.seal.modules.judge.repository.TrackJudgeRepository;
 import vn.edu.fpt.seal.modules.mentor.entity.TrackMentor;
 import vn.edu.fpt.seal.modules.mentor.repository.TrackMentorRepository;
 import vn.edu.fpt.seal.modules.round.entity.Round;
 import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
-import vn.edu.fpt.seal.modules.staff.dto.*;
+import vn.edu.fpt.seal.modules.staff.dto.EventStaffResponse;
+import vn.edu.fpt.seal.modules.staff.dto.InviteStaffRequest;
+import vn.edu.fpt.seal.modules.staff.dto.UpdateStaffAssignmentsRequest;
 import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
-import vn.edu.fpt.seal.modules.user.entity.*;
-import vn.edu.fpt.seal.modules.user.repository.*;
-import vn.edu.fpt.seal.modules.auth.service.AccountActivationService;
+import vn.edu.fpt.seal.modules.user.entity.Role;
+import vn.edu.fpt.seal.modules.user.entity.User;
+import vn.edu.fpt.seal.modules.user.repository.RoleRepository;
+import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 
 import java.util.*;
 
@@ -44,10 +49,17 @@ public class EventStaffService {
                              TrackRepository trackRepository, RoundRepository roundRepository, TrackMentorRepository mentorRepository,
                              TrackJudgeRepository trackJudgeRepository, RoundJudgeRepository roundJudgeRepository, PasswordEncoder passwordEncoder,
                              AccountActivationService activationService, vn.edu.fpt.seal.config.AppProperties appProperties) {
-        this.eventRepository = eventRepository; this.userRepository = userRepository; this.roleRepository = roleRepository;
-        this.trackRepository = trackRepository; this.roundRepository = roundRepository; this.mentorRepository = mentorRepository;
-        this.trackJudgeRepository = trackJudgeRepository; this.roundJudgeRepository = roundJudgeRepository; this.passwordEncoder = passwordEncoder;
-        this.activationService = activationService; this.appProperties = appProperties;
+        this.eventRepository = eventRepository;
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.trackRepository = trackRepository;
+        this.roundRepository = roundRepository;
+        this.mentorRepository = mentorRepository;
+        this.trackJudgeRepository = trackJudgeRepository;
+        this.roundJudgeRepository = roundJudgeRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.activationService = activationService;
+        this.appProperties = appProperties;
     }
 
     public EventStaffService(EventRepository e, UserRepository u, RoleRepository r, TrackRepository t, RoundRepository rd,
@@ -80,7 +92,8 @@ public class EventStaffService {
             throw ApiException.conflict("Email already registered; assign the existing account without a temporary password");
         }
         User user = existing.orElseGet(() -> createApprovedWithTemporaryPassword(request));
-        if (request.fullName() != null && !request.fullName().isBlank() && user.getFullName() == null) user.setFullName(request.fullName().trim());
+        if (request.fullName() != null && !request.fullName().isBlank() && user.getFullName() == null)
+            user.setFullName(request.fullName().trim());
         ensureGlobalRoles(user, requested);
         userRepository.save(user);
         applyAssignments(event, user, requested, request.mentorTrackIds(), request.judgeTrackIds(), request.judgeRoundIds());
@@ -114,7 +127,8 @@ public class EventStaffService {
     public void remove(UUID eventId, UUID userId, String assignmentType) {
         Event event = requireEvent(eventId);
         String type = assignmentType.toLowerCase(Locale.ROOT);
-        if ("mentor".equals(type)) mentorRepository.deleteAll(mentorRepository.findAllByEventId(eventId).stream().filter(a -> a.getUser().getId().equals(userId)).toList());
+        if ("mentor".equals(type))
+            mentorRepository.deleteAll(mentorRepository.findAllByEventId(eventId).stream().filter(a -> a.getUser().getId().equals(userId)).toList());
         else if ("judge".equals(type)) {
             trackJudgeRepository.deleteAll(trackJudgeRepository.findAllByEventId(eventId).stream().filter(a -> a.getUser().getId().equals(userId)).toList());
             roundJudgeRepository.deleteAll(roundJudgeRepository.findAllByRoundTrackEventId(eventId).stream().filter(a -> a.getUser().getId().equals(userId)).toList());
@@ -161,10 +175,14 @@ public class EventStaffService {
     }
 
     private void applyAssignments(Event event, User user, Set<String> roles, Set<UUID> mentorTracks, Set<UUID> judgeTracks, Set<UUID> judgeRounds) {
-        if (roles.contains("mentor")) replaceMentorAssignments(event, user, mentorTracks == null ? Set.of() : mentorTracks);
-        if (roles.contains("judge")) replaceJudgeAssignments(event, user, judgeTracks == null ? Set.of() : judgeTracks, judgeRounds == null ? Set.of() : judgeRounds);
-        if (roles.contains("mentor") && (mentorTracks == null || mentorTracks.isEmpty())) throw ApiException.badRequest("Mentor role requires at least one track");
-        if (roles.contains("judge") && (judgeTracks == null || judgeTracks.isEmpty()) && (judgeRounds == null || judgeRounds.isEmpty())) throw ApiException.badRequest("Judge role requires at least one track or round");
+        if (roles.contains("mentor"))
+            replaceMentorAssignments(event, user, mentorTracks == null ? Set.of() : mentorTracks);
+        if (roles.contains("judge"))
+            replaceJudgeAssignments(event, user, judgeTracks == null ? Set.of() : judgeTracks, judgeRounds == null ? Set.of() : judgeRounds);
+        if (roles.contains("mentor") && (mentorTracks == null || mentorTracks.isEmpty()))
+            throw ApiException.badRequest("Mentor role requires at least one track");
+        if (roles.contains("judge") && (judgeTracks == null || judgeTracks.isEmpty()) && (judgeRounds == null || judgeRounds.isEmpty()))
+            throw ApiException.badRequest("Judge role requires at least one track or round");
     }
 
     private void replaceMentorAssignments(Event event, User user, Set<UUID> ids) {
@@ -172,7 +190,8 @@ public class EventStaffService {
         mentorRepository.deleteAll(existing);
         for (UUID id : ids) {
             Track track = trackRepository.findById(id).orElseThrow(() -> ApiException.notFound("Track not found: " + id));
-            if (!track.getEvent().getId().equals(event.getId())) throw ApiException.badRequest("Mentor track belongs to another event");
+            if (!track.getEvent().getId().equals(event.getId()))
+                throw ApiException.badRequest("Mentor track belongs to another event");
             mentorRepository.save(TrackMentor.builder().event(event).track(track).user(user).build());
         }
     }
@@ -182,26 +201,50 @@ public class EventStaffService {
         roundJudgeRepository.deleteAll(roundJudgeRepository.findAllByRoundTrackEventId(event.getId()).stream().filter(a -> a.getUser().getId().equals(user.getId())).toList());
         for (UUID id : trackIds) {
             Track track = trackRepository.findById(id).orElseThrow(() -> ApiException.notFound("Track not found: " + id));
-            if (!track.getEvent().getId().equals(event.getId())) throw ApiException.badRequest("Judge track belongs to another event");
+            if (!track.getEvent().getId().equals(event.getId()))
+                throw ApiException.badRequest("Judge track belongs to another event");
             trackJudgeRepository.save(TrackJudge.builder().event(event).track(track).user(user).build());
         }
         for (UUID id : roundIds) {
             Round round = roundRepository.findById(id).orElseThrow(() -> ApiException.notFound("Round not found: " + id));
-            if (!round.getTrack().getEvent().getId().equals(event.getId())) throw ApiException.badRequest("Judge round belongs to another event");
+            if (!round.getTrack().getEvent().getId().equals(event.getId()))
+                throw ApiException.badRequest("Judge round belongs to another event");
             roundJudgeRepository.save(RoundJudge.builder().round(round).user(user).build());
         }
     }
 
     private static final class StaffAccumulator {
-        private final User user; private final Set<UUID> mentorTrackIds = new LinkedHashSet<>(), judgeTrackIds = new LinkedHashSet<>(), judgeRoundIds = new LinkedHashSet<>();
+        private final User user;
+        private final Set<UUID> mentorTrackIds = new LinkedHashSet<>(), judgeTrackIds = new LinkedHashSet<>(), judgeRoundIds = new LinkedHashSet<>();
         private final List<String> mentorTracks = new ArrayList<>(), judgeTracks = new ArrayList<>(), judgeRounds = new ArrayList<>();
-        private StaffAccumulator(User user) { this.user = user; }
-        StaffAccumulator mentor(Track t) { mentorTrackIds.add(t.getId()); mentorTracks.add(t.getName()); return this; }
-        StaffAccumulator judgeTrack(Track t) { judgeTrackIds.add(t.getId()); judgeTracks.add(t.getName()); return this; }
-        StaffAccumulator judgeRound(Round r) { judgeRoundIds.add(r.getId()); judgeRounds.add(r.getName()); return this; }
+
+        private StaffAccumulator(User user) {
+            this.user = user;
+        }
+
+        StaffAccumulator mentor(Track t) {
+            mentorTrackIds.add(t.getId());
+            mentorTracks.add(t.getName());
+            return this;
+        }
+
+        StaffAccumulator judgeTrack(Track t) {
+            judgeTrackIds.add(t.getId());
+            judgeTracks.add(t.getName());
+            return this;
+        }
+
+        StaffAccumulator judgeRound(Round r) {
+            judgeRoundIds.add(r.getId());
+            judgeRounds.add(r.getName());
+            return this;
+        }
+
         EventStaffResponse build() {
             List<String> globals = user.getRoles().stream().map(Role::getName).sorted().toList();
-            Set<String> event = new LinkedHashSet<>(); if (!mentorTrackIds.isEmpty()) event.add("mentor"); if (!judgeTrackIds.isEmpty() || !judgeRoundIds.isEmpty()) event.add("judge");
+            Set<String> event = new LinkedHashSet<>();
+            if (!mentorTrackIds.isEmpty()) event.add("mentor");
+            if (!judgeTrackIds.isEmpty() || !judgeRoundIds.isEmpty()) event.add("judge");
             return EventStaffResponse.builder().userId(user.getId()).fullName(user.getFullName()).email(user.getEmail()).accountStatus(user.getStatus())
                     .globalRoles(globals).eventRoles(event.stream().toList()).mentorTrackIds(mentorTrackIds.stream().toList()).mentorTracks(mentorTracks)
                     .judgeTrackIds(judgeTrackIds.stream().toList()).judgeTracks(judgeTracks).judgeRoundIds(judgeRoundIds.stream().toList())

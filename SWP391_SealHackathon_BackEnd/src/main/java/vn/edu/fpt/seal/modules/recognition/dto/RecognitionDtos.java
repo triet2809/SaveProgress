@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.UUID;
 
 public final class RecognitionDtos {
-    private RecognitionDtos() {}
+    private RecognitionDtos() {
+    }
 
     public record Summary(
             String code,
@@ -17,7 +18,8 @@ public final class RecognitionDtos {
             int qualificationCount,
             LocalDateTime earnedAt,
             boolean active
-    ) {}
+    ) {
+    }
 
     public record QualifyingSeason(
             UUID finishId,
@@ -28,7 +30,8 @@ public final class RecognitionDtos {
             int finalPlacement,
             UUID resultVersionId,
             LocalDateTime completedAt
-    ) {}
+    ) {
+    }
 
     public record EvidenceResponse(
             UUID teamProfileId,
@@ -36,9 +39,11 @@ public final class RecognitionDtos {
             Summary recognition,
             int distinctQualifyingSeasons,
             List<QualifyingSeason> qualifyingSeasons
-    ) {}
+    ) {
+    }
 
     public record RevokeRequest(
             @NotBlank @Size(max = 4000) String reason
-    ) {}
+    ) {
+    }
 }

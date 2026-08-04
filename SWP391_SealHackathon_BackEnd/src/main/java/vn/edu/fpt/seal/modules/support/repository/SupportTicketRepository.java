@@ -1,1 +1,18 @@
-package vn.edu.fpt.seal.modules.support.repository; import org.springframework.data.jpa.repository.*; import org.springframework.stereotype.Repository; import vn.edu.fpt.seal.modules.support.entity.SupportTicket; import java.util.*; @Repository public interface SupportTicketRepository extends JpaRepository<SupportTicket,UUID>{ @EntityGraph(attributePaths={"requester"}) List<SupportTicket> findByRequesterIdOrderByCreatedAtDesc(UUID requesterId); @EntityGraph(attributePaths={"requester"}) List<SupportTicket> findTop100ByOrderByCreatedAtDesc(); }
+package vn.edu.fpt.seal.modules.support.repository;
+
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import vn.edu.fpt.seal.modules.support.entity.SupportTicket;
+
+import java.util.List;
+import java.util.UUID;
+
+@Repository
+public interface SupportTicketRepository extends JpaRepository<SupportTicket, UUID> {
+    @EntityGraph(attributePaths = {"requester"})
+    List<SupportTicket> findByRequesterIdOrderByCreatedAtDesc(UUID requesterId);
+
+    @EntityGraph(attributePaths = {"requester"})
+    List<SupportTicket> findTop100ByOrderByCreatedAtDesc();
+}

@@ -15,11 +15,17 @@ import java.util.UUID;
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
     Page<Submission> findByRoundId(UUID roundId, Pageable pageable);
+
     Page<Submission> findByTeamId(UUID teamId, Pageable pageable);
+
     Optional<Submission> findByRoundIdAndTeamId(UUID roundId, UUID teamId);
+
     boolean existsByRoundIdAndTeamId(UUID roundId, UUID teamId);
+
     boolean existsByRoundId(UUID roundId);
+
     boolean existsByTeamId(UUID teamId);
+
     @EntityGraph(attributePaths = {"round", "round.track", "round.track.event", "team", "team.track"})
     @Query("""
             select s from Submission s

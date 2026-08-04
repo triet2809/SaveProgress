@@ -1,11 +1,14 @@
 package vn.edu.fpt.seal.modules.recognition.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.edu.fpt.seal.common.enums.*;
+import vn.edu.fpt.seal.common.enums.AuditAction;
+import vn.edu.fpt.seal.common.enums.EventStatus;
+import vn.edu.fpt.seal.common.enums.TeamStatus;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.audit.entity.AuditLog;
 import vn.edu.fpt.seal.modules.audit.repository.AuditLogRepository;
@@ -14,17 +17,18 @@ import vn.edu.fpt.seal.modules.recognition.entity.TeamRecognition;
 import vn.edu.fpt.seal.modules.recognition.repository.TeamRecognitionRepository;
 import vn.edu.fpt.seal.modules.seeding.entity.EventTeamFinish;
 import vn.edu.fpt.seal.modules.seeding.repository.EventTeamFinishRepository;
+import vn.edu.fpt.seal.modules.team.entity.Team;
+import vn.edu.fpt.seal.modules.team.repository.TeamRepository;
 import vn.edu.fpt.seal.modules.teamprofile.entity.TeamProfile;
 import vn.edu.fpt.seal.modules.teamprofile.repository.TeamProfileRepository;
+import vn.edu.fpt.seal.modules.timeline.TimelineEventType;
+import vn.edu.fpt.seal.modules.timeline.TimelineScope;
+import vn.edu.fpt.seal.modules.timeline.TimelineSourceType;
+import vn.edu.fpt.seal.modules.timeline.dto.TimelineEventRequest;
+import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
 import vn.edu.fpt.seal.modules.user.entity.User;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 import vn.edu.fpt.seal.security.CurrentUser;
-import org.springframework.beans.factory.annotation.Autowired;
-import vn.edu.fpt.seal.modules.team.entity.Team;
-import vn.edu.fpt.seal.modules.team.repository.TeamRepository;
-import vn.edu.fpt.seal.modules.timeline.*;
-import vn.edu.fpt.seal.modules.timeline.dto.TimelineEventRequest;
-import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -43,8 +47,10 @@ public class TeamRecognitionService {
     private final TeamProfileRepository profiles;
     private final UserRepository users;
     private final AuditLogRepository audits;
-    @Autowired private TimelineService timeline;
-    @Autowired private TeamRepository teams;
+    @Autowired
+    private TimelineService timeline;
+    @Autowired
+    private TeamRepository teams;
 
     @Transactional
     public Map<UUID, RecognitionDtos.Summary> evaluateProfiles(Collection<UUID> profileIds, User actor) {
@@ -140,8 +146,8 @@ public class TeamRecognitionService {
 
     @Transactional
     public RecognitionDtos.EvidenceResponse revoke(UUID profileId, UUID recognitionId,
-                                                    RecognitionDtos.RevokeRequest request,
-                                                    Authentication authentication) {
+                                                   RecognitionDtos.RevokeRequest request,
+                                                   Authentication authentication) {
         profile(profileId);
         TeamRecognition recognition = recognitions.findById(recognitionId)
                 .orElseThrow(() -> ApiException.notFound("Recognition not found: " + recognitionId));
@@ -247,6 +253,7 @@ public class TeamRecognitionService {
                 recognition.getQualificationCount(), recognition.getEarnedAt(),
                 recognition.isActive());
     }
+
     private void record(TeamRecognition recognition, TimelineEventType type, TimelineScope scope,
                         String title, String description, String suffix) {
         if (timeline == null || teams == null) return;

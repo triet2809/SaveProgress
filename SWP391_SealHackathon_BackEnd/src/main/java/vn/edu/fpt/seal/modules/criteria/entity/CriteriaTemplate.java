@@ -16,19 +16,44 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "criteria_templates")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CriteriaTemplate {
-    /** Khóa chính UUID. */
-    @Id @GeneratedValue @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
+    /**
+     * Khóa chính UUID.
+     */
+    @Id
+    @GeneratedValue
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
     private UUID id;
-    /** Tên tiêu chí mẫu. */
-    @Column(name = "name", nullable = false, length = 255) private String name;
-    /** Mô tả tiêu chí. */
-    @Column(name = "description", columnDefinition = "text") private String description;
-    /** Trọng số mặc định dùng khi áp mẫu vào vòng thi. */
-    @Column(name = "default_weight", nullable = false, precision = 10, scale = 2) private BigDecimal defaultWeight;
-    /** Thời điểm tạo, tự sinh. */
-    @CreationTimestamp @Column(name = "created_at", nullable = false, updatable = false) private LocalDateTime createdAt;
-    /** Thời điểm cập nhật gần nhất, tự sinh. */
-    @UpdateTimestamp @Column(name = "updated_at") private LocalDateTime updatedAt;
+    /**
+     * Tên tiêu chí mẫu.
+     */
+    @Column(name = "name", nullable = false, length = 255)
+    private String name;
+    /**
+     * Mô tả tiêu chí.
+     */
+    @Column(name = "description", columnDefinition = "text")
+    private String description;
+    /**
+     * Trọng số mặc định dùng khi áp mẫu vào vòng thi.
+     */
+    @Column(name = "default_weight", nullable = false, precision = 10, scale = 2)
+    private BigDecimal defaultWeight;
+    /**
+     * Thời điểm tạo, tự sinh.
+     */
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+    /**
+     * Thời điểm cập nhật gần nhất, tự sinh.
+     */
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

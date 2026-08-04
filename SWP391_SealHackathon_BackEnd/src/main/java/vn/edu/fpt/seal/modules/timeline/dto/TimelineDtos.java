@@ -1,10 +1,10 @@
 package vn.edu.fpt.seal.modules.timeline.dto;
 
-import vn.edu.fpt.seal.modules.timeline.TimelineScope;
 import vn.edu.fpt.seal.modules.timeline.TimelineEventType;
+import vn.edu.fpt.seal.modules.timeline.TimelineScope;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.UUID;
 
 public final class TimelineDtos {
     private TimelineDtos() {

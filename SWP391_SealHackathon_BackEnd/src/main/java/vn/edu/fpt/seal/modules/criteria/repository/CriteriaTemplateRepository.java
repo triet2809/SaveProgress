@@ -11,6 +11,8 @@ import java.util.UUID;
  */
 @Repository
 public interface CriteriaTemplateRepository extends JpaRepository<CriteriaTemplate, UUID> {
-    /** Kiểm tra tên mẫu đã tồn tại (không phân biệt hoa thường) để chống trùng tên. */
+    /**
+     * Kiểm tra tên mẫu đã tồn tại (không phân biệt hoa thường) để chống trùng tên.
+     */
     boolean existsByNameIgnoreCase(String name);
 }

@@ -15,17 +15,27 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "event_seed_assignments")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class EventSeedAssignment {
-    @Id @GeneratedValue @Column(columnDefinition = "uuid")
+    @Id
+    @GeneratedValue
+    @Column(columnDefinition = "uuid")
     private UUID id;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "event_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "event_id")
     private Event event;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "track_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "track_id")
     private Track track;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "team_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "team_id")
     private Team team;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "team_profile_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "team_profile_id")
     private TeamProfile teamProfile;
     @Column(name = "competition_stage", nullable = false, length = 40)
     @Builder.Default
@@ -34,7 +44,8 @@ public class EventSeedAssignment {
     private Integer seedNumber;
     @Column(name = "seed_tier", length = 20)
     private String seedTier;
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "candidate_source_finish_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "candidate_source_finish_id")
     private EventTeamFinish candidateSourceFinish;
     @Column(name = "continuity_count", nullable = false)
     private Integer continuityCount;
@@ -42,12 +53,16 @@ public class EventSeedAssignment {
     private String status;
     @Column(columnDefinition = "text")
     private String rationale;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "assigned_by")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "assigned_by")
     private User assignedBy;
-    @CreationTimestamp @Column(name = "assigned_at", nullable = false, updatable = false)
+    @CreationTimestamp
+    @Column(name = "assigned_at", nullable = false, updatable = false)
     private LocalDateTime assignedAt;
-    @UpdateTimestamp @Column(name = "updated_at")
+    @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    @Version @Column(name = "row_version", nullable = false)
+    @Version
+    @Column(name = "row_version", nullable = false)
     private Long rowVersion;
 }

@@ -26,4 +26,5 @@ public record SubmissionResponse(
         LocalDateTime submittedAt,
         LocalDateTime updatedAt,
         List<RecognitionDtos.Summary> recognitions
-) {}
+) {
+}

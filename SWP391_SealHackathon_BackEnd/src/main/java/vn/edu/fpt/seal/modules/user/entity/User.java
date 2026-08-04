@@ -10,9 +10,9 @@ import vn.edu.fpt.seal.common.enums.StudentType;
 import vn.edu.fpt.seal.modules.university.entity.Campus;
 import vn.edu.fpt.seal.modules.university.entity.University;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")

@@ -11,23 +11,24 @@ import vn.edu.fpt.seal.common.enums.*;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.audit.entity.AuditLog;
 import vn.edu.fpt.seal.modules.audit.repository.AuditLogRepository;
+import vn.edu.fpt.seal.modules.event.repository.EventRepository;
+import vn.edu.fpt.seal.modules.recognition.service.TeamRecognitionService;
 import vn.edu.fpt.seal.modules.team.dto.*;
-import vn.edu.fpt.seal.modules.team.entity.*;
+import vn.edu.fpt.seal.modules.team.entity.Team;
+import vn.edu.fpt.seal.modules.team.entity.TeamMember;
 import vn.edu.fpt.seal.modules.team.mapper.TeamMapper;
-import vn.edu.fpt.seal.modules.team.repository.*;
-import vn.edu.fpt.seal.security.CurrentUser;
+import vn.edu.fpt.seal.modules.team.repository.TeamMemberRepository;
+import vn.edu.fpt.seal.modules.team.repository.TeamRepository;
+import vn.edu.fpt.seal.modules.teamprofile.entity.TeamProfile;
+import vn.edu.fpt.seal.modules.teamprofile.repository.TeamProfileRepository;
+import vn.edu.fpt.seal.modules.timeline.TimelineScope;
+import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
 import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
 import vn.edu.fpt.seal.modules.user.entity.User;
-import vn.edu.fpt.seal.modules.user.entity.Role;
-import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 import vn.edu.fpt.seal.modules.user.repository.RoleRepository;
-import vn.edu.fpt.seal.modules.event.repository.EventRepository;
-import vn.edu.fpt.seal.modules.teamprofile.entity.TeamProfile;
-import vn.edu.fpt.seal.modules.teamprofile.repository.TeamProfileRepository;
-import vn.edu.fpt.seal.modules.recognition.service.TeamRecognitionService;
-import vn.edu.fpt.seal.modules.timeline.TimelineScope;
-import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
+import vn.edu.fpt.seal.modules.user.repository.UserRepository;
+import vn.edu.fpt.seal.security.CurrentUser;
 
 import java.util.*;
 
@@ -35,7 +36,9 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class TeamService {
-    /** Hackathon teams must have between MIN and MAX members (requirement #2). */
+    /**
+     * Hackathon teams must have between MIN and MAX members (requirement #2).
+     */
     private static final int MIN_TEAM_SIZE = 3;
     private static final int MAX_TEAM_SIZE = 5;
 
@@ -98,7 +101,8 @@ public class TeamService {
         ensureEditable(track);
         ensureRegistrationOpen(track);
         String name = req.name().trim();
-        if (teamRepository.existsByTrackIdAndNameIgnoreCase(track.getId(), name)) throw ApiException.conflict("Team name already exists in this track");
+        if (teamRepository.existsByTrackIdAndNameIgnoreCase(track.getId(), name))
+            throw ApiException.conflict("Team name already exists in this track");
 
         boolean coordinator = isCoordinator(auth);
         UUID actorId = currentUserIdOrNull(auth);
@@ -115,19 +119,28 @@ public class TeamService {
         if (coordinator) {
             // Coordinator may create on behalf of others; leader/members optional
             // (they can build the roster incrementally). Hard cap at MAX_TEAM_SIZE.
-            if (req.leaderUserId() != null) { addMemberInternal(team, req.leaderUserId(), TeamMemberRole.leader); added.add(req.leaderUserId()); }
-            if (req.memberUserIds() != null) for (UUID id : req.memberUserIds()) if (added.add(id)) addMemberInternal(team, id, TeamMemberRole.member);
-            for (UUID mid : resolveEmails(req.memberEmails())) if (added.add(mid)) addMemberInternal(team, mid, TeamMemberRole.member);
-            if (added.size() > MAX_TEAM_SIZE) throw ApiException.badRequest("A team can have at most " + MAX_TEAM_SIZE + " members");
+            if (req.leaderUserId() != null) {
+                addMemberInternal(team, req.leaderUserId(), TeamMemberRole.leader);
+                added.add(req.leaderUserId());
+            }
+            if (req.memberUserIds() != null) for (UUID id : req.memberUserIds())
+                if (added.add(id)) addMemberInternal(team, id, TeamMemberRole.member);
+            for (UUID mid : resolveEmails(req.memberEmails()))
+                if (added.add(mid)) addMemberInternal(team, mid, TeamMemberRole.member);
+            if (added.size() > MAX_TEAM_SIZE)
+                throw ApiException.badRequest("A team can have at most " + MAX_TEAM_SIZE + " members");
         } else {
             // A regular (non-coordinator) user creating their own team becomes the
             // leader. Solo creation is allowed (size 1); the roster grows later via
             // invite code or accepted join requests. Minimum size is enforced at a
             // later gate (registration close / submission), not at creation time.
             UUID callerId = currentUserId(auth);
-            addMemberInternal(team, callerId, TeamMemberRole.leader); added.add(callerId);
-            if (req.memberUserIds() != null) for (UUID id : req.memberUserIds()) if (added.add(id)) addMemberInternal(team, id, TeamMemberRole.member);
-            for (UUID mid : resolveEmails(req.memberEmails())) if (added.add(mid)) addMemberInternal(team, mid, TeamMemberRole.member);
+            addMemberInternal(team, callerId, TeamMemberRole.leader);
+            added.add(callerId);
+            if (req.memberUserIds() != null) for (UUID id : req.memberUserIds())
+                if (added.add(id)) addMemberInternal(team, id, TeamMemberRole.member);
+            for (UUID mid : resolveEmails(req.memberEmails()))
+                if (added.add(mid)) addMemberInternal(team, mid, TeamMemberRole.member);
             if (added.size() > MAX_TEAM_SIZE)
                 throw ApiException.badRequest("A team can have at most " + MAX_TEAM_SIZE + " members (including the leader)");
         }
@@ -135,7 +148,9 @@ public class TeamService {
         return toResponse(team);
     }
 
-    /** Resolve member emails to user ids; each must be an existing registered user. */
+    /**
+     * Resolve member emails to user ids; each must be an existing registered user.
+     */
     private List<UUID> resolveEmails(List<String> emails) {
         if (emails == null) return List.of();
         List<UUID> ids = new ArrayList<>();
@@ -148,7 +163,9 @@ public class TeamService {
         return ids;
     }
 
-    /** Generate a unique 6-char uppercase invite code. */
+    /**
+     * Generate a unique 6-char uppercase invite code.
+     */
     private String generateInviteCode() {
         for (int attempt = 0; attempt < 10; attempt++) {
             String code = UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
@@ -159,10 +176,12 @@ public class TeamService {
 
     @Transactional
     public TeamResponse update(UUID id, UpdateTeamRequest req) {
-        Team team = findOrThrow(id); ensureEditable(team.getTrack());
+        Team team = findOrThrow(id);
+        ensureEditable(team.getTrack());
         if (req.name() != null) {
             String name = req.name().trim();
-            if (!name.equalsIgnoreCase(team.getName()) && teamRepository.existsByTrackIdAndNameIgnoreCase(team.getTrack().getId(), name)) throw ApiException.conflict("Team name already exists in this track");
+            if (!name.equalsIgnoreCase(team.getName()) && teamRepository.existsByTrackIdAndNameIgnoreCase(team.getTrack().getId(), name))
+                throw ApiException.conflict("Team name already exists in this track");
             team.setName(name);
         }
         return toResponse(team);
@@ -198,14 +217,16 @@ public class TeamService {
         ensureEditable(team.getTrack());
         ensureRegistrationOpen(team.getTrack());
         if (teamMemberRepository.existsByTeamIdAndUserId(team.getId(), callerId)) return toResponse(team);
-        if (teamMemberRepository.countByTeamId(team.getId()) >= MAX_TEAM_SIZE) throw ApiException.badRequest("A team can have at most " + MAX_TEAM_SIZE + " members");
+        if (teamMemberRepository.countByTeamId(team.getId()) >= MAX_TEAM_SIZE)
+            throw ApiException.badRequest("A team can have at most " + MAX_TEAM_SIZE + " members");
         addMemberInternal(team, callerId, TeamMemberRole.member);
         return toResponse(team);
     }
 
     @Transactional
     public TeamResponse addMember(UUID teamId, AddTeamMemberRequest req) {
-        Team team = findOrThrow(teamId); ensureEditable(team.getTrack());
+        Team team = findOrThrow(teamId);
+        ensureEditable(team.getTrack());
         if (teamMemberRepository.countByTeamId(teamId) >= MAX_TEAM_SIZE)
             throw ApiException.badRequest("A team can have at most " + MAX_TEAM_SIZE + " members");
         addMemberInternal(team, req.userId(), req.role() == null ? TeamMemberRole.member : req.role());
@@ -214,7 +235,8 @@ public class TeamService {
 
     @Transactional
     public void removeMember(UUID teamId, UUID userId) {
-        Team team = findOrThrow(teamId); ensureEditable(team.getTrack());
+        Team team = findOrThrow(teamId);
+        ensureEditable(team.getTrack());
         TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId).orElseThrow(() -> ApiException.notFound("Team member not found"));
         teamMemberRepository.delete(member);
     }
@@ -261,14 +283,22 @@ public class TeamService {
     }
 
     @Transactional
-    public void delete(UUID id) { Team team = findOrThrow(id); ensureDraft(team.getTrack()); teamRepository.delete(team); }
+    public void delete(UUID id) {
+        Team team = findOrThrow(id);
+        ensureDraft(team.getTrack());
+        teamRepository.delete(team);
+    }
 
-    private TeamResponse toResponse(Team team) { return toResponse(team, true); }
+    private TeamResponse toResponse(Team team) {
+        return toResponse(team, true);
+    }
+
     private TeamResponse toResponse(Team team, boolean includeInviteCode) {
         return toResponse(team, includeInviteCode,
                 recognitionService.activeByTeamIds(List.of(team.getId()))
                         .getOrDefault(team.getId(), List.of()));
     }
+
     private TeamResponse toResponse(
             Team team, boolean includeInviteCode,
             List<vn.edu.fpt.seal.modules.recognition.dto.RecognitionDtos.Summary> recognitions) {
@@ -276,21 +306,30 @@ public class TeamService {
                 teamMemberRepository.findByTeamIdOrderByRoleAscJoinedAtAsc(team.getId()),
                 includeInviteCode, recognitions);
     }
-    private Team findOrThrow(UUID id) { return teamRepository.findWithTrackById(id).orElseThrow(() -> ApiException.notFound("Team not found: " + id)); }
+
+    private Team findOrThrow(UUID id) {
+        return teamRepository.findWithTrackById(id).orElseThrow(() -> ApiException.notFound("Team not found: " + id));
+    }
+
     private TeamMember addMemberInternal(Team team, UUID userId, TeamMemberRole role) {
-        if (teamMemberRepository.existsByTeamIdAndUserId(team.getId(), userId)) throw ApiException.conflict("User already belongs to this team");
+        if (teamMemberRepository.existsByTeamIdAndUserId(team.getId(), userId))
+            throw ApiException.conflict("User already belongs to this team");
         if (teamMemberRepository.existsActiveRegistrationInEvent(userId, team.getTrack().getEvent().getId()))
             throw ApiException.conflict("User already belongs to another active team in this event");
-        if (role == TeamMemberRole.leader && teamMemberRepository.existsByTeamIdAndRole(team.getId(), TeamMemberRole.leader)) throw ApiException.conflict("Team already has a leader");
+        if (role == TeamMemberRole.leader && teamMemberRepository.existsByTeamIdAndRole(team.getId(), TeamMemberRole.leader))
+            throw ApiException.conflict("Team already has a leader");
         User user = userRepository.findById(userId).orElseThrow(() -> ApiException.notFound("User not found: " + userId));
-        if (user.getStatus() != AccountStatus.approved) throw ApiException.badRequest("Only approved users can join teams");
+        if (user.getStatus() != AccountStatus.approved)
+            throw ApiException.badRequest("Only approved users can join teams");
         // Khi trở thành leader của một team, cấp role tài khoản team_leader (idempotent) để
         // FE điều hướng user vào workspace /team (nơi có menu Join Requests) thay vì /student.
         if (role == TeamMemberRole.leader) grantTeamLeaderRole(user);
         return teamMemberRepository.save(TeamMember.builder().team(team).user(user).role(role).build());
     }
 
-    /** Cấp role tài khoản "team_leader" cho user nếu chưa có (không bump security version để token hiện tại vẫn hợp lệ). */
+    /**
+     * Cấp role tài khoản "team_leader" cho user nếu chưa có (không bump security version để token hiện tại vẫn hợp lệ).
+     */
     private void grantTeamLeaderRole(User user) {
         boolean alreadyLeader = user.getRoles().stream().anyMatch(r -> "team_leader".equals(r.getName()));
         if (alreadyLeader) return;
@@ -299,23 +338,43 @@ public class TeamService {
             userRepository.save(user);
         });
     }
-    private void ensureEditable(Track track) { EventStatus s = track.getEvent().getStatus(); if (s != EventStatus.draft && s != EventStatus.published) throw ApiException.badRequest("Historical team registrations cannot be edited after registration closes (status: " + s + ")"); }
-    /** Team registration (create/join) is only allowed while the event has registration open (status=published). */
-    private void ensureRegistrationOpen(Track track) { EventStatus s = track.getEvent().getStatus(); if (s != EventStatus.published) throw ApiException.badRequest("Registration is not open for this event (status: " + s + ")"); }
-    private void ensureDraft(Track track) { EventStatus s = track.getEvent().getStatus(); if (s != EventStatus.draft) throw ApiException.badRequest("Teams can only be deleted while event is draft (current: " + s + ")"); }
+
+    private void ensureEditable(Track track) {
+        EventStatus s = track.getEvent().getStatus();
+        if (s != EventStatus.draft && s != EventStatus.published)
+            throw ApiException.badRequest("Historical team registrations cannot be edited after registration closes (status: " + s + ")");
+    }
+
+    /**
+     * Team registration (create/join) is only allowed while the event has registration open (status=published).
+     */
+    private void ensureRegistrationOpen(Track track) {
+        EventStatus s = track.getEvent().getStatus();
+        if (s != EventStatus.published)
+            throw ApiException.badRequest("Registration is not open for this event (status: " + s + ")");
+    }
+
+    private void ensureDraft(Track track) {
+        EventStatus s = track.getEvent().getStatus();
+        if (s != EventStatus.draft)
+            throw ApiException.badRequest("Teams can only be deleted while event is draft (current: " + s + ")");
+    }
 
     private boolean isCoordinator(Authentication auth) {
         return auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_COORDINATOR"));
     }
+
     private UUID currentUserId(Authentication auth) {
         UUID id = currentUserIdOrNull(auth);
         if (id == null) throw ApiException.forbidden("Authentication required");
         return id;
     }
+
     private UUID currentUserIdOrNull(Authentication auth) {
         if (auth != null && auth.getPrincipal() instanceof CurrentUser c) return c.getId();
         return null;
     }
+
     private void writeAudit(Authentication auth, Team team, AuditAction action, String oldValue, String newValue, String details) {
         UUID actorId = currentUserIdOrNull(auth);
         User actor = actorId == null ? null : userRepository.findById(actorId).orElse(null);

@@ -1,24 +1,20 @@
 package vn.edu.fpt.seal.modules.event.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.fpt.seal.common.enums.AuditAction;
 import vn.edu.fpt.seal.common.enums.EventStatus;
-import vn.edu.fpt.seal.common.enums.TeamStatus;
 import vn.edu.fpt.seal.common.enums.RoundParticipantStatus;
+import vn.edu.fpt.seal.common.enums.TeamStatus;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.audit.entity.AuditLog;
 import vn.edu.fpt.seal.modules.audit.repository.AuditLogRepository;
-import vn.edu.fpt.seal.modules.event.dto.CreateEventRequest;
-import vn.edu.fpt.seal.modules.event.dto.EventResponse;
-import vn.edu.fpt.seal.modules.event.dto.SetupCompetitionRequest;
-import vn.edu.fpt.seal.modules.event.dto.SetupCompetitionResponse;
-import vn.edu.fpt.seal.modules.event.dto.UpdateEventRequest;
+import vn.edu.fpt.seal.modules.event.dto.*;
 import vn.edu.fpt.seal.modules.event.entity.Event;
 import vn.edu.fpt.seal.modules.event.mapper.EventMapper;
 import vn.edu.fpt.seal.modules.event.repository.EventRepository;
@@ -27,30 +23,24 @@ import vn.edu.fpt.seal.modules.participant.repository.RoundParticipantRepository
 import vn.edu.fpt.seal.modules.recognition.service.TeamRecognitionService;
 import vn.edu.fpt.seal.modules.round.entity.Round;
 import vn.edu.fpt.seal.modules.round.entity.RoundDefinition;
-import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
 import vn.edu.fpt.seal.modules.round.repository.RoundDefinitionRepository;
+import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
+import vn.edu.fpt.seal.modules.seeding.entity.EventSeedAssignment;
+import vn.edu.fpt.seal.modules.seeding.service.SeedingService;
 import vn.edu.fpt.seal.modules.team.entity.Team;
 import vn.edu.fpt.seal.modules.team.repository.TeamMemberRepository;
 import vn.edu.fpt.seal.modules.team.repository.TeamRepository;
-import vn.edu.fpt.seal.modules.seeding.entity.EventSeedAssignment;
-import vn.edu.fpt.seal.modules.seeding.service.SeedingService;
+import vn.edu.fpt.seal.modules.timeline.TimelineScope;
+import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
 import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
 import vn.edu.fpt.seal.modules.user.entity.User;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 import vn.edu.fpt.seal.security.CurrentUser;
-import org.springframework.security.core.Authentication;
-import vn.edu.fpt.seal.modules.timeline.TimelineScope;
-import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Service quản lý vòng đời sự kiện.
@@ -204,9 +194,9 @@ public class EventService {
         }
         validateEventDates(
                 req.registrationStart() != null ? req.registrationStart() : e.getRegistrationStart(),
-                req.registrationEnd()   != null ? req.registrationEnd()   : e.getRegistrationEnd(),
-                req.eventStart()        != null ? req.eventStart()        : e.getEventStart(),
-                req.eventEnd()          != null ? req.eventEnd()          : e.getEventEnd());
+                req.registrationEnd() != null ? req.registrationEnd() : e.getRegistrationEnd(),
+                req.eventStart() != null ? req.eventStart() : e.getEventStart(),
+                req.eventEnd() != null ? req.eventEnd() : e.getEventEnd());
         if (req.title() != null) {
             String title = req.title().trim();
             if (!title.equalsIgnoreCase(e.getTitle())
@@ -666,7 +656,9 @@ public class EventService {
                         .event(e).name(GENERAL_TRACK).description("Default track for registered teams").build()));
     }
 
-    /** Finalists per track: explicit value (capped to N), else max(3, ceil(0.1*N)) capped to N. */
+    /**
+     * Finalists per track: explicit value (capped to N), else max(3, ceil(0.1*N)) capped to N.
+     */
     private int resolveFinalists(SetupCompetitionRequest req, int n) {
         int f = (req != null && req.finalistCount() != null)
                 ? req.finalistCount()
@@ -674,7 +666,9 @@ public class EventService {
         return Math.min(Math.max(1, f), n);
     }
 
-    /** Rounds per track: explicit value, else suggested by team count; clamped so funnel is valid. */
+    /**
+     * Rounds per track: explicit value, else suggested by team count; clamped so funnel is valid.
+     */
     private int resolveRounds(SetupCompetitionRequest req, int n, int f) {
         int r = (req != null && req.roundCount() != null) ? req.roundCount() : suggestRounds(n);
         // Can't eliminate anyone if N == F -> a single round. Otherwise at most (N - F) rounds make sense.
@@ -712,7 +706,9 @@ public class EventService {
         return out;
     }
 
-    /** Spread R submission deadlines across the event window (or from now if unset). */
+    /**
+     * Spread R submission deadlines across the event window (or from now if unset).
+     */
     private LocalDateTime[] spreadDeadlines(Event e, int r) {
         LocalDateTime base = e.getEventStart() != null ? e.getEventStart() : LocalDateTime.now();
         LocalDateTime end = e.getEventEnd() != null && e.getEventEnd().isAfter(base)
@@ -734,7 +730,7 @@ public class EventService {
     }
 
     private void validateEventDates(LocalDateTime registrationStart, LocalDateTime registrationEnd,
-                                     LocalDateTime eventStart, LocalDateTime eventEnd) {
+                                    LocalDateTime eventStart, LocalDateTime eventEnd) {
         if (registrationStart != null && registrationEnd != null
                 && !registrationStart.isBefore(registrationEnd)) {
             throw ApiException.badRequest("registrationStart must be before registrationEnd");

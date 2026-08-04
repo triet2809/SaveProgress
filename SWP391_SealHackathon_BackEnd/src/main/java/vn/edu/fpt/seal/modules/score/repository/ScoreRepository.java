@@ -1,11 +1,29 @@
 package vn.edu.fpt.seal.modules.score.repository;
 
-import org.springframework.data.domain.Page; import org.springframework.data.domain.Pageable; import org.springframework.data.jpa.repository.EntityGraph; import org.springframework.data.jpa.repository.JpaRepository; import org.springframework.data.jpa.repository.Query; import org.springframework.data.repository.query.Param; import org.springframework.stereotype.Repository;
-import vn.edu.fpt.seal.modules.score.entity.Score; import java.math.BigDecimal; import java.util.*;
-@Repository public interface ScoreRepository extends JpaRepository<Score, UUID> {
-    Page<Score> findBySubmissionId(UUID submissionId, Pageable pageable); Page<Score> findByJudgeId(UUID judgeId, Pageable pageable);
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import vn.edu.fpt.seal.modules.score.entity.Score;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface ScoreRepository extends JpaRepository<Score, UUID> {
+    Page<Score> findBySubmissionId(UUID submissionId, Pageable pageable);
+
+    Page<Score> findByJudgeId(UUID judgeId, Pageable pageable);
+
     Optional<Score> findBySubmissionIdAndJudgeIdAndCriterionId(UUID submissionId, UUID judgeId, UUID criterionId);
-    @EntityGraph(attributePaths={"submission","submission.round","submission.team","judge","criterion","criterion.round"}) Optional<Score> findWithRelationsById(UUID id);
+
+    @EntityGraph(attributePaths = {"submission", "submission.round", "submission.team", "judge", "criterion", "criterion.round"})
+    Optional<Score> findWithRelationsById(UUID id);
 
     /**
      * Every raw score in a round, flattened with team/criterion/judge ids, used
@@ -37,16 +55,27 @@ import vn.edu.fpt.seal.modules.score.entity.Score; import java.math.BigDecimal; 
 
     interface RoundScoreDetailRow {
         UUID getTeamId();
+
         String getTeamName();
+
         UUID getTrackId();
+
         String getTrackName();
+
         UUID getSubmissionId();
+
         UUID getCriterionId();
+
         String getCriterionName();
+
         BigDecimal getCriterionWeight();
+
         UUID getJudgeId();
+
         String getJudgeName();
+
         BigDecimal getScore();
+
         BigDecimal getWeightedScore();
     }
 }

@@ -13,8 +13,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -34,9 +34,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    /** Filter tự viết để giải mã và xác thực JWT trên mỗi request. */
+    /**
+     * Filter tự viết để giải mã và xác thực JWT trên mỗi request.
+     */
     private final JwtAuthenticationFilter jwtFilter;
-    /** Thuộc tính cấu hình ứng dụng (dùng để lấy danh sách CORS allowed origins). */
+    /**
+     * Thuộc tính cấu hình ứng dụng (dùng để lấy danh sách CORS allowed origins).
+     */
     private final AppProperties appProperties;
 
     /**

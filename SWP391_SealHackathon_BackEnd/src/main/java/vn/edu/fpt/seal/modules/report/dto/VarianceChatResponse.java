@@ -13,4 +13,5 @@ public record VarianceChatResponse(
         String reply,
         VarianceAnalysisResponse.Stats stats,
         List<String> suggestions
-) {}
+) {
+}

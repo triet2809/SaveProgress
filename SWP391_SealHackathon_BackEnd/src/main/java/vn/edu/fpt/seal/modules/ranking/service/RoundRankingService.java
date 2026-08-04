@@ -2,23 +2,27 @@ package vn.edu.fpt.seal.modules.ranking.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.core.Authentication;
 import vn.edu.fpt.seal.common.enums.PromotionStatus;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.criteria.repository.RoundCriterionRepository;
-import vn.edu.fpt.seal.modules.ranking.dto.*;
+import vn.edu.fpt.seal.modules.ranking.dto.RecalculateRankingsRequest;
+import vn.edu.fpt.seal.modules.ranking.dto.RoundRankingResponse;
 import vn.edu.fpt.seal.modules.ranking.entity.RoundRanking;
 import vn.edu.fpt.seal.modules.ranking.mapper.RoundRankingMapper;
 import vn.edu.fpt.seal.modules.ranking.repository.RoundRankingRepository;
+import vn.edu.fpt.seal.modules.recognition.service.TeamRecognitionService;
 import vn.edu.fpt.seal.modules.round.entity.Round;
 import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
 import vn.edu.fpt.seal.modules.team.entity.Team;
 import vn.edu.fpt.seal.modules.team.repository.TeamRepository;
 import vn.edu.fpt.seal.security.AuthorizationService;
-import vn.edu.fpt.seal.modules.recognition.service.TeamRecognitionService;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -36,9 +40,13 @@ public class RoundRankingService {
 
     public RoundRankingService(RoundRankingRepository r, RoundRepository rounds, TeamRepository teams,
                                RoundCriterionRepository criteria, AuthorizationService auth) {
-        this.rankingRepository=r; this.roundRepository=rounds; this.teamRepository=teams;
-        this.criterionRepository=criteria; this.authorizationService=auth; this.lifecycleService=null;
-        this.recognitionService=null;
+        this.rankingRepository = r;
+        this.roundRepository = rounds;
+        this.teamRepository = teams;
+        this.criterionRepository = criteria;
+        this.authorizationService = auth;
+        this.lifecycleService = null;
+        this.recognitionService = null;
     }
 
     @Transactional(readOnly = true)
@@ -132,7 +140,9 @@ public class RoundRankingService {
                 recognitionByTeam.getOrDefault(ranking.getTeam().getId(), List.of()))).toList();
     }
 
-    private static BigDecimal nz(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
+    private static BigDecimal nz(BigDecimal v) {
+        return v == null ? BigDecimal.ZERO : v;
+    }
 
     /**
      * Helper that, given the per-team/per-criterion weighted scores for a round
@@ -141,9 +151,13 @@ public class RoundRankingService {
      * decisive for a given team.
      */
     static final class TieBreaker {
-        /** Ordered (weight desc) distinct criteria seen in the round. */
+        /**
+         * Ordered (weight desc) distinct criteria seen in the round.
+         */
         private final List<CriterionRef> criteriaByWeightDesc = new ArrayList<>();
-        /** teamId -> (criterionId -> weighted score on that criterion). */
+        /**
+         * teamId -> (criterionId -> weighted score on that criterion).
+         */
         private final Map<UUID, Map<UUID, BigDecimal>> byTeam = new HashMap<>();
 
         TieBreaker(List<RoundRankingRepository.TeamCriterionScoreRow> rows) {
@@ -159,7 +173,9 @@ public class RoundRankingService {
             }
         }
 
-        /** Higher score on the highest-weight criterion comes first (negative). */
+        /**
+         * Higher score on the highest-weight criterion comes first (negative).
+         */
         int compareByCriterion(RoundRankingRepository.RoundScoreRow a, RoundRankingRepository.RoundScoreRow b) {
             for (CriterionRef c : criteriaByWeightDesc) {
                 BigDecimal sa = scoreOf(a.getTeamId(), c.id());
@@ -170,7 +186,9 @@ public class RoundRankingService {
             return 0;
         }
 
-        /** The first criterion (by weight) on which this team has any score. */
+        /**
+         * The first criterion (by weight) on which this team has any score.
+         */
         Decisive decisiveFor(UUID teamId) {
             for (CriterionRef c : criteriaByWeightDesc) {
                 BigDecimal s = scoreOf(teamId, c.id());
@@ -185,7 +203,10 @@ public class RoundRankingService {
             return m.getOrDefault(criterionId, BigDecimal.ZERO);
         }
 
-        record CriterionRef(UUID id, String name, BigDecimal weight) {}
-        record Decisive(UUID criterionId, String criterionName, BigDecimal score) {}
+        record CriterionRef(UUID id, String name, BigDecimal weight) {
+        }
+
+        record Decisive(UUID criterionId, String criterionName, BigDecimal score) {
+        }
     }
 }

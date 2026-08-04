@@ -2,27 +2,34 @@ package vn.edu.fpt.seal.modules.mentor.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.core.Authentication;
 import vn.edu.fpt.seal.common.enums.AccountStatus;
 import vn.edu.fpt.seal.common.exception.ApiException;
-import vn.edu.fpt.seal.modules.mentor.dto.*;
+import vn.edu.fpt.seal.modules.mentor.dto.AssignTrackMentorRequest;
+import vn.edu.fpt.seal.modules.mentor.dto.MentorTeamResponse;
+import vn.edu.fpt.seal.modules.mentor.dto.TrackMentorResponse;
 import vn.edu.fpt.seal.modules.mentor.entity.TrackMentor;
 import vn.edu.fpt.seal.modules.mentor.mapper.TrackMentorMapper;
 import vn.edu.fpt.seal.modules.mentor.repository.TrackMentorRepository;
+import vn.edu.fpt.seal.modules.recognition.service.TeamRecognitionService;
+import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
 import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
 import vn.edu.fpt.seal.modules.user.entity.User;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
-import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
-import vn.edu.fpt.seal.modules.recognition.service.TeamRecognitionService;
 import vn.edu.fpt.seal.security.AuthorizationService;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-@Service @RequiredArgsConstructor(onConstructor_ = @Autowired)
+@Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class TrackMentorService {
     private final TrackMentorRepository trackMentorRepository;
     private final TrackRepository trackRepository;
@@ -61,8 +68,10 @@ public class TrackMentorService {
                     : trackMentorRepository.findByEventIdAndUserId(eventId, current.getId(), pageable).map(TrackMentorMapper::toResponse);
         }
         if (eventId == null) throw ApiException.badRequest("eventId is required for coordinator mentor queries");
-        if (trackId != null) return trackMentorRepository.findByEventIdAndTrackId(eventId, trackId, pageable).map(TrackMentorMapper::toResponse);
-        if (userId != null) return trackMentorRepository.findByEventIdAndUserId(eventId, userId, pageable).map(TrackMentorMapper::toResponse);
+        if (trackId != null)
+            return trackMentorRepository.findByEventIdAndTrackId(eventId, trackId, pageable).map(TrackMentorMapper::toResponse);
+        if (userId != null)
+            return trackMentorRepository.findByEventIdAndUserId(eventId, userId, pageable).map(TrackMentorMapper::toResponse);
         return trackMentorRepository.findByEventId(eventId, pageable).map(TrackMentorMapper::toResponse);
     }
 
@@ -70,15 +79,24 @@ public class TrackMentorService {
     public TrackMentorResponse assign(AssignTrackMentorRequest req) {
         Track track = trackRepository.findById(req.trackId()).orElseThrow(() -> ApiException.notFound("Track not found: " + req.trackId()));
         User user = userRepository.findById(req.userId()).orElseThrow(() -> ApiException.notFound("User not found: " + req.userId()));
-        if (user.getStatus() != AccountStatus.approved) throw ApiException.badRequest("Only approved users can be assigned as mentors");
+        if (user.getStatus() != AccountStatus.approved)
+            throw ApiException.badRequest("Only approved users can be assigned as mentors");
         boolean hasMentorRole = user.getRoles() != null && user.getRoles().stream().anyMatch(r -> "mentor".equalsIgnoreCase(r.getName()));
         if (!hasMentorRole) throw ApiException.badRequest("Assigned user must have mentor role");
-        if (trackMentorRepository.existsByTrackIdAndUserId(track.getId(), user.getId())) throw ApiException.conflict("Mentor already assigned to this track");
+        if (trackMentorRepository.existsByTrackIdAndUserId(track.getId(), user.getId()))
+            throw ApiException.conflict("Mentor already assigned to this track");
         return TrackMentorMapper.toResponse(trackMentorRepository.save(TrackMentor.builder().event(track.getEvent()).track(track).user(user).build()));
     }
 
-    @Transactional public void remove(UUID id) { trackMentorRepository.delete(trackMentorRepository.findById(id).orElseThrow(() -> ApiException.notFound("Track mentor assignment not found: " + id))); }
-    @Transactional public void removeByTrackAndUser(UUID trackId, UUID userId) { trackMentorRepository.delete(trackMentorRepository.findByTrackIdAndUserId(trackId, userId).orElseThrow(() -> ApiException.notFound("Track mentor assignment not found"))); }
+    @Transactional
+    public void remove(UUID id) {
+        trackMentorRepository.delete(trackMentorRepository.findById(id).orElseThrow(() -> ApiException.notFound("Track mentor assignment not found: " + id)));
+    }
+
+    @Transactional
+    public void removeByTrackAndUser(UUID trackId, UUID userId) {
+        trackMentorRepository.delete(trackMentorRepository.findByTrackIdAndUserId(trackId, userId).orElseThrow(() -> ApiException.notFound("Track mentor assignment not found")));
+    }
 
     @Transactional(readOnly = true)
     public List<MentorTeamResponse> teams(UUID mentorId, UUID eventId, UUID trackId, UUID roundId, Authentication authentication) {
@@ -103,7 +121,7 @@ public class TrackMentorService {
         var recognitionByTeam = recognitionService == null
                 ? Map.<UUID, List<vn.edu.fpt.seal.modules.recognition.dto.RecognitionDtos.Summary>>of()
                 : recognitionService.activeByTeamIds(
-                        rows.stream().map(TrackMentorRepository.MentorTeamRow::getTeamId).toList());
+                rows.stream().map(TrackMentorRepository.MentorTeamRow::getTeamId).toList());
         return rows.stream().map(row -> MentorTeamResponse.builder()
                 .trackMentorId(row.getTrackMentorId()).mentorId(row.getMentorId()).eventId(row.getEventId()).eventName(row.getEventName())
                 .trackId(row.getTrackId()).trackName(row.getTrackName())

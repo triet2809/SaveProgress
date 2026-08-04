@@ -1,39 +1,40 @@
 package vn.edu.fpt.seal.modules.round.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.fpt.seal.common.enums.EventStatus;
 import vn.edu.fpt.seal.common.exception.ApiException;
+import vn.edu.fpt.seal.modules.audit.entity.AuditLog;
+import vn.edu.fpt.seal.modules.audit.repository.AuditLogRepository;
 import vn.edu.fpt.seal.modules.event.entity.Event;
-import vn.edu.fpt.seal.modules.round.dto.CreateRoundRequest;
-import vn.edu.fpt.seal.modules.round.dto.CreateLogicalRoundRequest;
-import vn.edu.fpt.seal.modules.round.dto.LogicalRoundResponse;
-import vn.edu.fpt.seal.modules.round.dto.RoundResponse;
-import vn.edu.fpt.seal.modules.round.dto.UpdateRoundRequest;
+import vn.edu.fpt.seal.modules.round.dto.*;
 import vn.edu.fpt.seal.modules.round.entity.Round;
 import vn.edu.fpt.seal.modules.round.entity.RoundDefinition;
 import vn.edu.fpt.seal.modules.round.mapper.RoundMapper;
-import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
 import vn.edu.fpt.seal.modules.round.repository.RoundDefinitionRepository;
-import vn.edu.fpt.seal.modules.track.entity.Track;
-import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
-import vn.edu.fpt.seal.modules.audit.entity.AuditLog;
-import vn.edu.fpt.seal.modules.audit.repository.AuditLogRepository;
-import vn.edu.fpt.seal.modules.user.repository.UserRepository;
-import org.springframework.security.core.Authentication;
-import vn.edu.fpt.seal.security.CurrentUser;
-import org.springframework.beans.factory.annotation.Autowired;
-import vn.edu.fpt.seal.modules.timeline.*;
+import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
+import vn.edu.fpt.seal.modules.timeline.TimelineEventType;
+import vn.edu.fpt.seal.modules.timeline.TimelineScope;
+import vn.edu.fpt.seal.modules.timeline.TimelineSourceType;
 import vn.edu.fpt.seal.modules.timeline.dto.TimelineEventRequest;
 import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
+import vn.edu.fpt.seal.modules.track.entity.Track;
+import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
+import vn.edu.fpt.seal.modules.user.repository.UserRepository;
+import vn.edu.fpt.seal.security.CurrentUser;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -70,9 +71,13 @@ public class RoundService {
 
     // Constructor cũ giữ lại cho test đơn lẻ, không cần lifecycle hooks.
     public RoundService(RoundRepository r, TrackRepository t, AuditLogRepository a, UserRepository u) {
-        this.roundRepository=r; this.trackRepository=t; this.auditLogRepository=a; this.userRepository=u;
-        this.lifecycleService=null; this.timelineService=null;
-        this.definitionRepository=null;
+        this.roundRepository = r;
+        this.trackRepository = t;
+        this.auditLogRepository = a;
+        this.userRepository = u;
+        this.lifecycleService = null;
+        this.timelineService = null;
+        this.definitionRepository = null;
     }
 
     // Luồng publish kết quả: kiểm tra đúng event, ghi version kết quả, mở appeal window.
@@ -89,8 +94,9 @@ public class RoundService {
             UUID actorId = auth != null && auth.getPrincipal() instanceof CurrentUser c ? c.getId() : null;
             boolean corrected = round.getResultPublishedAt() != null;
             vn.edu.fpt.seal.modules.resultversion.entity.RoundResultVersion version = null;
-            if (lifecycleService != null) version = lifecycleService.publish(round, actorId == null ? null : userRepository.findById(actorId).orElse(null),
-                    corrected ? "Corrected result republication" : "Initial publication");
+            if (lifecycleService != null)
+                version = lifecycleService.publish(round, actorId == null ? null : userRepository.findById(actorId).orElse(null),
+                        corrected ? "Corrected result republication" : "Initial publication");
             else round.setResultPublishedAt(java.time.LocalDateTime.now());
             auditLogRepository.save(AuditLog.builder()
                     .user(actorId == null ? null : userRepository.findById(actorId).orElse(null))
@@ -119,7 +125,8 @@ public class RoundService {
     public RoundResponse advance(UUID eventId, UUID roundId) {
         // Luồng advance: chỉ chạy khi round đã tới trạng thái READY_TO_ADVANCE sau khi hết appeal.
         Round round = findOrThrow(roundId);
-        if (!round.getTrack().getEvent().getId().equals(eventId)) throw ApiException.badRequest("Round does not belong to the selected event");
+        if (!round.getTrack().getEvent().getId().equals(eventId))
+            throw ApiException.badRequest("Round does not belong to the selected event");
         lifecycleService.advance(round);
         auditLogRepository.save(AuditLog.builder().action(vn.edu.fpt.seal.common.enums.AuditAction.UPDATE)
                 .targetType("round").targetId(roundId).oldValue("READY_TO_ADVANCE").newValue("ADVANCED")
@@ -142,7 +149,8 @@ public class RoundService {
     public RoundResponse resume(UUID eventId, UUID roundId) {
         // Luồng resume: coordinator cho round chạy lại sau khi xử lý appeal xong.
         Round round = findOrThrow(roundId);
-        if (!round.getTrack().getEvent().getId().equals(eventId)) throw ApiException.badRequest("Round does not belong to the selected event");
+        if (!round.getTrack().getEvent().getId().equals(eventId))
+            throw ApiException.badRequest("Round does not belong to the selected event");
         lifecycleService.resume(round);
         auditLogRepository.save(AuditLog.builder().action(vn.edu.fpt.seal.common.enums.AuditAction.UPDATE)
                 .targetType("round").targetId(roundId).newValue(round.getLifecycleState().name())
@@ -237,7 +245,7 @@ public class RoundService {
         }
         int sequence = req.sequenceNumber() == null
                 ? definitionRepository.findTopByEventIdOrderBySequenceNumberDesc(eventId)
-                    .map(definition -> definition.getSequenceNumber() + 1).orElse(1)
+                .map(definition -> definition.getSequenceNumber() + 1).orElse(1)
                 : req.sequenceNumber();
         if (definitionRepository.existsByEventIdAndSequenceNumber(eventId, sequence)) {
             throw ApiException.conflict("Logical round sequence already exists in this event");

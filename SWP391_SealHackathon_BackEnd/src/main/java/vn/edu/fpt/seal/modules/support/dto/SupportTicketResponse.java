@@ -1,1 +1,9 @@
-package vn.edu.fpt.seal.modules.support.dto; import java.time.LocalDateTime; import java.util.UUID; public record SupportTicketResponse(UUID id,UUID requesterId,String requesterName,String requesterEmail,String category,String priority,String subject,String description,String status,LocalDateTime createdAt,LocalDateTime updatedAt){}
+package vn.edu.fpt.seal.modules.support.dto;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+public record SupportTicketResponse(UUID id, UUID requesterId, String requesterName, String requesterEmail,
+                                    String category, String priority, String subject, String description, String status,
+                                    LocalDateTime createdAt, LocalDateTime updatedAt) {
+}

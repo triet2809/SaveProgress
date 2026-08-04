@@ -1,10 +1,10 @@
 package vn.edu.fpt.seal.modules.event.dto;
 
 import lombok.Builder;
+import vn.edu.fpt.seal.modules.seeding.dto.SeedingDtos;
 
 import java.util.List;
 import java.util.UUID;
-import vn.edu.fpt.seal.modules.seeding.dto.SeedingDtos;
 
 /**
  * Result of the one-shot competition setup: what tracks/rounds were generated and

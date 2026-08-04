@@ -1,2 +1,54 @@
-package vn.edu.fpt.seal.modules.participant.controller; import jakarta.validation.Valid; import lombok.RequiredArgsConstructor; import org.springframework.data.domain.*; import org.springframework.http.ResponseEntity; import org.springframework.security.access.prepost.PreAuthorize; import org.springframework.web.bind.annotation.*; import vn.edu.fpt.seal.common.enums.RoundParticipantStatus; import vn.edu.fpt.seal.modules.participant.dto.*; import vn.edu.fpt.seal.modules.participant.service.RoundParticipantService; import java.util.UUID;
-@RestController @RequestMapping("/round-participants") @RequiredArgsConstructor public class RoundParticipantController{private final RoundParticipantService service; @GetMapping @PreAuthorize("isAuthenticated()") public ResponseEntity<Page<RoundParticipantResponse>> list(@RequestParam(required=false) UUID roundId,@RequestParam(required=false) UUID teamId,@RequestParam(required=false) RoundParticipantStatus status,Pageable p){return ResponseEntity.ok(service.list(roundId,teamId,status,p));} @GetMapping("/{id}") @PreAuthorize("isAuthenticated()") public ResponseEntity<RoundParticipantResponse> get(@PathVariable UUID id){return ResponseEntity.ok(service.get(id));} @PostMapping @PreAuthorize("hasRole('COORDINATOR')") public ResponseEntity<RoundParticipantResponse> add(@Valid @RequestBody AddRoundParticipantRequest r){return ResponseEntity.ok(service.add(r));} @PatchMapping("/{id}") @PreAuthorize("hasRole('COORDINATOR')") public ResponseEntity<RoundParticipantResponse> update(@PathVariable UUID id,@Valid @RequestBody UpdateRoundParticipantRequest r){return ResponseEntity.ok(service.update(id,r));} @DeleteMapping("/{id}") @PreAuthorize("hasRole('COORDINATOR')") public ResponseEntity<Void> delete(@PathVariable UUID id){service.delete(id); return ResponseEntity.noContent().build();}}
+package vn.edu.fpt.seal.modules.participant.controller;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import vn.edu.fpt.seal.common.enums.RoundParticipantStatus;
+import vn.edu.fpt.seal.modules.participant.dto.AddRoundParticipantRequest;
+import vn.edu.fpt.seal.modules.participant.dto.RoundParticipantResponse;
+import vn.edu.fpt.seal.modules.participant.dto.UpdateRoundParticipantRequest;
+import vn.edu.fpt.seal.modules.participant.service.RoundParticipantService;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/round-participants")
+@RequiredArgsConstructor
+public class RoundParticipantController {
+    private final RoundParticipantService service;
+
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Page<RoundParticipantResponse>> list(@RequestParam(required = false) UUID roundId, @RequestParam(required = false) UUID teamId, @RequestParam(required = false) RoundParticipantStatus status, Pageable p) {
+        return ResponseEntity.ok(service.list(roundId, teamId, status, p));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<RoundParticipantResponse> get(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.get(id));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<RoundParticipantResponse> add(@Valid @RequestBody AddRoundParticipantRequest r) {
+        return ResponseEntity.ok(service.add(r));
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<RoundParticipantResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateRoundParticipantRequest r) {
+        return ResponseEntity.ok(service.update(id, r));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+}

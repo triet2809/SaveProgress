@@ -1,13 +1,18 @@
 package vn.edu.fpt.seal.modules.ranking.repository;
 
-import org.springframework.data.domain.*;
-import org.springframework.data.jpa.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.edu.fpt.seal.modules.ranking.entity.RoundRanking;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface RoundRankingRepository extends JpaRepository<RoundRanking, UUID> {
@@ -15,7 +20,9 @@ public interface RoundRankingRepository extends JpaRepository<RoundRanking, UUID
     Page<RoundRanking> findByRoundId(UUID roundId, Pageable pageable);
 
     Optional<RoundRanking> findByRoundIdAndTeamId(UUID roundId, UUID teamId);
+
     boolean existsByTeamId(UUID teamId);
+
     boolean existsByRoundId(UUID roundId);
 
     void deleteByRoundId(UUID roundId);
@@ -58,15 +65,21 @@ public interface RoundRankingRepository extends JpaRepository<RoundRanking, UUID
 
     interface RoundScoreRow {
         UUID getTeamId();
+
         BigDecimal getTotalScore();
+
         String getTeamName();
     }
 
     interface TeamCriterionScoreRow {
         UUID getTeamId();
+
         UUID getCriterionId();
+
         String getCriterionName();
+
         BigDecimal getCriterionWeight();
+
         BigDecimal getCriterionScore();
     }
 }

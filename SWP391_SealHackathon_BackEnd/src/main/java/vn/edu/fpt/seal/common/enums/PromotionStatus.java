@@ -4,12 +4,20 @@ package vn.edu.fpt.seal.common.enums;
  * Trạng thái thăng hạng của đội thi qua các vòng.
  */
 public enum PromotionStatus {
-    /** Chưa xét. */
+    /**
+     * Chưa xét.
+     */
     pending,
-    /** Được thăng lên vòng tiếp theo. */
+    /**
+     * Được thăng lên vòng tiếp theo.
+     */
     promoted,
-    /** Bị loại. */
+    /**
+     * Bị loại.
+     */
     eliminated,
-    /** Bị truất quyền. */
+    /**
+     * Bị truất quyền.
+     */
     disqualified
 }

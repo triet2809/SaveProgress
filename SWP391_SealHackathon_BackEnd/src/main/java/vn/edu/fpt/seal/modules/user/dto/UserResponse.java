@@ -1,10 +1,12 @@
 package vn.edu.fpt.seal.modules.user.dto;
 
 import lombok.Builder;
-import vn.edu.fpt.seal.common.enums.*;
+import vn.edu.fpt.seal.common.enums.AccountStatus;
+import vn.edu.fpt.seal.common.enums.StudentType;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @Builder
 public record UserResponse(
@@ -28,4 +30,5 @@ public record UserResponse(
         List<String> roles,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
-) {}
+) {
+}

@@ -14,4 +14,4 @@ package vn.edu.fpt.seal.common.enums;
  *   <li>{@code READY_FOR_AWARDS} – sẵn sàng trao giải.</li>
  * </ul>
  */
-public enum RoundLifecycleState { SCORING, APPEAL_WINDOW_OPEN, PAUSED_FOR_APPEAL, AWAITING_RECALCULATION, READY_TO_ADVANCE, ADVANCED, READY_FOR_AWARDS }
+public enum RoundLifecycleState {SCORING, APPEAL_WINDOW_OPEN, PAUSED_FOR_APPEAL, AWAITING_RECALCULATION, READY_TO_ADVANCE, ADVANCED, READY_FOR_AWARDS}

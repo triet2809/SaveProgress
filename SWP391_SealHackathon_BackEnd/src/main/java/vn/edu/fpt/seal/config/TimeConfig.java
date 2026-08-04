@@ -1,5 +1,8 @@
 package vn.edu.fpt.seal.config;
-import org.springframework.context.annotation.*;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import java.time.Clock;
 
 /**
@@ -10,6 +13,13 @@ import java.time.Clock;
  * dễ kiểm thử (có thể thay bằng đồng hồ cố định trong test) và đảm bảo mọi
  * mốc thời gian nghiệp vụ đều tính theo cùng một chuẩn UTC.</p>
  */
-@Configuration public class TimeConfig {
-    /** Bean đồng hồ hệ thống theo UTC, dùng cho các tính toán thời gian nghiệp vụ. */
-    @Bean public Clock applicationClock() { return Clock.systemUTC(); } }
+@Configuration
+public class TimeConfig {
+    /**
+     * Bean đồng hồ hệ thống theo UTC, dùng cho các tính toán thời gian nghiệp vụ.
+     */
+    @Bean
+    public Clock applicationClock() {
+        return Clock.systemUTC();
+    }
+}

@@ -10,12 +10,13 @@ import java.util.List;
  * One-shot "build the competition" wizard input (fired when registration closes).
  * <p>
  * - tracks: the thematic groups to create. If null/empty, a single "General" track
- *   is used and every registered team stays in it.
+ * is used and every registered team stays in it.
  * - finalistCount (F): desired number of finalists PER TRACK. If null, defaults to
- *   max(3, ceil(0.1 * teamsInTrack)).
+ * max(3, ceil(0.1 * teamsInTrack)).
  * - roundCount (R): number of elimination rounds PER TRACK. If null, suggested from
- *   team count: &lt;=8 -&gt; 1, 9-30 -&gt; 2, 31-80 -&gt; 3, &gt;80 -&gt; 4.
+ * team count: &lt;=8 -&gt; 1, 9-30 -&gt; 2, 31-80 -&gt; 3, &gt;80 -&gt; 4.
  */
+
 /**
  * Dữ liệu đầu vào cho wizard "dựng cuộc thi" một lần (chạy khi đóng đăng ký).
  * <p>

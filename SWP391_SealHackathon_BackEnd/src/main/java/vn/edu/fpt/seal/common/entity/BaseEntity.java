@@ -24,18 +24,24 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity {
 
-    /** Khóa chính dạng UUID, sinh tự động, không cho phép cập nhật sau khi tạo. */
+    /**
+     * Khóa chính dạng UUID, sinh tự động, không cho phép cập nhật sau khi tạo.
+     */
     @Id
     @GeneratedValue
     @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
     private UUID id;
 
-    /** Thời điểm tạo bản ghi, gán tự động một lần khi tạo, không thay đổi sau đó. */
+    /**
+     * Thời điểm tạo bản ghi, gán tự động một lần khi tạo, không thay đổi sau đó.
+     */
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /** Thời điểm cập nhật gần nhất, gán tự động mỗi lần lưu thay đổi. */
+    /**
+     * Thời điểm cập nhật gần nhất, gán tự động mỗi lần lưu thay đổi.
+     */
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

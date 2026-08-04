@@ -8,11 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import vn.edu.fpt.seal.modules.report.dto.AnonymizedDatasetResponse;
-import vn.edu.fpt.seal.modules.report.dto.JudgeVarianceResponse;
-import vn.edu.fpt.seal.modules.report.dto.VarianceAnalysisResponse;
-import vn.edu.fpt.seal.modules.report.dto.VarianceChatRequest;
-import vn.edu.fpt.seal.modules.report.dto.VarianceChatResponse;
+import vn.edu.fpt.seal.modules.report.dto.*;
 import vn.edu.fpt.seal.modules.report.service.AiVarianceAnalysisService;
 import vn.edu.fpt.seal.modules.report.service.ReportService;
 
@@ -21,10 +17,10 @@ import java.util.UUID;
 
 /**
  * Coordinator-facing reporting/analytics over a round's scores:
- *  - #11 ranking CSV export
- *  - #12 anonymized dataset export
- *  - #13 inter-judge variance dashboard
- *
+ * - #11 ranking CSV export
+ * - #12 anonymized dataset export
+ * - #13 inter-judge variance dashboard
+ * <p>
  * All endpoints are read-only and coordinator-only (they expose cross-team
  * data that participants must not see).
  */
@@ -41,7 +37,7 @@ public class ReportController {
     @PreAuthorize("hasRole('COORDINATOR')")
     @Operation(summary = "Inter-judge variance per team/criterion for a round (#13)")
     public ResponseEntity<List<JudgeVarianceResponse>> judgeVariance(@PathVariable UUID roundId,
-            @RequestParam UUID eventId, @RequestParam(required=false) UUID trackId) {
+                                                                     @RequestParam UUID eventId, @RequestParam(required = false) UUID trackId) {
         return ResponseEntity.ok(reportService.judgeVariance(eventId, roundId, trackId));
     }
 
@@ -51,8 +47,8 @@ public class ReportController {
             + "Statistics are computed in code; the LLM only narrates. Data sent to the "
             + "external LLM is anonymized. Falls back to stats-only if AI is unavailable.")
     public ResponseEntity<VarianceAnalysisResponse> varianceAnalysis(@PathVariable UUID roundId,
-            @RequestParam UUID eventId, @RequestParam(required=false) UUID trackId,
-            @RequestParam(defaultValue = "false") boolean refresh) {
+                                                                     @RequestParam UUID eventId, @RequestParam(required = false) UUID trackId,
+                                                                     @RequestParam(defaultValue = "false") boolean refresh) {
         return ResponseEntity.ok(aiVarianceAnalysisService.analyze(eventId, roundId, trackId, refresh));
     }
 
@@ -60,8 +56,8 @@ public class ReportController {
     @PreAuthorize("hasRole('COORDINATOR')")
     @Operation(summary = "Chat with the AI about variance patterns in the round")
     public ResponseEntity<VarianceChatResponse> varianceChat(@PathVariable UUID roundId,
-            @RequestParam UUID eventId, @RequestParam(required=false) UUID trackId,
-            @RequestBody(required = false) VarianceChatRequest request) {
+                                                             @RequestParam UUID eventId, @RequestParam(required = false) UUID trackId,
+                                                             @RequestBody(required = false) VarianceChatRequest request) {
         return ResponseEntity.ok(aiVarianceAnalysisService.chat(eventId, roundId, trackId, request));
     }
 

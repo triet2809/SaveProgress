@@ -5,10 +5,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import vn.edu.fpt.seal.modules.staff.dto.*;
+import vn.edu.fpt.seal.modules.staff.dto.EventStaffResponse;
+import vn.edu.fpt.seal.modules.staff.dto.InviteStaffRequest;
+import vn.edu.fpt.seal.modules.staff.dto.UpdateStaffAssignmentsRequest;
 import vn.edu.fpt.seal.modules.staff.service.EventStaffService;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/events/{eventId}/staff")

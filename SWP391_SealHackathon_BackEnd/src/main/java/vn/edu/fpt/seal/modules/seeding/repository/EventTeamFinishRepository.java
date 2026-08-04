@@ -8,12 +8,18 @@ import vn.edu.fpt.seal.common.enums.EventStatus;
 import vn.edu.fpt.seal.common.enums.TeamStatus;
 import vn.edu.fpt.seal.modules.seeding.entity.EventTeamFinish;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public interface EventTeamFinishRepository extends JpaRepository<EventTeamFinish, UUID> {
     boolean existsByTeamId(UUID teamId);
+
     Optional<EventTeamFinish> findByTeamId(UUID teamId);
+
     long countByTrackId(UUID trackId);
+
     long countByFinalRoundId(UUID finalRoundId);
 
     @EntityGraph(attributePaths = {"event", "track", "team", "teamProfile", "finalRound", "resultVersion"})

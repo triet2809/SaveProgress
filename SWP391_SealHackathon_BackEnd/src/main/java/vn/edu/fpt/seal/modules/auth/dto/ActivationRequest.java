@@ -1,6 +1,9 @@
 package vn.edu.fpt.seal.modules.auth.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /**
  * DTO nhận dữ liệu kích hoạt tài khoản: đặt mật khẩu lần đầu qua token kích hoạt.
@@ -14,4 +17,5 @@ public record ActivationRequest(
         @NotBlank String token,
         @NotBlank @Size(min = 8, max = 72) String password,
         @NotBlank String confirmPassword,
-        @NotNull @AssertTrue(message = "Terms and Privacy Policy acceptance is required") Boolean acceptedTerms) {}
+        @NotNull @AssertTrue(message = "Terms and Privacy Policy acceptance is required") Boolean acceptedTerms) {
+}

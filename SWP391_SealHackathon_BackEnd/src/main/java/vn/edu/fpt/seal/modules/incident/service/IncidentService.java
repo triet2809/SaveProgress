@@ -1,6 +1,7 @@
 package vn.edu.fpt.seal.modules.incident.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +26,11 @@ import vn.edu.fpt.seal.modules.submission.entity.Submission;
 import vn.edu.fpt.seal.modules.submission.repository.SubmissionRepository;
 import vn.edu.fpt.seal.modules.team.entity.Team;
 import vn.edu.fpt.seal.modules.team.repository.TeamRepository;
+import vn.edu.fpt.seal.modules.timeline.TimelineEventType;
+import vn.edu.fpt.seal.modules.timeline.TimelineScope;
+import vn.edu.fpt.seal.modules.timeline.TimelineSourceType;
+import vn.edu.fpt.seal.modules.timeline.dto.TimelineEventRequest;
+import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
 import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.track.repository.TrackRepository;
 import vn.edu.fpt.seal.modules.user.entity.User;
@@ -35,15 +41,12 @@ import vn.edu.fpt.seal.security.CurrentUser;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Autowired;
-import vn.edu.fpt.seal.modules.timeline.*;
-import vn.edu.fpt.seal.modules.timeline.dto.TimelineEventRequest;
-import vn.edu.fpt.seal.modules.timeline.service.TimelineService;
 
 @Service
 @RequiredArgsConstructor
 public class IncidentService {
-    @Autowired private TimelineService timeline;
+    @Autowired
+    private TimelineService timeline;
     private final IncidentReportRepository reportRepository;
     private final IncidentEvidenceRepository evidenceRepository;
     private final IncidentActionRepository actionRepository;
@@ -66,10 +69,10 @@ public class IncidentService {
         Page<IncidentReport> source = eventId != null
                 ? reportRepository.findByEventId(eventId, pageable)
                 : reporterId != null
-                    ? reportRepository.findByReporterId(reporterId, pageable)
-                    : status != null
-                        ? reportRepository.findByStatus(status, pageable)
-                        : reportRepository.findAll(pageable);
+                ? reportRepository.findByReporterId(reporterId, pageable)
+                : status != null
+                ? reportRepository.findByStatus(status, pageable)
+                : reportRepository.findAll(pageable);
         List<IncidentResponse> visible = source.stream()
                 .filter(incident -> authorizationService.canReadIncident(user, incident))
                 .map(this::toResponse)
@@ -99,7 +102,7 @@ public class IncidentService {
                 .orElseThrow(() -> ApiException.notFound("Team not found: " + request.teamId()));
         Submission submission = request.submissionId() == null ? null
                 : submissionRepository.findWithRelationsById(request.submissionId())
-                    .orElseThrow(() -> ApiException.notFound("Submission not found: " + request.submissionId()));
+                .orElseThrow(() -> ApiException.notFound("Submission not found: " + request.submissionId()));
 
         validateHierarchy(event, track, round, team, submission);
 
@@ -134,8 +137,8 @@ public class IncidentService {
         TimelineEventType type = request.status() == IncidentStatus.resolved
                 ? TimelineEventType.INCIDENT_RESOLVED
                 : request.status() == IncidentStatus.rejected
-                    ? TimelineEventType.INCIDENT_DISMISSED
-                    : TimelineEventType.INCIDENT_UNDER_REVIEW;
+                ? TimelineEventType.INCIDENT_DISMISSED
+                : TimelineEventType.INCIDENT_UNDER_REVIEW;
         record(incident, type, type == TimelineEventType.INCIDENT_RESOLVED ? "Incident resolved"
                         : type == TimelineEventType.INCIDENT_DISMISSED ? "Incident dismissed" : "Incident under review",
                 type == TimelineEventType.INCIDENT_RESOLVED ? "The incident review was closed"
@@ -230,6 +233,7 @@ public class IncidentService {
                 evidenceRepository.findByIncidentIdOrderByCreatedAtAsc(incident.getId()),
                 actionRepository.findByIncidentIdOrderByCreatedAtAsc(incident.getId()));
     }
+
     private void record(IncidentReport i, TimelineEventType type, String title, String description, String suffix) {
         if (timeline == null) return;
         TimelineScope scope = i.getRound() != null || i.getTrack() != null

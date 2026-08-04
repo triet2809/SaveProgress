@@ -15,9 +15,9 @@ import java.util.Map;
 /**
  * {@link LlmClient} backed by the Google Generative Language API (Gemini),
  * usable with a Google AI Studio key.
- *
+ * <p>
  * Endpoint: POST {baseUrl}/v1beta/models/{model}:generateContent?key=API_KEY
- *
+ * <p>
  * The key is passed as a query param per Google's spec. We never log the key or
  * the full URL. Any non-2xx / transport / parse problem becomes an
  * {@link LlmException} so the service layer can fall back to code-only stats.
@@ -89,7 +89,9 @@ public class GeminiClient implements LlmClient {
         return extractText(raw);
     }
 
-    /** Pull candidates[0].content.parts[*].text out of the Gemini response. */
+    /**
+     * Pull candidates[0].content.parts[*].text out of the Gemini response.
+     */
     private String extractText(String raw) {
         if (raw == null || raw.isBlank()) {
             throw new LlmException("Empty response from Gemini");

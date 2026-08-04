@@ -1,6 +1,7 @@
 package vn.edu.fpt.seal.modules.user.dto;
 
 import jakarta.validation.constraints.Size;
+
 import java.util.UUID;
 
 public record UpdateCurrentUserRequest(
@@ -14,4 +15,5 @@ public record UpdateCurrentUserRequest(
         @Size(max = 2000) String bio,
         UUID universityId,
         UUID campusId
-) {}
+) {
+}

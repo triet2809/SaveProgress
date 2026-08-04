@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.ranking.dto.RoundRankingResponse;
-import vn.edu.fpt.seal.modules.ranking.entity.RoundRanking;
 import vn.edu.fpt.seal.modules.ranking.mapper.RoundRankingMapper;
 import vn.edu.fpt.seal.modules.ranking.repository.RoundRankingRepository;
 import vn.edu.fpt.seal.modules.report.dto.AnonymizedDatasetResponse;
@@ -21,10 +20,10 @@ import java.util.*;
 
 /**
  * Read-only reporting/analytics over a round's scores:
- *  - #11 ranking CSV export
- *  - #12 anonymized dataset export
- *  - #13 inter-judge variance dashboard
- *
+ * - #11 ranking CSV export
+ * - #12 anonymized dataset export
+ * - #13 inter-judge variance dashboard
+ * <p>
  * All three derive from the same raw score rows so the numbers are consistent
  * with what the ranking endpoint produces.
  */
@@ -51,8 +50,10 @@ public class ReportService {
     @Transactional(readOnly = true)
     public List<JudgeVarianceResponse> judgeVariance(UUID eventId, UUID roundId, UUID trackId) {
         Round round = requireRound(roundId);
-        if (!round.getTrack().getEvent().getId().equals(eventId)) throw ApiException.badRequest("Round does not belong to the selected event");
-        if (trackId != null && !round.getTrack().getId().equals(trackId)) throw ApiException.badRequest("Track is not relevant to the selected round");
+        if (!round.getTrack().getEvent().getId().equals(eventId))
+            throw ApiException.badRequest("Round does not belong to the selected event");
+        if (trackId != null && !round.getTrack().getId().equals(trackId))
+            throw ApiException.badRequest("Track is not relevant to the selected round");
         List<RoundScoreDetailRow> rows = scoreRepository.findRoundScoreDetails(roundId, trackId);
 
         // group raw scores by team+criterion
@@ -163,7 +164,9 @@ public class ReportService {
 
     // ---- helpers -----------------------------------------------------------
 
-    /** RFC-4180-ish CSV escaping: quote when the value has comma/quote/newline. */
+    /**
+     * RFC-4180-ish CSV escaping: quote when the value has comma/quote/newline.
+     */
     private static String csv(String v) {
         if (v == null) return "";
         if (v.contains(",") || v.contains("\"") || v.contains("\n") || v.contains("\r")) {
@@ -172,7 +175,9 @@ public class ReportService {
         return v;
     }
 
-    /** 0 -> A, 1 -> B ... 25 -> Z, 26 -> AA ... */
+    /**
+     * 0 -> A, 1 -> B ... 25 -> Z, 26 -> AA ...
+     */
     private static String alpha(int idx) {
         StringBuilder sb = new StringBuilder();
         int n = idx;
@@ -183,6 +188,11 @@ public class ReportService {
         return sb.toString();
     }
 
-    private static BigDecimal round2(double v) { return BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP); }
-    private static BigDecimal round4(double v) { return BigDecimal.valueOf(v).setScale(4, RoundingMode.HALF_UP); }
+    private static BigDecimal round2(double v) {
+        return BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static BigDecimal round4(double v) {
+        return BigDecimal.valueOf(v).setScale(4, RoundingMode.HALF_UP);
+    }
 }

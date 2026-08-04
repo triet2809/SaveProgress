@@ -33,4 +33,5 @@ public record GoogleLoginRequest(
         UUID universityId,
         String universityName,
         UUID campusId
-) {}
+) {
+}

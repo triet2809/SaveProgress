@@ -1,6 +1,8 @@
 package vn.edu.fpt.seal.modules.user.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import vn.edu.fpt.seal.common.enums.AccountStatus;
 import vn.edu.fpt.seal.common.enums.StudentType;
 
@@ -23,4 +25,5 @@ public record CreateUserRequest(
         UUID campusId,
         AccountStatus status,
         Set<@NotBlank String> roles
-) {}
+) {
+}

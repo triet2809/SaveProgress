@@ -19,25 +19,33 @@ import java.util.*;
  * Computes the quantitative layer of the variance analysis, entirely in code
  * (deterministic, reproducible, cheap). The LLM never recomputes these numbers;
  * it only interprets them.
- *
+ * <p>
  * On top of the plain per-(team,criterion) variance it adds two things the raw
  * numbers hide:
- *   - pattern classification: is a high variance caused by ONE outlier judge,
- *     a POLARIZED split, or a general SPREAD?
- *   - per-judge bias across the whole round: is a judge systematically LENIENT
- *     or HARSH vs. their peers, or just INCONSISTENT?
+ * - pattern classification: is a high variance caused by ONE outlier judge,
+ * a POLARIZED split, or a general SPREAD?
+ * - per-judge bias across the whole round: is a judge systematically LENIENT
+ * or HARSH vs. their peers, or just INCONSISTENT?
  */
 @Service
 @RequiredArgsConstructor
 public class VarianceStatsService {
 
-    /** Variance at/above this is flagged as "high" (matches the FE threshold). */
+    /**
+     * Variance at/above this is flagged as "high" (matches the FE threshold).
+     */
     public static final double HIGH_VARIANCE = 10.0;
-    /** A score this many stddevs from the mean is a candidate outlier. */
+    /**
+     * A score this many stddevs from the mean is a candidate outlier.
+     */
     private static final double OUTLIER_Z = 1.5;
-    /** Avg deviation beyond this (points) marks a judge lenient/harsh. */
+    /**
+     * Avg deviation beyond this (points) marks a judge lenient/harsh.
+     */
     private static final double BIAS_POINTS = 1.0;
-    /** How many hotspots to surface (highest variance first). */
+    /**
+     * How many hotspots to surface (highest variance first).
+     */
     private static final int MAX_HOTSPOTS = 15;
 
     private final ScoreRepository scoreRepository;
@@ -47,8 +55,10 @@ public class VarianceStatsService {
     public Stats compute(UUID eventId, UUID roundId, UUID trackId) {
         var round = roundRepository.findById(roundId)
                 .orElseThrow(() -> ApiException.notFound("Round not found: " + roundId));
-        if (!round.getTrack().getEvent().getId().equals(eventId)) throw ApiException.badRequest("Round does not belong to the selected event");
-        if (trackId != null && !round.getTrack().getId().equals(trackId)) throw ApiException.badRequest("Track is not relevant to the selected round");
+        if (!round.getTrack().getEvent().getId().equals(eventId))
+            throw ApiException.badRequest("Round does not belong to the selected event");
+        if (trackId != null && !round.getTrack().getId().equals(trackId))
+            throw ApiException.badRequest("Track is not relevant to the selected round");
         List<RoundScoreDetailRow> rows = scoreRepository.findRoundScoreDetails(roundId, trackId);
 
         // Group raw scores by team+criterion.
@@ -153,7 +163,10 @@ public class VarianceStatsService {
         double maxAbsDev = -1;
         for (RoundScoreDetailRow r : g) {
             double dev = Math.abs(r.getScore().doubleValue() - mean);
-            if (dev > maxAbsDev) { maxAbsDev = dev; extreme = r; }
+            if (dev > maxAbsDev) {
+                maxAbsDev = dev;
+                extreme = r;
+            }
         }
         if (extreme == null || maxAbsDev < OUTLIER_Z * stddev) return null;
 
@@ -161,7 +174,10 @@ public class VarianceStatsService {
         List<Double> rest = new ArrayList<>();
         boolean dropped = false;
         for (RoundScoreDetailRow r : g) {
-            if (!dropped && r == extreme) { dropped = true; continue; }
+            if (!dropped && r == extreme) {
+                dropped = true;
+                continue;
+            }
             rest.add(r.getScore().doubleValue());
         }
         double restMean = rest.stream().mapToDouble(Double::doubleValue).average().orElse(0);
@@ -180,8 +196,13 @@ public class VarianceStatsService {
         double maxBelow = Double.NEGATIVE_INFINITY, minAbove = Double.POSITIVE_INFINITY;
         for (BigDecimal s : scores) {
             double v = s.doubleValue();
-            if (v < mean) { below++; maxBelow = Math.max(maxBelow, v); }
-            else if (v > mean) { above++; minAbove = Math.min(minAbove, v); }
+            if (v < mean) {
+                below++;
+                maxBelow = Math.max(maxBelow, v);
+            } else if (v > mean) {
+                above++;
+                minAbove = Math.min(minAbove, v);
+            }
         }
         if (below < 2 || above < 2) return false;
         // A visible gap separating the two clusters.
@@ -223,9 +244,17 @@ public class VarianceStatsService {
         final String name;
         final List<Double> deviations = new ArrayList<>();
         int outlierCount = 0;
-        JudgeAcc(String name) { this.name = name; }
+
+        JudgeAcc(String name) {
+            this.name = name;
+        }
     }
 
-    private static BigDecimal round2(double v) { return BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP); }
-    private static BigDecimal round4(double v) { return BigDecimal.valueOf(v).setScale(4, RoundingMode.HALF_UP); }
+    private static BigDecimal round2(double v) {
+        return BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static BigDecimal round4(double v) {
+        return BigDecimal.valueOf(v).setScale(4, RoundingMode.HALF_UP);
+    }
 }

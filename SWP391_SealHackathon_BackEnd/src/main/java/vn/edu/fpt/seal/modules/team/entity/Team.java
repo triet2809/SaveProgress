@@ -6,8 +6,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import vn.edu.fpt.seal.common.entity.BaseEntity;
 import vn.edu.fpt.seal.common.enums.TeamStatus;
-import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.teamprofile.entity.TeamProfile;
+import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.user.entity.User;
 
 import java.time.LocalDateTime;
@@ -41,7 +41,9 @@ public class Team extends BaseEntity {
     @Column(name = "disqualified_reason", columnDefinition = "text")
     private String disqualifiedReason;
 
-    /** Short human-friendly invite code (6 chars) used to join the team. */
+    /**
+     * Short human-friendly invite code (6 chars) used to join the team.
+     */
     @Column(name = "invite_code", length = 12, unique = true)
     private String inviteCode;
 

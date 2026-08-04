@@ -17,21 +17,33 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "event_team_finishes")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class EventTeamFinish {
-    @Id @GeneratedValue @Column(columnDefinition = "uuid")
+    @Id
+    @GeneratedValue
+    @Column(columnDefinition = "uuid")
     private UUID id;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "event_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "event_id")
     private Event event;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "track_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "track_id")
     private Track track;
-    @OneToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "team_id")
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "team_id")
     private Team team;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "team_profile_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "team_profile_id")
     private TeamProfile teamProfile;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "final_round_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "final_round_id")
     private Round finalRound;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "result_version_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "result_version_id")
     private RoundResultVersion resultVersion;
     @Column(name = "final_rank", nullable = false)
     private Integer finalRank;
@@ -41,10 +53,13 @@ public class EventTeamFinish {
     private String completionStatus;
     @Column(name = "completed_at", nullable = false)
     private LocalDateTime completedAt;
-    @CreationTimestamp @Column(name = "created_at", nullable = false, updatable = false)
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "created_by")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
     private User createdBy;
-    @Version @Column(name = "row_version", nullable = false)
+    @Version
+    @Column(name = "row_version", nullable = false)
     private Long rowVersion;
 }

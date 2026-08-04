@@ -1,15 +1,19 @@
 package vn.edu.fpt.seal.modules.submission.mapper;
 
+import vn.edu.fpt.seal.modules.recognition.dto.RecognitionDtos;
 import vn.edu.fpt.seal.modules.submission.dto.SubmissionResponse;
 import vn.edu.fpt.seal.modules.submission.entity.Submission;
-import vn.edu.fpt.seal.modules.recognition.dto.RecognitionDtos;
+
 import java.util.List;
 
 public final class SubmissionMapper {
-    private SubmissionMapper() {}
+    private SubmissionMapper() {
+    }
+
     public static SubmissionResponse toResponse(Submission s) {
         return toResponse(s, List.of());
     }
+
     public static SubmissionResponse toResponse(
             Submission s, List<RecognitionDtos.Summary> recognitions) {
         return SubmissionResponse.builder()

@@ -1,4 +1,47 @@
 package vn.edu.fpt.seal.modules.participant.entity;
-import jakarta.persistence.*; import lombok.*; import org.hibernate.annotations.CreationTimestamp; import org.hibernate.annotations.UpdateTimestamp; import org.hibernate.annotations.JdbcTypeCode; import org.hibernate.type.SqlTypes; import vn.edu.fpt.seal.common.enums.RoundParticipantStatus; import vn.edu.fpt.seal.modules.round.entity.Round; import vn.edu.fpt.seal.modules.team.entity.Team; import java.time.LocalDateTime; import java.util.UUID;
-@Entity @Table(name="round_participants", uniqueConstraints=@UniqueConstraint(name="uq_round_participants_round_team", columnNames={"round_id","team_id"})) @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class RoundParticipant { @Id @GeneratedValue @Column(name="id",updatable=false,nullable=false,columnDefinition="uuid") private UUID id; @ManyToOne(fetch=FetchType.LAZY,optional=false) @JoinColumn(name="round_id",nullable=false) private Round round; @ManyToOne(fetch=FetchType.LAZY,optional=false) @JoinColumn(name="team_id",nullable=false) private Team team; @Enumerated(EnumType.STRING) @JdbcTypeCode(SqlTypes.NAMED_ENUM) @Column(name="status",nullable=false,columnDefinition="round_participant_status") @Builder.Default private RoundParticipantStatus status=RoundParticipantStatus.pending; @Column(name="note",columnDefinition="text") private String note; @CreationTimestamp @Column(name="created_at",nullable=false,updatable=false) private LocalDateTime createdAt; @UpdateTimestamp @Column(name="updated_at") private LocalDateTime updatedAt; }
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
+import vn.edu.fpt.seal.common.enums.RoundParticipantStatus;
+import vn.edu.fpt.seal.modules.round.entity.Round;
+import vn.edu.fpt.seal.modules.team.entity.Team;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "round_participants", uniqueConstraints = @UniqueConstraint(name = "uq_round_participants_round_team", columnNames = {"round_id", "team_id"}))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class RoundParticipant {
+    @Id
+    @GeneratedValue
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
+    private UUID id;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "round_id", nullable = false)
+    private Round round;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "team_id", nullable = false)
+    private Team team;
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "status", nullable = false, columnDefinition = "round_participant_status")
+    @Builder.Default
+    private RoundParticipantStatus status = RoundParticipantStatus.pending;
+    @Column(name = "note", columnDefinition = "text")
+    private String note;
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+}

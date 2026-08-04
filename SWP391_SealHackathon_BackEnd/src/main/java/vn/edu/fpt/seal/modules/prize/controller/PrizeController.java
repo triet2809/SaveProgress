@@ -1,2 +1,53 @@
-package vn.edu.fpt.seal.modules.prize.controller; import jakarta.validation.Valid; import lombok.RequiredArgsConstructor; import org.springframework.data.domain.*; import org.springframework.http.ResponseEntity; import org.springframework.security.access.prepost.PreAuthorize; import org.springframework.web.bind.annotation.*; import vn.edu.fpt.seal.modules.prize.dto.*; import vn.edu.fpt.seal.modules.prize.service.PrizeService; import java.util.UUID;
-@RestController @RequestMapping("/prizes") @RequiredArgsConstructor public class PrizeController{private final PrizeService service; @GetMapping @PreAuthorize("isAuthenticated()") public ResponseEntity<Page<PrizeResponse>> list(@RequestParam(required=false) UUID eventId,@RequestParam(required=false) UUID trackId,@RequestParam(required=false) UUID teamId,Pageable p){return ResponseEntity.ok(service.list(eventId,trackId,teamId,p));} @GetMapping("/{id}") @PreAuthorize("isAuthenticated()") public ResponseEntity<PrizeResponse> get(@PathVariable UUID id){return ResponseEntity.ok(service.get(id));} @PostMapping @PreAuthorize("hasRole('COORDINATOR')") public ResponseEntity<PrizeResponse> create(@Valid @RequestBody CreatePrizeRequest r){return ResponseEntity.ok(service.create(r));} @PatchMapping("/{id}") @PreAuthorize("hasRole('COORDINATOR')") public ResponseEntity<PrizeResponse> update(@PathVariable UUID id,@Valid @RequestBody UpdatePrizeRequest r){return ResponseEntity.ok(service.update(id,r));} @DeleteMapping("/{id}") @PreAuthorize("hasRole('COORDINATOR')") public ResponseEntity<Void> delete(@PathVariable UUID id){service.delete(id); return ResponseEntity.noContent().build();}}
+package vn.edu.fpt.seal.modules.prize.controller;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import vn.edu.fpt.seal.modules.prize.dto.CreatePrizeRequest;
+import vn.edu.fpt.seal.modules.prize.dto.PrizeResponse;
+import vn.edu.fpt.seal.modules.prize.dto.UpdatePrizeRequest;
+import vn.edu.fpt.seal.modules.prize.service.PrizeService;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/prizes")
+@RequiredArgsConstructor
+public class PrizeController {
+    private final PrizeService service;
+
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Page<PrizeResponse>> list(@RequestParam(required = false) UUID eventId, @RequestParam(required = false) UUID trackId, @RequestParam(required = false) UUID teamId, Pageable p) {
+        return ResponseEntity.ok(service.list(eventId, trackId, teamId, p));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PrizeResponse> get(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.get(id));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<PrizeResponse> create(@Valid @RequestBody CreatePrizeRequest r) {
+        return ResponseEntity.ok(service.create(r));
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<PrizeResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdatePrizeRequest r) {
+        return ResponseEntity.ok(service.update(id, r));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+}

@@ -1,6 +1,8 @@
 package vn.edu.fpt.seal.modules.university.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.*;
 import vn.edu.fpt.seal.common.entity.BaseEntity;
 

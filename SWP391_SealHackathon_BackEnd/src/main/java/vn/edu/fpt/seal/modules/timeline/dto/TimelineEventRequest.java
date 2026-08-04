@@ -1,6 +1,8 @@
 package vn.edu.fpt.seal.modules.timeline.dto;
 
-import vn.edu.fpt.seal.modules.timeline.*;
+import vn.edu.fpt.seal.modules.timeline.TimelineEventType;
+import vn.edu.fpt.seal.modules.timeline.TimelineScope;
+import vn.edu.fpt.seal.modules.timeline.TimelineSourceType;
 
 import java.util.UUID;
 

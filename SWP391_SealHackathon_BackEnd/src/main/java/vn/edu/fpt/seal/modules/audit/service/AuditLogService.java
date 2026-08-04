@@ -1,23 +1,82 @@
-package vn.edu.fpt.seal.modules.audit.service; import lombok.RequiredArgsConstructor; import org.springframework.data.domain.*; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional; import vn.edu.fpt.seal.common.enums.AuditAction; import vn.edu.fpt.seal.common.exception.ApiException; import vn.edu.fpt.seal.modules.audit.dto.*; import vn.edu.fpt.seal.modules.audit.entity.AuditLog; import vn.edu.fpt.seal.modules.audit.mapper.AuditLogMapper; import vn.edu.fpt.seal.modules.audit.repository.AuditLogRepository; import vn.edu.fpt.seal.modules.incident.entity.IncidentReport; import vn.edu.fpt.seal.modules.incident.repository.IncidentReportRepository; import vn.edu.fpt.seal.modules.team.entity.Team; import vn.edu.fpt.seal.modules.team.repository.TeamRepository; import vn.edu.fpt.seal.modules.user.entity.User; import vn.edu.fpt.seal.modules.user.repository.UserRepository; import java.util.UUID;
+package vn.edu.fpt.seal.modules.audit.service;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import vn.edu.fpt.seal.common.enums.AuditAction;
+import vn.edu.fpt.seal.common.exception.ApiException;
+import vn.edu.fpt.seal.modules.audit.dto.AuditLogResponse;
+import vn.edu.fpt.seal.modules.audit.dto.CreateAuditLogRequest;
+import vn.edu.fpt.seal.modules.audit.entity.AuditLog;
+import vn.edu.fpt.seal.modules.audit.mapper.AuditLogMapper;
+import vn.edu.fpt.seal.modules.audit.repository.AuditLogRepository;
+import vn.edu.fpt.seal.modules.incident.entity.IncidentReport;
+import vn.edu.fpt.seal.modules.incident.repository.IncidentReportRepository;
+import vn.edu.fpt.seal.modules.team.entity.Team;
+import vn.edu.fpt.seal.modules.team.repository.TeamRepository;
+import vn.edu.fpt.seal.modules.user.entity.User;
+import vn.edu.fpt.seal.modules.user.repository.UserRepository;
+
+import java.util.UUID;
+
 /**
  * Service nghiệp vụ nhật ký kiểm toán.
  * Cung cấp liệt kê (có lọc/phân trang), lấy chi tiết và tạo bản ghi audit.
  */
-@Service @RequiredArgsConstructor public class AuditLogService{private final AuditLogRepository repo; private final UserRepository userRepo; private final TeamRepository teamRepo; private final IncidentReportRepository incidentRepo;
- /**
- * Liệt kê nhật ký theo bộ lọc ưu tiên: userId > teamId > incidentId > action; nếu không có thì lấy tất cả.
- * @return trang kết quả đã ánh xạ sang DTO
- */
- @Transactional(readOnly=true) public Page<AuditLogResponse> list(UUID userId,UUID teamId,UUID incidentId,AuditAction action,Pageable p){Page<AuditLog> page=userId!=null?repo.findByUserId(userId,p):teamId!=null?repo.findByTeamId(teamId,p):incidentId!=null?repo.findByIncidentId(incidentId,p):action!=null?repo.findByAction(action,p):repo.findAll(p); return page.map(AuditLogMapper::toResponse);}
- /** Lấy chi tiết một bản ghi audit theo id. @throws ApiException nếu không tìm thấy */
- @Transactional(readOnly=true) public AuditLogResponse get(UUID id){return AuditLogMapper.toResponse(find(id));}
- /**
- * Tạo một bản ghi audit mới.
- * Xác thực sự tồn tại của user/team/incident nếu được cung cấp; trim các trường văn bản.
- * @throws ApiException nếu user/team/incident tham chiếu không tồn tại
- */
- @Transactional public AuditLogResponse create(CreateAuditLogRequest r){User u=r.userId()==null?null:userRepo.findById(r.userId()).orElseThrow(()->ApiException.notFound("User not found: "+r.userId())); Team t=r.teamId()==null?null:teamRepo.findById(r.teamId()).orElseThrow(()->ApiException.notFound("Team not found: "+r.teamId())); IncidentReport i=r.incidentId()==null?null:incidentRepo.findById(r.incidentId()).orElseThrow(()->ApiException.notFound("Incident not found: "+r.incidentId())); return AuditLogMapper.toResponse(repo.save(AuditLog.builder().user(u).team(t).incident(i).action(r.action()).targetType(r.targetType().trim()).targetId(r.targetId()).oldValue(trim(r.oldValue())).newValue(trim(r.newValue())).details(trim(r.details())).build()));}
- /** Tìm bản ghi kèm quan hệ; ném 404 nếu không tồn tại. */
- private AuditLog find(UUID id){return repo.findWithRelationsById(id).orElseThrow(()->ApiException.notFound("Audit log not found: "+id));}
- /** Trim chuỗi null-safe. */
- private String trim(String s){return s==null?null:s.trim();}}
+@Service
+@RequiredArgsConstructor
+public class AuditLogService {
+    private final AuditLogRepository repo;
+    private final UserRepository userRepo;
+    private final TeamRepository teamRepo;
+    private final IncidentReportRepository incidentRepo;
+
+    /**
+     * Liệt kê nhật ký theo bộ lọc ưu tiên: userId > teamId > incidentId > action; nếu không có thì lấy tất cả.
+     *
+     * @return trang kết quả đã ánh xạ sang DTO
+     */
+    @Transactional(readOnly = true)
+    public Page<AuditLogResponse> list(UUID userId, UUID teamId, UUID incidentId, AuditAction action, Pageable p) {
+        Page<AuditLog> page = userId != null ? repo.findByUserId(userId, p) : teamId != null ? repo.findByTeamId(teamId, p) : incidentId != null ? repo.findByIncidentId(incidentId, p) : action != null ? repo.findByAction(action, p) : repo.findAll(p);
+        return page.map(AuditLogMapper::toResponse);
+    }
+
+    /**
+     * Lấy chi tiết một bản ghi audit theo id. @throws ApiException nếu không tìm thấy
+     */
+    @Transactional(readOnly = true)
+    public AuditLogResponse get(UUID id) {
+        return AuditLogMapper.toResponse(find(id));
+    }
+
+    /**
+     * Tạo một bản ghi audit mới.
+     * Xác thực sự tồn tại của user/team/incident nếu được cung cấp; trim các trường văn bản.
+     *
+     * @throws ApiException nếu user/team/incident tham chiếu không tồn tại
+     */
+    @Transactional
+    public AuditLogResponse create(CreateAuditLogRequest r) {
+        User u = r.userId() == null ? null : userRepo.findById(r.userId()).orElseThrow(() -> ApiException.notFound("User not found: " + r.userId()));
+        Team t = r.teamId() == null ? null : teamRepo.findById(r.teamId()).orElseThrow(() -> ApiException.notFound("Team not found: " + r.teamId()));
+        IncidentReport i = r.incidentId() == null ? null : incidentRepo.findById(r.incidentId()).orElseThrow(() -> ApiException.notFound("Incident not found: " + r.incidentId()));
+        return AuditLogMapper.toResponse(repo.save(AuditLog.builder().user(u).team(t).incident(i).action(r.action()).targetType(r.targetType().trim()).targetId(r.targetId()).oldValue(trim(r.oldValue())).newValue(trim(r.newValue())).details(trim(r.details())).build()));
+    }
+
+    /**
+     * Tìm bản ghi kèm quan hệ; ném 404 nếu không tồn tại.
+     */
+    private AuditLog find(UUID id) {
+        return repo.findWithRelationsById(id).orElseThrow(() -> ApiException.notFound("Audit log not found: " + id));
+    }
+
+    /**
+     * Trim chuỗi null-safe.
+     */
+    private String trim(String s) {
+        return s == null ? null : s.trim();
+    }
+}

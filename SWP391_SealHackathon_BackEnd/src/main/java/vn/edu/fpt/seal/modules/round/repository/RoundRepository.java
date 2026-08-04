@@ -12,6 +12,7 @@ import java.util.UUID;
 public interface RoundRepository extends JpaRepository<Round, UUID> {
 
     Page<Round> findByTrackId(UUID trackId, Pageable pageable);
+
     Page<Round> findByTrackEventId(UUID eventId, Pageable pageable);
 
     boolean existsByTrackIdAndNameIgnoreCase(UUID trackId, String name);
@@ -19,7 +20,9 @@ public interface RoundRepository extends JpaRepository<Round, UUID> {
     boolean existsByTrackIdAndSequenceNumber(UUID trackId, Integer sequenceNumber);
 
     java.util.Optional<Round> findTopByTrackIdOrderBySequenceNumberDesc(UUID trackId);
+
     java.util.Optional<Round> findByTrackIdAndSequenceNumber(UUID trackId, Integer sequenceNumber);
+
     java.util.List<Round> findByLogicalRoundId(UUID logicalRoundId);
 
     long countByTrackEventId(UUID eventId);

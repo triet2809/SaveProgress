@@ -7,8 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import vn.edu.fpt.seal.modules.team.entity.Team;
 
-import java.util.List;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,8 +16,10 @@ import java.util.UUID;
 public interface TeamRepository extends JpaRepository<Team, UUID> {
 
     Page<Team> findByTrackId(UUID trackId, Pageable pageable);
+
     @EntityGraph(attributePaths = {"track", "track.event"})
     Page<Team> findByTrackEventId(UUID eventId, Pageable pageable);
+
     @EntityGraph(attributePaths = {"track", "track.event"})
     Page<Team> findByTrackEventIdAndTrackId(UUID eventId, UUID trackId, Pageable pageable);
 

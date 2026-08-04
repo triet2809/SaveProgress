@@ -2,7 +2,7 @@ package vn.edu.fpt.seal.modules.report.ai;
 
 /**
  * Provider-agnostic boundary for a single text completion call.
- *
+ * <p>
  * Swapping the LLM vendor (Gemini today, OpenAI/local tomorrow) means adding a
  * new implementation, not touching the analysis logic. Implementations should
  * be resilient: a transport/timeout/HTTP error surfaces as {@link LlmException}
@@ -18,12 +18,21 @@ public interface LlmClient {
      */
     String complete(String systemPrompt, String userPrompt);
 
-    /** True when the client is configured and allowed to make a call. */
+    /**
+     * True when the client is configured and allowed to make a call.
+     */
     boolean isAvailable();
 
-    /** Thrown on any LLM failure so the service layer can degrade gracefully. */
+    /**
+     * Thrown on any LLM failure so the service layer can degrade gracefully.
+     */
     class LlmException extends RuntimeException {
-        public LlmException(String message) { super(message); }
-        public LlmException(String message, Throwable cause) { super(message, cause); }
+        public LlmException(String message) {
+            super(message);
+        }
+
+        public LlmException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

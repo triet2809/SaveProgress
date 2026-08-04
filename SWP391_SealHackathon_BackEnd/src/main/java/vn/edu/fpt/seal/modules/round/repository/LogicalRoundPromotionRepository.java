@@ -9,7 +9,9 @@ import java.util.UUID;
 
 public interface LogicalRoundPromotionRepository extends JpaRepository<LogicalRoundPromotion, UUID> {
     boolean existsByTargetLogicalRoundIdAndTeamId(UUID targetLogicalRoundId, UUID teamId);
+
     boolean existsBySourceLogicalRoundId(UUID sourceLogicalRoundId);
+
     boolean existsByTargetLogicalRoundId(UUID targetLogicalRoundId);
 
     @EntityGraph(attributePaths = {"sourceLogicalRound", "targetLogicalRound", "team"})

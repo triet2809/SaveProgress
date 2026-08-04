@@ -3,8 +3,8 @@ package vn.edu.fpt.seal.modules.round.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.edu.fpt.seal.common.entity.BaseEntity;
-import vn.edu.fpt.seal.modules.event.entity.Event;
 import vn.edu.fpt.seal.common.enums.RoundLifecycleState;
+import vn.edu.fpt.seal.modules.event.entity.Event;
 
 @Entity
 @Table(name = "round_definitions")

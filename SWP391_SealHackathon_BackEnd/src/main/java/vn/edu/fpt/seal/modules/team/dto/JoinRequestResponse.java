@@ -17,4 +17,5 @@ public record JoinRequestResponse(
         String message,
         LocalDateTime createdAt,
         LocalDateTime respondedAt
-) {}
+) {
+}

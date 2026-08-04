@@ -17,7 +17,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -32,12 +31,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class JwtService {
 
-    /** Cấu hình ứng dụng chứa khóa bí mật, issuer và thời hạn token. */
+    /**
+     * Cấu hình ứng dụng chứa khóa bí mật, issuer và thời hạn token.
+     */
     private final AppProperties appProperties;
-    /** Repository lưu trữ hash của các token đã bị thu hồi. */
+    /**
+     * Repository lưu trữ hash của các token đã bị thu hồi.
+     */
     private final RevokedTokenRepository revokedTokenRepository;
 
-    /** Tạo khóa ký HMAC từ secret trong cấu hình. */
+    /**
+     * Tạo khóa ký HMAC từ secret trong cấu hình.
+     */
     private SecretKey signingKey() {
         return Keys.hmacShaKeyFor(
                 appProperties.getSecurity().getJwt().getSecret().getBytes(StandardCharsets.UTF_8));

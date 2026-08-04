@@ -10,5 +10,6 @@ public final class RoleName {
     public static final String MENTOR = "mentor";
     public static final String JUDGE = "judge";
 
-    private RoleName() {}
+    private RoleName() {
+    }
 }

@@ -12,4 +12,5 @@ public record UpdateSubmissionRequest(
         @Size(max = 255) String projectName,
         @Size(max = 50) String version,
         @Size(max = 50) String reviewStatus
-) {}
+) {
+}
