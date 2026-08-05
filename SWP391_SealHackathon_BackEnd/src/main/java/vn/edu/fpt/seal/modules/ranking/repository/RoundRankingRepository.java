@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 import vn.edu.fpt.seal.modules.ranking.entity.RoundRanking;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,8 +31,7 @@ public interface RoundRankingRepository extends JpaRepository<RoundRanking, UUID
             select
                 sub.team.id as teamId,
                 coalesce(sum(sc.weightedScore), 0) as totalScore,
-                sub.team.name as teamName,
-                min(sub.submittedAt) as earliestSubmittedAt
+                sub.team.name as teamName
             from Submission sub
             left join Score sc on sc.submission.id = sub.id
             where sub.round.id = :roundId
@@ -71,8 +69,6 @@ public interface RoundRankingRepository extends JpaRepository<RoundRanking, UUID
         BigDecimal getTotalScore();
 
         String getTeamName();
-
-        LocalDateTime getEarliestSubmittedAt();
     }
 
     interface TeamCriterionScoreRow {
