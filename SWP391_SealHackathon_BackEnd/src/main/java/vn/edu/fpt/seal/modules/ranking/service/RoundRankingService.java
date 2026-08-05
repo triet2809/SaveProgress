@@ -89,13 +89,15 @@ public class RoundRankingService {
         // total weighted score can be broken by the highest-weight criterion.
         TieBreaker tieBreaker = new TieBreaker(rankingRepository.criterionScores(roundId));
 
-        // Re-order the (already total-desc, name-asc) rows so that teams tied on
-        // total are ordered by their score on the highest-weight criterion first.
+        // Re-order rows: total score desc, then per-criterion scores (highest-weight first),
+        // then submission time asc when all criteria are also equal, then name for determinism.
         List<RoundRankingRepository.RoundScoreRow> ordered = new ArrayList<>(rows);
         ordered.sort(
                 Comparator.<RoundRankingRepository.RoundScoreRow, BigDecimal>comparing(
                                 r -> nz(r.getTotalScore()), Comparator.reverseOrder())
                         .thenComparing(tieBreaker::compareByCriterion)
+                        .thenComparing(RoundRankingRepository.RoundScoreRow::getEarliestSubmittedAt,
+                                Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(r -> r.getTeamName() == null ? "" : r.getTeamName()));
 
         rankingRepository.deleteByRoundId(roundId);
@@ -105,16 +107,16 @@ public class RoundRankingService {
         List<RoundRanking> saved = new ArrayList<>();
         int rank = 1;
         BigDecimal prevTotal = null;
+        UUID prevTeamId = null;
         for (RoundRankingRepository.RoundScoreRow row : ordered) {
             Team team = teamRepository.findById(row.getTeamId()).orElseThrow(() -> ApiException.notFound("Team not found: " + row.getTeamId()));
             PromotionStatus status = PromotionStatus.pending;
             if (applyPromotion) status = rank <= topN ? PromotionStatus.promoted : PromotionStatus.eliminated;
 
-            // Populate tie-breaker fields only when this team was actually tied on
-            // total with the previous (higher-ranked) team, so the data shows WHY
-            // the order is what it is.
             boolean tiedWithPrev = prevTotal != null && nz(row.getTotalScore()).compareTo(prevTotal) == 0;
-            TieBreaker.Decisive decisive = tiedWithPrev ? tieBreaker.decisiveFor(row.getTeamId()) : null;
+            TieBreaker.Decisive decisive = (tiedWithPrev && prevTeamId != null)
+                    ? tieBreaker.decisiveBetween(prevTeamId, row.getTeamId())
+                    : null;
 
             RoundRanking.RoundRankingBuilder builder = RoundRanking.builder()
                     .round(round)
@@ -126,10 +128,13 @@ public class RoundRankingService {
                 builder.tieBreakerCriterion(criterionRepository.getReferenceById(decisive.criterionId()))
                         .tieBreakerScore(decisive.score())
                         .tieBreakerReason("Tie on total score broken by highest-weight criterion '" + decisive.criterionName() + "'");
+            } else if (tiedWithPrev) {
+                builder.tieBreakerReason("Tie on total score and all criteria equal; resolved by earliest submission time");
             } else {
                 builder.tieBreakerReason("Ranked by total weighted score; team name used for deterministic ordering on ties");
             }
             saved.add(rankingRepository.save(builder.build()));
+            prevTeamId = row.getTeamId();
             prevTotal = nz(row.getTotalScore());
             rank++;
         }
@@ -187,12 +192,15 @@ public class RoundRankingService {
         }
 
         /**
-         * The first criterion (by weight) on which this team has any score.
+         * The first criterion (by weight) where teamA and teamB have different scores.
+         * Returns null when every criterion score is identical (submission time is the tiebreaker).
+         * The returned score is teamB's (the lower-ranked team) score on that criterion.
          */
-        Decisive decisiveFor(UUID teamId) {
+        Decisive decisiveBetween(UUID teamA, UUID teamB) {
             for (CriterionRef c : criteriaByWeightDesc) {
-                BigDecimal s = scoreOf(teamId, c.id());
-                if (s.signum() != 0) return new Decisive(c.id(), c.name(), s);
+                BigDecimal sa = scoreOf(teamA, c.id());
+                BigDecimal sb = scoreOf(teamB, c.id());
+                if (sa.compareTo(sb) != 0) return new Decisive(c.id(), c.name(), sb);
             }
             return null;
         }
