@@ -80,6 +80,15 @@ public class PrizeService {
         if (r.teamId() != null) p.setTeam(team(r.teamId()));
         validateScope(p.getEvent(), p.getTrack(), p.getTeam());
         if (r.name() != null) p.setName(r.name().trim());
+        if (p.getTeam() != null) {
+            if (p.getTeam().getStatus() == TeamStatus.disqualified) {
+                throw ApiException.badRequest("Cannot award a prize to a disqualified team");
+            }
+            if (repo.existsByEventIdAndTeamIdAndNameIgnoreCaseAndIdNot(
+                    p.getEvent().getId(), p.getTeam().getId(), p.getName(), id)) {
+                throw ApiException.conflict("A prize with this name has already been awarded to this team in this event");
+            }
+        }
         if (r.prizeAmount() != null) p.setPrizeAmount(r.prizeAmount());
         if (r.description() != null) p.setDescription(trim(r.description()));
         if (r.awardedAt() != null) p.setAwardedAt(r.awardedAt());

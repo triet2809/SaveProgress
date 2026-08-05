@@ -25,4 +25,6 @@ public interface PrizeRepository extends JpaRepository<Prize, UUID> {
     Optional<Prize> findWithRelationsById(UUID id);
 
     boolean existsByEventIdAndTeamIdAndNameIgnoreCase(UUID eventId, UUID teamId, String name);
+
+    boolean existsByEventIdAndTeamIdAndNameIgnoreCaseAndIdNot(UUID eventId, UUID teamId, String name, UUID id);
 }
