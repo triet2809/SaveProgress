@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import vn.edu.fpt.seal.common.enums.EventStatus;
 import vn.edu.fpt.seal.modules.event.entity.Event;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -31,4 +32,10 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
      * @return true nếu đã tồn tại
      */
     boolean existsByTitleIgnoreCase(String title);
+
+    boolean existsByEventStartLessThanEqualAndEventEndGreaterThanEqual(
+            LocalDateTime end, LocalDateTime start);
+
+    boolean existsByEventStartLessThanEqualAndEventEndGreaterThanEqualAndIdNot(
+            LocalDateTime end, LocalDateTime start, UUID excludeId);
 }

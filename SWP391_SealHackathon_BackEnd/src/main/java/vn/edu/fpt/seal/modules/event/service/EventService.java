@@ -168,6 +168,7 @@ public class EventService {
         }
         validateEventDates(req.registrationStart(), req.registrationEnd(),
                 req.eventStart(), req.eventEnd());
+        validateNoOverlap(req.eventStart(), req.eventEnd(), null);
         Event e = Event.builder()
                 .title(title)
                 .description(req.description())
@@ -197,6 +198,10 @@ public class EventService {
                 req.registrationEnd() != null ? req.registrationEnd() : e.getRegistrationEnd(),
                 req.eventStart() != null ? req.eventStart() : e.getEventStart(),
                 req.eventEnd() != null ? req.eventEnd() : e.getEventEnd());
+        validateNoOverlap(
+                req.eventStart() != null ? req.eventStart() : e.getEventStart(),
+                req.eventEnd() != null ? req.eventEnd() : e.getEventEnd(),
+                e.getId());
         if (req.title() != null) {
             String title = req.title().trim();
             if (!title.equalsIgnoreCase(e.getTitle())
@@ -727,6 +732,14 @@ public class EventService {
         if (seq == total) return "Final";
         if (seq == total - 1) return "Semifinal";
         return "Round " + seq;
+    }
+
+    private void validateNoOverlap(LocalDateTime start, LocalDateTime end, UUID excludeId) {
+        if (start == null || end == null) return;
+        boolean overlaps = excludeId == null
+                ? eventRepository.existsByEventStartLessThanEqualAndEventEndGreaterThanEqual(end, start)
+                : eventRepository.existsByEventStartLessThanEqualAndEventEndGreaterThanEqualAndIdNot(end, start, excludeId);
+        if (overlaps) throw ApiException.conflict("Event dates overlap with an existing event");
     }
 
     private void validateEventDates(LocalDateTime registrationStart, LocalDateTime registrationEnd,
