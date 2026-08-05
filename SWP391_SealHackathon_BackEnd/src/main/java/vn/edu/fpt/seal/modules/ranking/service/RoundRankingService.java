@@ -85,12 +85,14 @@ public class RoundRankingService {
         }
         List<RoundRankingRepository.RoundScoreRow> rows = rankingRepository.calculateRows(roundId);
 
-        // Requirement #8: build a per-team, per-criterion lookup so ties on the
-        // total weighted score can be broken by the highest-weight criterion.
+        // Xây dựng bảng tra cứu điểm từng tiêu chí cho mỗi đội để phục vụ phân hạng khi hòa.
         TieBreaker tieBreaker = new TieBreaker(rankingRepository.criterionScores(roundId));
 
-        // Re-order rows: total score desc, then per-criterion scores (highest-weight first),
-        // then submission time asc when all criteria are also equal, then name for determinism.
+        // Thứ tự ưu tiên phân hạng (áp dụng tuần tự):
+        //   1. Tổng điểm có trọng số — cao hơn xếp trước (logic gốc, không đổi).
+        //   2. Nếu bằng tổng điểm → so tiêu chí theo trọng số giảm dần (logic gốc, không đổi).
+        //   3. Nếu mọi tiêu chí cũng bằng → đội nộp bài SỚM HƠN xếp trước (bổ sung mới).
+        //   4. Tên đội A–Z để kết quả luôn xác định.
         List<RoundRankingRepository.RoundScoreRow> ordered = new ArrayList<>(rows);
         ordered.sort(
                 Comparator.<RoundRankingRepository.RoundScoreRow, BigDecimal>comparing(
@@ -113,7 +115,10 @@ public class RoundRankingService {
             PromotionStatus status = PromotionStatus.pending;
             if (applyPromotion) status = rank <= topN ? PromotionStatus.promoted : PromotionStatus.eliminated;
 
+            // Kiểm tra đội hiện tại có hòa tổng điểm với đội xếp ngay trước không.
             boolean tiedWithPrev = prevTotal != null && nz(row.getTotalScore()).compareTo(prevTotal) == 0;
+            // Nếu hòa → tìm tiêu chí đầu tiên mà hai đội khác nhau để ghi nhận lý do.
+            // decisive == null có nghĩa mọi tiêu chí bằng nhau → thời gian nộp bài đã phân hạng.
             TieBreaker.Decisive decisive = (tiedWithPrev && prevTeamId != null)
                     ? tieBreaker.decisiveBetween(prevTeamId, row.getTeamId())
                     : null;
@@ -125,10 +130,12 @@ public class RoundRankingService {
                     .rank(rank)
                     .status(status);
             if (decisive != null) {
+                // Hòa tổng điểm nhưng khác điểm ở một tiêu chí → ghi nhận tiêu chí đó.
                 builder.tieBreakerCriterion(criterionRepository.getReferenceById(decisive.criterionId()))
                         .tieBreakerScore(decisive.score())
                         .tieBreakerReason("Tie on total score broken by highest-weight criterion '" + decisive.criterionName() + "'");
             } else if (tiedWithPrev) {
+                // Hòa cả tổng điểm lẫn từng tiêu chí → thời gian nộp bài sớm hơn đã quyết định.
                 builder.tieBreakerReason("Tie on total score and all criteria equal; resolved by earliest submission time");
             } else {
                 builder.tieBreakerReason("Ranked by total weighted score; team name used for deterministic ordering on ties");
@@ -150,19 +157,22 @@ public class RoundRankingService {
     }
 
     /**
-     * Helper that, given the per-team/per-criterion weighted scores for a round
-     * (already ordered by criterion weight desc), can compare two teams by their
-     * scores on the most important criteria, and report which criterion was
-     * decisive for a given team.
+     * Lớp hỗ trợ phá hòa khi nhiều đội có cùng tổng điểm.
+     *
+     * Cách hoạt động:
+     *   - Nhận dữ liệu điểm từng tiêu chí của từng đội (query criterionScores trả về,
+     *     đã sắp xếp theo trọng số giảm dần).
+     *   - Lưu vào bảng tra cứu nội bộ: teamId → (criterionId → điểm có trọng số).
+     *
+     * Hai phương thức chính:
+     *   - compareByCriterion: so sánh hai đội theo từng tiêu chí (logic GỐC, không đổi).
+     *   - decisiveBetween: xác định tiêu chí đầu tiên mà hai đội khác nhau, hoặc trả về
+     *     null nếu mọi tiêu chí bằng nhau — báo hiệu thời gian nộp bài là yếu tố quyết định.
      */
     static final class TieBreaker {
-        /**
-         * Ordered (weight desc) distinct criteria seen in the round.
-         */
+        // Danh sách tiêu chí sắp xếp theo trọng số giảm dần (tiêu chí quan trọng nhất đứng đầu).
         private final List<CriterionRef> criteriaByWeightDesc = new ArrayList<>();
-        /**
-         * teamId -> (criterionId -> weighted score on that criterion).
-         */
+        // Bảng tra cứu nhanh: teamId → (criterionId → điểm có trọng số của đội đó).
         private final Map<UUID, Map<UUID, BigDecimal>> byTeam = new HashMap<>();
 
         TieBreaker(List<RoundRankingRepository.TeamCriterionScoreRow> rows) {
@@ -179,7 +189,9 @@ public class RoundRankingService {
         }
 
         /**
-         * Higher score on the highest-weight criterion comes first (negative).
+         * So sánh hai đội theo từng tiêu chí, ưu tiên tiêu chí có trọng số cao nhất.
+         * Trả về số âm nếu a xếp trước b, dương nếu b xếp trước, 0 nếu mọi tiêu chí bằng nhau.
+         * Phương thức này KHÔNG thay đổi so với phiên bản gốc.
          */
         int compareByCriterion(RoundRankingRepository.RoundScoreRow a, RoundRankingRepository.RoundScoreRow b) {
             for (CriterionRef c : criteriaByWeightDesc) {
@@ -192,9 +204,12 @@ public class RoundRankingService {
         }
 
         /**
-         * The first criterion (by weight) where teamA and teamB have different scores.
-         * Returns null when every criterion score is identical (submission time is the tiebreaker).
-         * The returned score is teamB's (the lower-ranked team) score on that criterion.
+         * Tìm tiêu chí đầu tiên (theo trọng số giảm dần) mà teamA và teamB có điểm khác nhau.
+         * Trả về null nếu tất cả tiêu chí đều bằng nhau → nghĩa là thời gian nộp bài
+         * (earliestSubmittedAt) đã là yếu tố phân hạng cuối cùng giữa hai đội.
+         * Điểm được lưu là điểm của teamB (đội xếp sau) trên tiêu chí quyết định đó.
+         * Đây là phương thức mới, thay thế decisiveFor() cũ vốn chỉ xét một đội đơn lẻ
+         * mà không so sánh trực tiếp với đội đứng trước — kém chính xác hơn.
          */
         Decisive decisiveBetween(UUID teamA, UUID teamB) {
             for (CriterionRef c : criteriaByWeightDesc) {
