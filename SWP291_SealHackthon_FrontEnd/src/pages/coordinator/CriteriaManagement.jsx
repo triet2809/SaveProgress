@@ -24,6 +24,7 @@ const CriteriaManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingCriteria, setEditingCriteria] = useState(null);
   const [newCriteria, setNewCriteria] = useState({ name: '', weight: '', description: '', status: 'active' });
+  const [modalError, setModalError] = useState('');
 
   // Applicable Category == the track that the round belongs to
   const trackNameOf = (trackId) => tracks.find((t) => t.id === trackId)?.name || '—';
@@ -72,20 +73,32 @@ const CriteriaManagement = () => {
   );
 
   const handleSaveCriteria = async () => {
-    if (!newCriteria.name || newCriteria.weight === '') {
-      alert('Please fill all fields');
+    setModalError('');
+    if (!newCriteria.name.trim()) {
+      setModalError('Criteria name is required.');
+      return;
+    }
+    if (newCriteria.weight === '') {
+      setModalError('Weight is required.');
+      return;
+    }
+    const weightNum = Number(newCriteria.weight);
+    if (isNaN(weightNum) || weightNum <= 0 || weightNum > 100) {
+      setModalError('Weight must be a number between 0.01 and 100.');
       return;
     }
     if (!selectedRound) {
-      alert('Select a round first');
+      setModalError('Please select a round first.');
       return;
     }
     setSaving(true);
     setError('');
+    // Backend expects weight as decimal 0-1, UI shows 0-100
+    const weightDecimal = weightNum / 100;
     const payload = {
       roundId: selectedRound,
-      name: newCriteria.name,
-      weight: Number(newCriteria.weight),
+      name: newCriteria.name.trim(),
+      weight: weightDecimal,
       description: newCriteria.description || '',
       status: newCriteria.status || 'active',
     };
@@ -102,6 +115,7 @@ const CriteriaManagement = () => {
       }
       setEditingCriteria(null);
       setNewCriteria({ name: '', weight: '', description: '', status: 'active' });
+      setModalError('');
       setShowModal(false);
       await loadCriteria(selectedRound);
     } catch (err) {
@@ -112,13 +126,14 @@ const CriteriaManagement = () => {
   };
 
   const handleDeleteCriteria = async (id) => {
-    if (!window.confirm('Delete this criteria?')) return;
-    setError('');
-    try {
-      await deleteRoundCriterion(id);
-      await loadCriteria(selectedRound);
-    } catch (err) {
-      setError(err.message);
+    if (window.confirm('Are you sure you want to delete this criterion?')) {
+      setError('');
+      try {
+        await deleteRoundCriterion(id);
+        await loadCriteria(selectedRound);
+      } catch (err) {
+        setError(err.message);
+      }
     }
   };
 
@@ -228,6 +243,9 @@ const CriteriaManagement = () => {
         </Modal.Header>
 
         <Modal.Body>
+          {modalError && (
+            <Alert variant="danger" onClose={() => setModalError('')} dismissible>{modalError}</Alert>
+          )}
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>Criteria Name</Form.Label>
@@ -238,13 +256,17 @@ const CriteriaManagement = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Weight (%)</Form.Label>
+              <Form.Label>Weight (%) <span className="text-danger">*</span></Form.Label>
               <Form.Control
                 type="number"
+                min="0.01"
+                max="100"
                 step="0.01"
+                placeholder="e.g. 25 for 25%"
                 value={newCriteria.weight}
                 onChange={(e) => setNewCriteria({ ...newCriteria, weight: e.target.value })}
               />
+              <Form.Text className="text-muted">Enter a value between 0.01 and 100.</Form.Text>
             </Form.Group>
 
             <Form.Group className="mb-3">

@@ -53,6 +53,7 @@ const TeamJourney = () => {
   const [appealRound, setAppealRound] = useState(null);
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [appealError, setAppealError] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -98,20 +99,24 @@ const TeamJourney = () => {
   const openAppealModal = (round) => {
     setAppealRound(round);
     setReason('');
+    setAppealError('');
     setShowAppeal(true);
   };
 
   const submitAppeal = async () => {
-    if (!reason.trim()) { alert('Please provide a reason for the appeal.'); return; }
+    if (!reason.trim()) {
+      setAppealError('Please provide a reason for the appeal.');
+      return;
+    }
     try {
       setSubmitting(true);
+      setAppealError('');
       setError('');
-      // Backend luôn kiểm tra lại deadline; nếu quá hạn sẽ trả lỗi và ta hiển thị cho user.
       await createAppeal({ roundId: appealRound.id, reason });
       setShowAppeal(false);
       await load();
     } catch (e) {
-      setError(e.message || 'Failed to submit appeal');
+      setAppealError(e.message || 'Failed to submit appeal');
     } finally {
       setSubmitting(false);
     }
@@ -206,12 +211,15 @@ const TeamJourney = () => {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          {appealError && (
+            <Alert variant="danger" onClose={() => setAppealError('')} dismissible>{appealError}</Alert>
+          )}
           <p className="text-muted small">
             Round: <strong>{appealRound?.name}</strong>. Appeals are only accepted before the deadline.
             The system validates the deadline on the server.
           </p>
           <Form.Group>
-            <Form.Label className="fw-medium">Reason</Form.Label>
+            <Form.Label className="fw-medium">Reason <span className="text-danger">*</span></Form.Label>
             <Form.Control
               as="textarea"
               rows={4}

@@ -88,12 +88,12 @@ const AwardForm = () => {
   };
 
   const handleSave = async () => {
-    if (!award.name) {
-      alert('Please fill out the award name.');
+    if (!award.name.trim()) {
+      setError('Please fill out the award name.');
       return;
     }
     if (!award.eventId) {
-      alert('Please select an event for this award.');
+      setError('Please select an event for this award.');
       return;
     }
     try {
@@ -102,7 +102,12 @@ const AwardForm = () => {
       // Chuyển prizeAmount về number; để trống nếu không nhập.
       const amount = award.prizeAmount === '' ? undefined : Number(award.prizeAmount);
       if (amount != null && Number.isNaN(amount)) {
-        setError('Prize amount must be a number.');
+        setError('Prize amount must be a valid number.');
+        setSaving(false);
+        return;
+      }
+      if (amount != null && amount < 0) {
+        setError('Prize amount cannot be negative.');
         setSaving(false);
         return;
       }
@@ -144,11 +149,11 @@ const AwardForm = () => {
   // Gửi yêu cầu thu hồi/chuyển; BE ghi lại lịch sử và cập nhật timeline của (các) đội.
   const submitRevise = async () => {
     if (!reviseForm.reason.trim()) {
-      alert('Please provide a reason.');
+      setError('Please provide a reason for this action.');
       return;
     }
     if (reviseMode === 'reassign' && !reviseForm.newTeamId) {
-      alert('Please select the new winning team.');
+      setError('Please select the new winning team.');
       return;
     }
     try {

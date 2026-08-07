@@ -99,6 +99,10 @@ const MentorForm = () => {
 
   const handleSaveEdit = async () => {
     if (!mentor) return;
+    if (!form.fullName.trim()) {
+      setError('Full name is required.');
+      return;
+    }
     try {
       setSaving(true);
       setError('');
@@ -194,6 +198,10 @@ const MentorForm = () => {
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-medium d-flex align-items-center gap-2"><Briefcase size={16} className="text-info"/> Company / Organization</Form.Label>
                     <Form.Control type="text" name="company" placeholder="e.g. Google, Tech Startup Inc." value={form.company} onChange={handleChange} />
+                  </Form.Group>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-medium d-flex align-items-center gap-2"><Mail size={16} className="text-secondary"/> Phone Number</Form.Label>
+                    <Form.Control type="tel" name="phone" placeholder="e.g. 0912345678" value={form.phone} onChange={handleChange} />
                   </Form.Group>
                 </div>
 

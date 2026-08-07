@@ -52,6 +52,30 @@ const TeamChat = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!team?.id) return;
+    let active = true;
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await getTeamChatMessages(team.id);
+        const msgs = res?.content || res || [];
+        const normalized = normalize(msgs);
+        if (active) {
+          setMessages((prev) => {
+            const hasNew = prev.length !== normalized.length || 
+              (prev.length > 0 && normalized.length > 0 && prev[prev.length - 1].id !== normalized[normalized.length - 1].id);
+            return hasNew ? normalized : prev;
+          });
+        }
+      } catch { /* ignore polling errors */ }
+    }, 4000);
+
+    return () => {
+      active = false;
+      clearInterval(pollInterval);
+    };
+  }, [team?.id]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };

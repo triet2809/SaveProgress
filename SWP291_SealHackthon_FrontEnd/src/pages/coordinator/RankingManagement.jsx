@@ -208,7 +208,7 @@ const RankingManagement = () => {
                     </td>
                     <td><Badge bg={team.resultPublishedAt ? 'success' : 'secondary'}>{team.resultPublishedAt ? 'Published' : 'Unpublished'}</Badge></td>
                     <td className="py-3 text-end">
-                      <Button variant="link" size="sm" className="p-0 text-primary" onClick={() => navigate(`/coordinator/ranking/${team.teamId}?roundId=${selectedRound}`)}>
+                      <Button variant="link" size="sm" className="p-0 text-primary" onClick={() => navigate(`/coordinator/ranking/${team.teamId || team.id}?roundId=${selectedRound}`)}>
                         <Eye size={16} />
                       </Button>
                     </td>

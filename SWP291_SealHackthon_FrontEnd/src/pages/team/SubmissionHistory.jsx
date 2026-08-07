@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Table, Button, Spinner, Alert } from 'react-bootstrap';
 import { ExternalLink } from 'lucide-react';
-import { getMyTeams, getSubmissions } from '../../api/hackathonApi';
+import { getMyTeams, getSubmissions, getRounds } from '../../api/hackathonApi';
 import styles from './SubmissionHistory.module.css';
 
 const SubmissionHistory = () => {
@@ -9,16 +9,32 @@ const SubmissionHistory = () => {
   const [error, setError] = useState('');
   const [teamName, setTeamName] = useState('');
   const [submissions, setSubmissions] = useState([]);
+  const [roundsMap, setRoundsMap] = useState({});
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const teams = await getMyTeams();
+        const [teams, roundsRes] = await Promise.all([
+          getMyTeams(),
+          getRounds({ size: 100 }).catch(() => ({ content: [] })),
+        ]);
         const list = Array.isArray(teams) ? teams : teams?.content || [];
         const current = list[0] || null;
+        
+        // Map rounds
+        const rList = roundsRes?.content || roundsRes || [];
+        const rMap = {};
+        if (Array.isArray(rList)) {
+          rList.forEach((r) => {
+            rMap[r.id] = r.name;
+          });
+        }
+
         if (!active) return;
         setTeamName(current?.name || '');
+        setRoundsMap(rMap);
+
         if (!current?.id) {
           setLoading(false);
           return;
@@ -86,10 +102,11 @@ const SubmissionHistory = () => {
               {submissions.map((submission) => {
                 const link = firstLink(submission);
                 const linkCount = [submission.repoUrl, submission.demoUrl, submission.slideUrl, submission.reportUrl].filter(Boolean).length;
+                const roundName = roundsMap[submission.roundId] || (submission.roundId ? submission.roundId.slice(0, 8) : '—');
                 return (
                   <tr key={submission.id} className={styles.tableRow}>
                     <td className={styles.tableCell}>
-                      <span className={styles.versionBadge}>{submission.roundId ? submission.roundId.slice(0, 8) : '—'}</span>
+                      <span className={styles.versionBadge}>{roundName}</span>
                     </td>
                     <td className={styles.tableCell}>
                       <span className={styles.titleText}>{submission.teamName || teamName}</span>

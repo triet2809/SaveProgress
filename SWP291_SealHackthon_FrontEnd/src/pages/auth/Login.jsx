@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
-import { Zap, Users, Award, Calendar } from 'lucide-react';
+import { Zap, Users, Award, Calendar, Eye, EyeOff } from 'lucide-react';
 import { login } from '../../api/authApi';
 import { getMyTeams } from '../../api/hackathonApi';
 import styles from './Login.module.css';
@@ -25,6 +25,7 @@ const Login = () => {
   const { setForceTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -35,10 +36,25 @@ const Login = () => {
 
   const handleStandardLogin = async (e) => {
     e.preventDefault();
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      setError('Email address is required.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!password) {
+      setError('Password is required.');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     try {
-      const result = await login({ email, password });
+      const result = await login({ email: cleanEmail, password });
       if (!result.ok) {
         setError(result.data?.message || 'Incorrect email or password');
         return;
@@ -140,13 +156,22 @@ const Login = () => {
 
               <Form.Group className="mb-3" controlId="password">
                 <Form.Label>Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <InputGroup>
+                  <Form.Control
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <Button
+                    variant="outline-secondary"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ borderLeft: 'none' }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </Button>
+                </InputGroup>
               </Form.Group>
 
               <Button variant="primary" type="submit" className="w-100 py-2" disabled={submitting}>

@@ -244,7 +244,7 @@ const MyTeam = () => {
               <h5 className={styles.cardTitle} style={{ marginBottom: '1rem' }}>Team Leader</h5>
 
               {(() => {
-                const leader = (team.members || []).find((m) => m.role === 'leader') || (team.members || [])[0];
+                const leader = (team.members || []).find((m) => (m.role || '').toLowerCase() === 'leader') || (team.members || [])[0];
                 if (!leader) return <div className="text-muted small">No members.</div>;
                 const initials = (leader.fullName || leader.email || 'U')
                   .split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase();

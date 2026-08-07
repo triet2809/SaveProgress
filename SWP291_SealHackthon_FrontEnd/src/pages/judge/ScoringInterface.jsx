@@ -60,12 +60,20 @@ const ScoringInterface = () => {
   }, [id, judgeId]);
 
   const setScore = (criterionId, value) =>
-    setScores((prev) => ({ ...prev, [criterionId]: value }));
+    setScores((prev) => ({ ...prev, [criterionId]: Number(value) }));
 
-  const averageScore = useMemo(() => {
-    const vals = criteria.map((c) => Number(scores[c.id] || 0));
-    if (!vals.length) return 0;
-    return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+  // Weighted score: sum(score_i * weight_i) where weight is 0-1
+  const weightedScore = useMemo(() => {
+    if (!criteria.length) return 0;
+    const totalWeight = criteria.reduce((sum, c) => sum + (c.weight || 0), 0);
+    if (totalWeight === 0) {
+      // Fallback: simple average if no weights defined
+      const vals = criteria.map((c) => Number(scores[c.id] || 0));
+      return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+    }
+    return criteria.reduce((total, c) => {
+      return total + Number(scores[c.id] || 0) * (c.weight || 0);
+    }, 0);
   }, [criteria, scores]);
 
   const handleSubmit = async (e) => {
@@ -164,8 +172,8 @@ const ScoringInterface = () => {
         <Col lg={5}>
           <Card className={styles.scoringCard}>
             <div className={styles.finalScoreBox}>
-              <div className={styles.scoreLabel}>Final Average Score</div>
-              <div className={styles.scoreValue}>{averageScore}<span style={{fontSize: '1.25rem', color: '#86efac'}}>/100</span></div>
+              <div className={styles.scoreLabel}>Weighted Score</div>
+              <div className={styles.scoreValue}>{weightedScore.toFixed(1)}<span style={{fontSize: '1.25rem', color: '#86efac'}}>/100</span></div>
             </div>
 
             <Form onSubmit={handleSubmit}>
@@ -175,7 +183,12 @@ const ScoringInterface = () => {
               {criteria.map((c, index) => (
                 <div className={styles.criteriaGroup} key={c.id}>
                   <div className={styles.criteriaHeader}>
-                    <span className={styles.criteriaTitle}>{index + 1}. {c.name}</span>
+                    <span className={styles.criteriaTitle}>
+                      {index + 1}. {c.name}
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: 6 }}>
+                        (weight: {((c.weight || 0) * 100).toFixed(0)}%)
+                      </span>
+                    </span>
                     <span className={styles.criteriaScore}>{scores[c.id] || 0}/100</span>
                   </div>
                   <Form.Range

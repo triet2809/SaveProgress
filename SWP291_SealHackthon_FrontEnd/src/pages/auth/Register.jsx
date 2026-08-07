@@ -57,8 +57,8 @@ const Register = () => {
     setSubmitting(true);
     try {
       const res = studentType === 'fpt'
-        ? await registerFpt({ fullName, email, password, studentId, campusId, acceptedTerms })
-        : await registerExternal({ fullName, email, password, universityName, acceptedTerms });
+        ? await registerFpt({ fullName: fullName.trim(), email: email.trim(), password, studentId: studentId.trim(), campusId, acceptedTerms })
+        : await registerExternal({ fullName: fullName.trim(), email: email.trim(), password, studentId: studentId.trim(), universityName: universityName.trim(), acceptedTerms });
       if (!res.ok) {
         // Surface backend field-level validation errors (e.g. password too short,
         // invalid email) instead of the generic "Validation failed" message.

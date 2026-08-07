@@ -200,7 +200,7 @@ const JudgeDashboard = () => {
                   </div>
                   <div className={styles.statRow}>
                     <span className={styles.statLabel}>In Progress</span>
-                    <span className={styles.statValueInfo}>0</span>
+                    <span className={styles.statValueInfo}>{stats.pending > 0 ? stats.pending : 0}</span>
                   </div>
                 </div>
               </Card.Body>

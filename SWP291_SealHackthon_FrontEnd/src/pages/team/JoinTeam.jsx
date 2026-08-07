@@ -146,8 +146,8 @@ const JoinTeam = () => {
                     </InputGroup.Text>
                     <Form.Control
                       type="text"
-                      placeholder="VD: A1B2C3"
-                      maxLength={12}
+                      placeholder="e.g. A1B2C3"
+                      maxLength={6}
                       value={inviteCode}
                       onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                       className="border-start-0 text-center fw-bold"
@@ -156,7 +156,7 @@ const JoinTeam = () => {
                     />
                   </InputGroup>
                   <Button variant="primary" type="submit" size="lg" className="w-100 d-flex align-items-center justify-content-center gap-2" disabled={joining || !!success}>
-                    {joining ? <Spinner animation="border" size="sm" /> : <>Tham gia <ArrowRight size={20} /></>}
+                    {joining ? <Spinner animation="border" size="sm" /> : <>Join <ArrowRight size={20} /></>}
                   </Button>
                 </Form>
               </Card.Body>
