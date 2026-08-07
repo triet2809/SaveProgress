@@ -44,8 +44,8 @@ const SubmissionManagement = () => {
           .slice()
           .sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
         // Skip ADVANCED rounds — team can no longer submit for them.
-        const active = rounds.filter((r) => r.lifecycleState !== 'ADVANCED');
-        const pool = active.length > 0 ? active : rounds;
+        const nonAdvanced = rounds.filter((r) => r.lifecycleState !== 'ADVANCED');
+        const pool = nonAdvanced.length > 0 ? nonAdvanced : rounds;
         const now = new Date();
         const upcoming = pool.find((r) => r.submissionDeadline && new Date(r.submissionDeadline) >= now);
         const currentRound = upcoming || pool[pool.length - 1] || null;

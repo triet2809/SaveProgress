@@ -137,9 +137,9 @@ public class CompetitionLifecycleService {
 
     public void requireRankingRecalculationAllowed(Round r) {
         refresh(r);
-        RoundLifecycleState state = r.getLogicalRound() != null
-                ? r.getLogicalRound().getLifecycleState()
-                : r.getLifecycleState();
+        // Dùng trạng thái của execution round (không dùng logical round) để SQL reset trên bảng rounds
+        // là đủ để mở lại recalculation mà không cần reset thêm bảng round_definitions.
+        RoundLifecycleState state = r.getLifecycleState();
         if (state == RoundLifecycleState.ADVANCED) {
             throw ApiException.conflict("Cannot recalculate rankings after round has been advanced");
         }

@@ -126,7 +126,7 @@ const RankingManagement = () => {
     try {
       await advanceRound(eventId, selectedRound);
       setNotice('Round advanced. Promoted teams are now eligible for the next round.');
-      await loadRankings(selectedRound);
+      await Promise.all([loadRounds(), loadRankings(selectedRound)]);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -136,6 +136,7 @@ const RankingManagement = () => {
 
   const currentRoundData = rounds.find((r) => r.id === selectedRound);
   const isPublished = !!currentRoundData?.resultPublishedAt;
+  const isReadyToAdvance = currentRoundData?.lifecycleState === 'READY_TO_ADVANCE';
 
   return (
     <>
@@ -150,7 +151,7 @@ const RankingManagement = () => {
           <Button variant="outline-primary" className="d-flex align-items-center gap-2" onClick={handlePublish} disabled={publishing || !selectedRound}>
             {publishing ? <Spinner size="sm" animation="border" /> : <Send size={18} />} Publish Results
           </Button>
-          {isPublished && (
+          {isReadyToAdvance && (
             <Button variant="warning" className="d-flex align-items-center gap-2" onClick={handleAdvance} disabled={advancing || !selectedRound}>
               {advancing ? <Spinner size="sm" animation="border" /> : <ArrowRight size={18} />} Advance Round
             </Button>
