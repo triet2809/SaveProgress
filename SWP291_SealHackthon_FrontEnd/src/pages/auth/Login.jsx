@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
+import { Row, Col, Form, Button, Alert, Spinner, InputGroup } from 'react-bootstrap';
 import { Zap, Users, Award, Calendar, Eye, EyeOff } from 'lucide-react';
 import { login } from '../../api/authApi';
 import { getMyTeams } from '../../api/hackathonApi';
