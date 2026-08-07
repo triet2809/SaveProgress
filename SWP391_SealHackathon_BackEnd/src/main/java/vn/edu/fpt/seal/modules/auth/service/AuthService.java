@@ -172,7 +172,7 @@ public class AuthService {
             return buildPendingResponse(user);
         }
         if (user.getStatus() == AccountStatus.rejected) {
-            throw ApiException.forbidden("Your account has been rejected");
+            throw ApiException.accountRejected(user.getRejectionReason());
         }
         return buildAuthResponse(user);
     }
@@ -250,7 +250,7 @@ public class AuthService {
             throw ApiException.forbidden("Your account is pending approval");
         }
         if (user.getStatus() == AccountStatus.rejected) {
-            throw ApiException.forbidden("Your account has been rejected");
+            throw ApiException.accountRejected(user.getRejectionReason());
         }
 
         return buildAuthResponse(user);
@@ -323,7 +323,7 @@ public class AuthService {
             throw ApiException.forbidden("Your account is pending approval");
         }
         if (user.getStatus() == AccountStatus.rejected) {
-            throw ApiException.forbidden("Your account has been rejected");
+            throw ApiException.accountRejected(user.getRejectionReason());
         }
         // security version lệch nghĩa là phiên bảo mật đã thay đổi (ví dụ đổi mật khẩu) => token cũ vô hiệu
         if (user.getSecurityVersion() != tokenVersion) {
@@ -401,8 +401,10 @@ public class AuthService {
      */
     private AuthResponse buildAuthResponse(User user) {
         if (user.getStatus() != AccountStatus.approved) {
-            throw ApiException.forbidden(user.getStatus() == AccountStatus.pending
-                    ? "Your account is pending approval" : "Your account has been rejected");
+            if (user.getStatus() == AccountStatus.pending) {
+                throw ApiException.forbidden("Your account is pending approval");
+            }
+            throw ApiException.accountRejected(user.getRejectionReason());
         }
         List<String> roleNames = user.getRoles().stream().map(Role::getName).toList();
         boolean termsRequired = termsAcceptanceRequired(user);

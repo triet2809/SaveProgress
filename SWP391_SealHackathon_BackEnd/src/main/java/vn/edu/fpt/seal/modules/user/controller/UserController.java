@@ -62,8 +62,9 @@ public class UserController {
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('COORDINATOR')")
-    public ResponseEntity<UserResponse> updateStatus(@PathVariable UUID id, @Valid @RequestBody UpdateUserStatusRequest r) {
-        return ResponseEntity.ok(service.updateStatus(id, r));
+    public ResponseEntity<UserResponse> updateStatus(@PathVariable UUID id, @Valid @RequestBody UpdateUserStatusRequest r,
+                                                      @AuthenticationPrincipal CurrentUser actor) {
+        return ResponseEntity.ok(service.updateStatus(id, r, actor == null ? null : actor.getId()));
     }
 
     @PatchMapping("/{id}/profile")

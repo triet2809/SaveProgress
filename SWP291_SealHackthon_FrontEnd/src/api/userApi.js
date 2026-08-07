@@ -71,8 +71,11 @@ export async function updateUserProfile(userId, payload) {
 }
 
 // Cập nhật trạng thái tài khoản (approved/rejected/...).
-export async function updateUserStatus(userId, status) {
-  const result = await apiPatch(`/users/${userId}/status`, { status });
+export async function updateUserStatus(userId, status, rejectionReason) {
+  const result = await apiPatch(`/users/${userId}/status`, {
+    status,
+    ...(rejectionReason ? { rejectionReason } : {}),
+  });
   return { ...result, value: result.data ?? null };
 }
 
@@ -82,8 +85,8 @@ export function approveUser(userId) {
 }
 
 // Từ chối user (đặt status = rejected).
-export function rejectUser(userId) {
-  return updateUserStatus(userId, 'rejected');
+export function rejectUser(userId, rejectionReason) {
+  return updateUserStatus(userId, 'rejected', rejectionReason);
 }
 
 // Ghi đè toàn bộ danh sách role của user.

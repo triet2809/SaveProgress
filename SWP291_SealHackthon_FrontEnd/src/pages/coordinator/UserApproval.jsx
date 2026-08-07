@@ -31,6 +31,11 @@ const UserApproval = () => {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [importError, setImportError] = useState('');
+  // Reject: modal thu lý do từ chối (BE yêu cầu bắt buộc).
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectError, setRejectError] = useState('');
+  const [rejecting, setRejecting] = useState(false);
 
   const load = async () => {
     try {
@@ -61,7 +66,11 @@ const UserApproval = () => {
     setBusyId(id);
     setActionError('');
     try {
-      await approveUser(id);
+      const res = await approveUser(id);
+      if (!res.ok) {
+        setActionError(res.data?.message || 'Failed to approve user');
+        return;
+      }
       await load();
     } catch (err) {
       setActionError(err.message || 'Failed to approve user');
@@ -70,17 +79,36 @@ const UserApproval = () => {
     }
   };
 
-  const handleReject = async (id) => {
-    if (!window.confirm('Reject this request?')) return;
-    setBusyId(id);
+  // Mở modal nhập lý do; không gọi API cho tới khi EC nhập lý do.
+  const openRejectModal = (user) => {
+    setRejectTarget(user);
+    setRejectReason('');
+    setRejectError('');
+  };
+
+  // Gửi lý do từ chối lên BE; lý do là bắt buộc.
+  const handleRejectSubmit = async () => {
+    const reason = rejectReason.trim();
+    if (!reason) {
+      setRejectError('Rejection reason is required');
+      return;
+    }
+    setRejecting(true);
+    setRejectError('');
     setActionError('');
     try {
-      await rejectUser(id);
+      const res = await rejectUser(rejectTarget.id, reason);
+      if (!res.ok) {
+        setRejectError(res.data?.message || 'Failed to reject user');
+        return;
+      }
+      setRejectTarget(null);
+      setRejectReason('');
       await load();
     } catch (err) {
-      setActionError(err.message || 'Failed to reject user');
+      setRejectError(err.message || 'Failed to reject user');
     } finally {
-      setBusyId(null);
+      setRejecting(false);
     }
   };
 
@@ -201,7 +229,7 @@ const UserApproval = () => {
                     <Button variant="outline-success" size="sm" className="me-2 d-inline-flex align-items-center gap-1" disabled={busyId === user.id} onClick={() => handleApprove(user.id)}>
                       {busyId === user.id ? <Spinner animation="border" size="sm" /> : <Check size={14} />} Approve
                     </Button>
-                    <Button variant="outline-danger" size="sm" className="d-inline-flex align-items-center gap-1" disabled={busyId === user.id} onClick={() => handleReject(user.id)}>
+                    <Button variant="outline-danger" size="sm" className="d-inline-flex align-items-center gap-1" disabled={busyId === user.id} onClick={() => openRejectModal(user)}>
                       <X size={14} /> Reject
                     </Button>
                   </td>
@@ -268,6 +296,40 @@ const UserApproval = () => {
             onClick={() => setShowModal(false)}
           >
             Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={!!rejectTarget} onHide={() => setRejectTarget(null)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Reject Registration</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {rejectTarget && (
+            <>
+              <p className="mb-3">
+                Rejecting <strong>{rejectTarget.name}</strong> ({rejectTarget.email}).
+                The reason below is shown to the applicant when they sign in.
+              </p>
+              {rejectError && <Alert variant="danger">{rejectError}</Alert>}
+              <Form.Group>
+                <Form.Label>Rejection reason <span className="text-danger">*</span></Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={4}
+                  maxLength={2000}
+                  placeholder="Explain why this registration is rejected..."
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                />
+              </Form.Group>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setRejectTarget(null)} disabled={rejecting}>Cancel</Button>
+          <Button variant="danger" onClick={handleRejectSubmit} disabled={rejecting || !rejectReason.trim()}>
+            {rejecting ? <><Spinner animation="border" size="sm" /> Rejecting...</> : <><X size={16} className="me-1" />Reject</>}
           </Button>
         </Modal.Footer>
       </Modal>

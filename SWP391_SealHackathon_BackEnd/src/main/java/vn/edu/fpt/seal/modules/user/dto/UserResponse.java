@@ -27,6 +27,9 @@ public record UserResponse(
         String campusName,
         boolean isGuest,
         AccountStatus status,
+        String rejectionReason,
+        LocalDateTime rejectedAt,
+        UUID rejectedBy,
         List<String> roles,
         LocalDateTime createdAt,
         LocalDateTime updatedAt

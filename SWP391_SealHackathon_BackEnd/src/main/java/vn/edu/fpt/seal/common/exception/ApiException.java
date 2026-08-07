@@ -69,6 +69,19 @@ public class ApiException extends RuntimeException {
     }
 
     /**
+     * Tạo lỗi 403 Forbidden riêng cho tài khoản bị từ chối, kèm lý do từ chối.
+     * Dùng mã ACCOUNT_REJECTED để frontend hiển thị lý do cho người dùng.
+     *
+     * @param reason lý do EC đã ghi khi từ chối (có thể null nếu dữ liệu cũ)
+     */
+    public static ApiException accountRejected(String reason) {
+        String message = reason == null || reason.isBlank()
+                ? "Your account has been rejected"
+                : "Your account has been rejected. Reason: " + reason.trim();
+        return new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_REJECTED", message);
+    }
+
+    /**
      * Tạo lỗi 500 Internal Server Error (lỗi cấu hình/hệ thống).
      */
     public static ApiException internal(String message) {

@@ -84,6 +84,24 @@ public class User extends BaseEntity {
     @Builder.Default
     private AccountStatus status = AccountStatus.pending;
 
+    /**
+     * Lý do EC từ chối tài khoản; chỉ có giá trị khi status = rejected.
+     */
+    @Column(name = "rejection_reason", columnDefinition = "text")
+    private String rejectionReason;
+
+    /**
+     * Thời điểm tài khoản bị từ chối.
+     */
+    @Column(name = "rejected_at")
+    private LocalDateTime rejectedAt;
+
+    /**
+     * ID của EC đã thực hiện từ chối.
+     */
+    @Column(name = "rejected_by", columnDefinition = "uuid")
+    private java.util.UUID rejectedBy;
+
     @Column(name = "security_version", nullable = false)
     @Builder.Default
     private long securityVersion = 1L;

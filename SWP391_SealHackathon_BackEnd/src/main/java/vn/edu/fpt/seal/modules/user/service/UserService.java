@@ -20,6 +20,7 @@ import vn.edu.fpt.seal.modules.user.mapper.UserMapper;
 import vn.edu.fpt.seal.modules.user.repository.RoleRepository;
 import vn.edu.fpt.seal.modules.user.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -60,7 +61,35 @@ public class UserService {
 
     @Transactional
     public UserResponse updateStatus(UUID id, UpdateUserStatusRequest r) {
+        return updateStatus(id, r, null);
+    }
+
+    /**
+     * Cập nhật trạng thái tài khoản. Khi từ chối (rejected) thì lý do là bắt buộc
+     * và được lưu lại để người dùng thấy khi đăng nhập. Khi chuyển sang trạng thái
+     * khác thì xóa thông tin từ chối cũ.
+     *
+     * @param id       ID người dùng cần cập nhật
+     * @param r        dữ liệu trạng thái mới kèm lý do từ chối (nếu có)
+     * @param actorId  ID của EC thực hiện hành động (có thể null)
+     */
+    @Transactional
+    public UserResponse updateStatus(UUID id, UpdateUserStatusRequest r, UUID actorId) {
         User u = find(id);
+        if (r.status() == AccountStatus.rejected) {
+            String reason = r.rejectionReason() == null ? null : r.rejectionReason().trim();
+            if (reason == null || reason.isBlank()) {
+                throw ApiException.badRequest("Rejection reason is required when rejecting an account");
+            }
+            u.setRejectionReason(reason);
+            u.setRejectedAt(LocalDateTime.now());
+            u.setRejectedBy(actorId);
+        } else {
+            // Chuyển sang pending/approved: bỏ thông tin từ chối trước đó
+            u.setRejectionReason(null);
+            u.setRejectedAt(null);
+            u.setRejectedBy(null);
+        }
         u.setStatus(r.status());
         return UserMapper.toResponse(u);
     }

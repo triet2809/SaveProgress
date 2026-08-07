@@ -29,6 +29,8 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // Lý do bị từ chối (BE trả code ACCOUNT_REJECTED) — hiển thị riêng, rõ hơn alert lỗi thường.
+  const [rejection, setRejection] = useState(null);
   // Luu Google ID token khi BE yeu cau bo sung ho so (pha 2).
   const [pendingToken, setPendingToken] = useState(null);
   const [googleInfo, setGoogleInfo] = useState(null);
@@ -62,9 +64,15 @@ const Login = () => {
     e.preventDefault();
     setSubmitting(true);
     setError('');
+    setRejection(null);
     try {
       const result = await login({ email, password });
       if (!result.ok) {
+        // Tài khoản bị EC từ chối: hiển thị lý do từ chối cho người đăng ký.
+        if (result.data?.code === 'ACCOUNT_REJECTED') {
+          setRejection(result.data.message || 'Your account has been rejected');
+          return;
+        }
         setError(result.data?.message || 'Incorrect email or password');
         return;
       }
@@ -85,9 +93,14 @@ const Login = () => {
   const handleGoogle = async (idToken) => {
     setSubmitting(true);
     setError('');
+    setRejection(null);
     try {
       const result = await loginWithGoogle(idToken);
       if (!result.ok) {
+        if (result.data?.code === 'ACCOUNT_REJECTED') {
+          setRejection(result.data.message || 'Your account has been rejected');
+          return;
+        }
         setError(result.data?.message || 'Google sign-in failed');
         return;
       }
@@ -188,6 +201,16 @@ const Login = () => {
             <p className={styles.formSubtitle}>Sign in to access your dashboard</p>
 
             {error && <Alert variant="danger">{error}</Alert>}
+            {rejection && (
+              <Alert variant="danger">
+                <Alert.Heading className="h6 fw-bold mb-2">Registration rejected</Alert.Heading>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{rejection}</div>
+                <hr />
+                <div className="small mb-0">
+                  Contact the organizing committee if you believe this decision is a mistake.
+                </div>
+              </Alert>
+            )}
 
             <Form onSubmit={handleStandardLogin} className={styles.form}>
               <Form.Group className="mb-3" controlId="email">
