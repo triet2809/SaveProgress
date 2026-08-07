@@ -64,6 +64,10 @@ public class AuthService {
         if (userRepository.existsByEmail(req.email().toLowerCase().trim())) {
             throw ApiException.conflict("Email already registered");
         }
+        if (req.studentId() != null && !req.studentId().isBlank()
+                && userRepository.existsByStudentId(req.studentId().trim())) {
+            throw ApiException.conflict("Student ID already registered");
+        }
 
         StudentType type = req.studentType() != null ? req.studentType() : StudentType.none;
         Campus campus = null;

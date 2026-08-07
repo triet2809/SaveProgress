@@ -13,9 +13,14 @@ import java.util.UUID;
 
 @Repository
 public interface IncidentReportRepository extends JpaRepository<IncidentReport, UUID> {
+    @EntityGraph(attributePaths = {"event", "track", "team", "reporter"})
     Page<IncidentReport> findByEventId(UUID eventId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"event", "track", "team", "reporter"})
     Page<IncidentReport> findByReporterId(UUID reporterId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"event", "track", "team", "reporter"})
+    Page<IncidentReport> findAll(Pageable pageable);
 
     Page<IncidentReport> findByStatus(IncidentStatus status, Pageable pageable);
 

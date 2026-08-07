@@ -11,5 +11,6 @@ import java.util.UUID;
 public record CaseResponse(String id, String source, String category, String subject, String description,
                            String status, UUID eventId, UUID roundId, UUID trackId, UUID teamId,
                            UUID submissionId, UUID reporterId, String reporterName,
+                           String eventName, String trackName, String teamName,
                            LocalDateTime createdAt, LocalDateTime updatedAt) {
 }

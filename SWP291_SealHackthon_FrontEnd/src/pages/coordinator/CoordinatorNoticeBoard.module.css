@@ -1,0 +1,199 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--cf-text-primary);
+}
+
+.pageSubtitle {
+  color: var(--cf-text-secondary);
+  font-size: 0.875rem;
+}
+
+.createLinkBtn {
+  color: #a855f7;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0;
+}
+
+.createLinkBtn:hover {
+  color: #9333ea;
+  text-decoration: underline;
+}
+
+/* Post Form Card Styling */
+.postCard {
+  border: 1px solid var(--cf-border-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  border-radius: var(--cf-radius-lg);
+  margin-bottom: 3rem;
+  background-color: var(--cf-bg-surface);
+}
+
+.formLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.formControl {
+  border-color: var(--cf-border-color);
+  font-size: 0.875rem;
+  color: var(--cf-text-primary);
+  padding: 0.6rem 0.75rem;
+}
+
+.formControl:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 0.2rem rgba(168, 85, 247, 0.15);
+}
+
+.targetBadge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background-color: var(--cf-brand-blue-light);
+  color: var(--cf-brand-blue);
+  border-radius: var(--cf-radius-sm);
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 0.75rem;
+}
+
+.postBtn {
+  background-color: #a855f7;
+  border: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.6rem 1.5rem;
+  color: white;
+  float: right;
+}
+
+.postBtn:hover {
+  background-color: #9333ea;
+  color: white;
+}
+
+/* Notice List Styling (Reusing styles from Team NoticeBoard) */
+.noticeList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.noticeCard {
+  border: 1px solid var(--cf-border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  border-radius: var(--cf-radius-lg);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-left-width: 4px;
+}
+
+.noticeCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.priorityNormal {
+  border-left-color: var(--cf-brand-blue);
+}
+
+.priorityHigh {
+  border: 1px solid var(--cf-status-danger) !important;
+  border-left: 4px solid var(--cf-status-danger) !important;
+  background-color: var(--cf-status-danger-bg) !important;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.authorInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: white;
+}
+
+.avatarAdmin { background-color: #f59e0b; }
+.avatarJudge { background-color: #10b981; }
+.avatarMentor { background-color: #a855f7; }
+
+.authorDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.authorName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cf-text-primary);
+}
+
+.authorRole {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.roleAdmin { color: #f59e0b; }
+.roleJudge { color: #10b981; }
+.roleMentor { color: #a855f7; }
+
+.noticeDate {
+  font-size: 0.75rem;
+  color: var(--cf-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.noticeTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cf-text-primary);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.importantIndicator {
+  display: inline-flex;
+  align-items: center;
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  margin-left: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.noticeContent {
+  font-size: 0.875rem;
+  color: var(--cf-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}

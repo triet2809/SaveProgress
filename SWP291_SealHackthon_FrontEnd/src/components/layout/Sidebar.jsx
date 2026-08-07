@@ -88,7 +88,6 @@ const Sidebar = ({ role }) => {
           { name: 'Team Journey', path: '/team/journey', icon: RouteIcon },
           { name: 'Notice Board', path: '/team/notices', icon: Bell },
           { name: 'Deadlines & Schedule', path: '/team/schedule', icon: Calendar },
-          { name: 'Support Ticket', path: '/team/support', icon: MessageSquare },
           { name: 'Report & Support', path: '/team/cases', icon: MessageSquare },
           { name: 'Profile', path: '/team/profile', icon: User },
         ];
@@ -131,10 +130,9 @@ const Sidebar = ({ role }) => {
           { name: 'Seeding Review', path: '/coordinator/seeding', icon: Award },
           { name: 'Team Timeline', path: '/coordinator/timeline', icon: RouteIcon },
           { name: 'Awards', path: '/coordinator/awards', icon: Award },
-          { name: 'Incident Review', path: '/coordinator/incidents', icon: AlertTriangle },
+          { name: 'Notice Board', path: '/coordinator/notices', icon: Bell },
           { name: 'Reports', path: '/coordinator/reports', icon: FileText },
           { name: 'Audit Logs', path: '/coordinator/logs', icon: History },
-          { name: 'Support Tickets', path: '/coordinator/support', icon: LifeBuoy },
           { name: 'Case Management', path: '/coordinator/cases', icon: LifeBuoy },
           { name: 'Profile', path: '/coordinator/profile', icon: User },
         ];

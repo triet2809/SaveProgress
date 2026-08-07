@@ -40,13 +40,14 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 
     @EntityGraph(attributePaths = {"round", "round.track", "round.track.event", "team", "team.track"})
     @Query("""
-            select s from Submission s join s.round r join r.track tr
+            select s from Submission s join s.round r join r.track tr join s.team t
             where tr.event.id = :eventId
               and (:roundId is null or r.id = :roundId)
               and (:trackId is null or tr.id = :trackId)
+              and (:teamId is null or t.id = :teamId)
             """)
     Page<Submission> searchByEvent(@Param("eventId") UUID eventId, @Param("roundId") UUID roundId,
-                                   @Param("trackId") UUID trackId, Pageable pageable);
+                                   @Param("trackId") UUID trackId, @Param("teamId") UUID teamId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"round", "round.track", "round.track.event", "team", "team.track"})
     Optional<Submission> findWithRelationsById(UUID id);

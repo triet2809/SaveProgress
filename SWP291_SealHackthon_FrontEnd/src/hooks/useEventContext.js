@@ -31,6 +31,10 @@ export function useEventContext() {
   const selectEvent = useCallback((id) => {
     const next = new URLSearchParams(searchParams);
     if (id) next.set('eventId', id); else next.delete('eventId');
+    // Xóa round/track cũ để không lẫn sang event mới
+    // (gây lỗi backend "Round does not belong to the selected event").
+    next.delete('roundId');
+    next.delete('trackId');
     setSearchParams(next);
   }, [searchParams, setSearchParams]);
 

@@ -48,8 +48,13 @@ const RankingManagement = () => {
   useEffect(() => {
     (async () => {
       const list = await loadRounds();
-      if (list.length && !selectedRound) {
-        const next = new URLSearchParams(searchParams); next.set('roundId', list[0].id); setSearchParams(next);
+      // Reset round nếu selection hiện tại không thuộc rounds của event đang chọn
+      // (roundId cũ sót lại trong URL sau khi đổi event).
+      const roundInList = selectedRound && list.some((r) => r.id === selectedRound);
+      if (list.length && !roundInList) {
+        const next = new URLSearchParams(searchParams); next.set('roundId', list[0].id); next.delete('trackId'); setSearchParams(next);
+      } else if (list.length === 0 && selectedRound) {
+        const next = new URLSearchParams(searchParams); next.delete('roundId'); next.delete('trackId'); setSearchParams(next);
       } else {
         setLoading(false);
       }
@@ -73,9 +78,11 @@ const RankingManagement = () => {
 
   useEffect(() => {
     // Refresh rankings when the URL-selected round changes.
+    // Guard: chỉ load khi round thuộc event hiện tại, tránh lỗi backend
+    // "Round does not belong to the selected event" với roundId stale.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (selectedRound) loadRankings(selectedRound);
-  }, [selectedRound, loadRankings]);
+    if (selectedRound && rounds.some((r) => r.id === selectedRound)) loadRankings(selectedRound);
+  }, [selectedRound, rounds, loadRankings]);
 
   const filteredRankings = rankings
     .slice()
@@ -135,7 +142,6 @@ const RankingManagement = () => {
   };
 
   const currentRoundData = rounds.find((r) => r.id === selectedRound);
-  const isPublished = !!currentRoundData?.resultPublishedAt;
   const isReadyToAdvance = currentRoundData?.lifecycleState === 'READY_TO_ADVANCE';
 
   return (

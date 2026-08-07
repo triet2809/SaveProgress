@@ -63,6 +63,7 @@ import CreateJudgeIncidentReport from '../pages/judge/CreateIncidentReport';
 
 // Coordinator Pages
 import CoordinatorDashboard from '../pages/coordinator/CoordinatorDashboard';
+import CoordinatorNoticeBoard from '../pages/coordinator/CoordinatorNoticeBoard';
 import EventManagement from '../pages/coordinator/EventManagement';
 import EventDetails from '../pages/coordinator/EventDetails';
 import TeamManagement from '../pages/coordinator/TeamManagement';
@@ -202,6 +203,7 @@ const AppRoutes = () => {
           <Route path="awards" element={<AwardsManagement />} />
           <Route path="awards/new" element={<AwardForm />} />
           <Route path="awards/:id/edit" element={<AwardForm />} />
+          <Route path="notices" element={<CoordinatorNoticeBoard />} />
           <Route path="incidents/*" element={<Navigate to="/coordinator/cases" replace />} />
           <Route path="reports" element={<Reports />} />
           <Route path="timeline" element={<EventTimeline />} />

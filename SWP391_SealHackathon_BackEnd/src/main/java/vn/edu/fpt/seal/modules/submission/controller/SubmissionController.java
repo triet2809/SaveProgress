@@ -27,7 +27,7 @@ public class SubmissionController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List submissions")
-    public ResponseEntity<Page<SubmissionResponse>> list(@RequestParam UUID eventId, @RequestParam(required = false) UUID roundId, @RequestParam(required = false) UUID teamId, @RequestParam(required = false) UUID trackId, Pageable pageable, Authentication auth) {
+    public ResponseEntity<Page<SubmissionResponse>> list(@RequestParam(required = false) UUID eventId, @RequestParam(required = false) UUID roundId, @RequestParam(required = false) UUID teamId, @RequestParam(required = false) UUID trackId, Pageable pageable, Authentication auth) {
         return ResponseEntity.ok(submissionService.list(eventId, roundId, teamId, trackId, pageable, auth));
     }
 

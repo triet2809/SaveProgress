@@ -45,13 +45,14 @@ public class CaseService {
      */
     @Transactional(readOnly = true)
     public Page<CaseResponse> list(UUID eventId, UUID reporterId, Pageable pageable, Authentication auth) {
-        // Người dùng thường chỉ được xem case của chính mình khi không lọc theo sự kiện
-        if (eventId == null && !hasCoordinator(auth)) reporterId = authorizationService.current(auth).getId();
-        if (eventId == null && reporterId == null) throw ApiException.badRequest("eventId is required");
+        // Coordinator xem toàn bộ case (mọi sự kiện) khi không truyền eventId; user thường chỉ xem case của chính mình.
+        boolean coordinator = hasCoordinator(auth);
+        if (eventId == null && !coordinator) reporterId = authorizationService.current(auth).getId();
         Page<IncidentReport> page = eventId != null ? incidents.findByEventId(eventId, pageable)
-                : incidents.findByReporterId(reporterId, pageable);
+                : reporterId != null ? incidents.findByReporterId(reporterId, pageable)
+                : incidents.findAll(pageable);
         List<CaseResponse> visible = page.stream().map(this::map).toList();
-        return new PageImpl<>(visible, pageable, visible.size());
+        return new PageImpl<>(visible, pageable, page.getTotalElements());
     }
 
     /**
@@ -80,9 +81,11 @@ public class CaseService {
         };
         IncidentResponse source = incidentService.create(new CreateIncidentRequest(request.eventId(), request.trackId(), request.roundId(),
                 request.teamId(), request.submissionId(), type, null, request.category(), request.subject(), request.description()), auth);
-        return new CaseResponse("INC-" + source.id(), "incident", request.category(), source.title(), source.description(),
-                "open", source.eventId(), source.roundId(), source.trackId(), source.teamId(), source.submissionId(),
-                source.reporterId(), source.reporterEmail(), source.createdAt(), source.updatedAt());
+        // Đọc lại kèm quan hệ để lấy tên event/track/team hiển thị.
+        return incidents.findWithRelationsById(source.id()).map(this::map).orElseGet(() ->
+                new CaseResponse("INC-" + source.id(), "incident", request.category(), source.title(), source.description(),
+                        "open", source.eventId(), source.roundId(), source.trackId(), source.teamId(), source.submissionId(),
+                        source.reporterId(), source.reporterEmail(), null, null, null, source.createdAt(), source.updatedAt()));
     }
 
     /**
@@ -102,9 +105,11 @@ public class CaseService {
             default -> throw ApiException.badRequest("Unknown case status");
         };
         IncidentResponse source = incidentService.updateStatus(id, new UpdateIncidentStatusRequest(target, null, request.note()), auth);
-        return new CaseResponse("INC-" + source.id(), "incident", source.category(), source.title(), source.description(),
-                normalize(source.status()), source.eventId(), source.roundId(), source.trackId(), source.teamId(), source.submissionId(),
-                source.reporterId(), source.reporterEmail(), source.createdAt(), source.updatedAt());
+        // Đọc lại kèm quan hệ để trả về tên event/track/team.
+        return incidents.findWithRelationsById(source.id()).map(this::map).orElseGet(() ->
+                new CaseResponse("INC-" + source.id(), "incident", source.category(), source.title(), source.description(),
+                        normalize(source.status()), source.eventId(), source.roundId(), source.trackId(), source.teamId(), source.submissionId(),
+                        source.reporterId(), source.reporterEmail(), null, null, null, source.createdAt(), source.updatedAt()));
     }
 
     /**
@@ -133,6 +138,8 @@ public class CaseService {
         return new CaseResponse("INC-" + i.getId(), "incident", i.getCategory(), i.getTitle(), i.getDescription(), normalize(i.getStatus()),
                 i.getEvent().getId(), i.getRound() == null ? null : i.getRound().getId(), i.getTrack() == null ? null : i.getTrack().getId(),
                 i.getTeam() == null ? null : i.getTeam().getId(), i.getSubmission() == null ? null : i.getSubmission().getId(),
-                i.getReporter().getId(), i.getReporter().getFullName(), i.getCreatedAt(), i.getUpdatedAt());
+                i.getReporter().getId(), i.getReporter().getFullName(),
+                i.getEvent().getTitle(), i.getTrack() == null ? null : i.getTrack().getName(), i.getTeam() == null ? null : i.getTeam().getName(),
+                i.getCreatedAt(), i.getUpdatedAt());
     }
 }

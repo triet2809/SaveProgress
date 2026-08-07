@@ -76,7 +76,7 @@ public class SubmissionService {
             if (trackId != null && !round.getTrack().getId().equals(trackId))
                 throw ApiException.badRequest("Round and track do not match");
         }
-        Page<Submission> submissions = submissionRepository.searchByEvent(scopedEventId, roundId, trackId, pageable);
+        Page<Submission> submissions = submissionRepository.searchByEvent(scopedEventId, roundId, trackId, teamId, pageable);
         submissions.forEach(submission -> authorizationService.require(
                 authorizationService.canReadSubmission(user, submission),
                 "You are not authorized to view one or more requested submissions"));
