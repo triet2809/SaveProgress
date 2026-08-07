@@ -584,7 +584,8 @@ export async function getRoundRankings(params = {}) {
 }
 
 export async function recalculateRoundRankings(roundId, payload = {}) {
-  const res = await apiPost(`/round-rankings/rounds/${roundId}/recalculate`, payload);
+  const params = payload.applyPromotion ? '?applyPromotion=true' : '';
+  const res = await apiPost(`/round-rankings/rounds/${roundId}/recalculate${params}`, {});
   if (!res.ok) throw new Error(res.data?.message || 'Failed to recalculate rankings');
   return res.data;
 }

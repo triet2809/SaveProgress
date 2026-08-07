@@ -55,7 +55,7 @@ public class CompetitionLifecycleService {
         int n = versions.findTopByRoundIdOrderByVersionNumberDesc(round.getId()).map(v -> v.getVersionNumber() + 1).orElse(1);
         RoundResultVersion source = versions.findTopByRoundIdOrderByVersionNumberDesc(round.getId()).orElse(null);
         RoundResultVersion v = versions.save(RoundResultVersion.builder().round(round).versionNumber(n).status("published").publishedAt(now)
-                .appealDeadline(now.plusMinutes(15)).publishedBy(actor).sourceVersion(source).reason(reason).createdAt(now).build());
+                .appealDeadline(now.minusSeconds(1)).publishedBy(actor).sourceVersion(source).reason(reason).createdAt(now).build());
         rankings.findByRoundId(round.getId(), org.springframework.data.domain.Pageable.unpaged()).forEach(r -> entries.save(
                 RoundResultVersionEntry.builder()
                         .resultVersion(v)
@@ -68,7 +68,7 @@ public class CompetitionLifecycleService {
                         .createdAt(now)
                         .build()));
         round.setResultPublishedAt(now);
-        round.setAppealDeadline(now.plusMinutes(15));
+        round.setAppealDeadline(now.minusSeconds(1));
         setState(round, RoundLifecycleState.APPEAL_WINDOW_OPEN);
         return v;
     }
@@ -136,10 +136,17 @@ public class CompetitionLifecycleService {
     }
 
     public void requireRankingRecalculationAllowed(Round r) {
-        // Chỉ cho phép recalculation khi round đang scoring hoặc awaiting recalculation.
         refresh(r);
-        if (!Set.of(RoundLifecycleState.SCORING, RoundLifecycleState.AWAITING_RECALCULATION).contains(r.getLifecycleState())) {
-            throw ApiException.conflict("Published rankings are immutable outside the controlled recalculation state");
+        RoundLifecycleState state = r.getLogicalRound() != null
+                ? r.getLogicalRound().getLifecycleState()
+                : r.getLifecycleState();
+        if (state == RoundLifecycleState.ADVANCED) {
+            throw ApiException.conflict("Cannot recalculate rankings after round has been advanced");
+        }
+        // Recalculation cho phép từ mọi trạng thái trừ ADVANCED để coordinator có thể sửa ranking trước khi advance.
+        if (Set.of(RoundLifecycleState.READY_TO_ADVANCE, RoundLifecycleState.READY_FOR_AWARDS,
+                RoundLifecycleState.APPEAL_WINDOW_OPEN, RoundLifecycleState.PAUSED_FOR_APPEAL).contains(state)) {
+            setState(r, RoundLifecycleState.AWAITING_RECALCULATION);
         }
     }
 
@@ -170,7 +177,12 @@ public class CompetitionLifecycleService {
         if (r.getLifecycleState() != RoundLifecycleState.READY_TO_ADVANCE) {
             throw ApiException.conflict("Round is not ready to advance");
         }
-        if (r.getLogicalRound() == null || promotions == null || definitions == null) {
+        if (r.getLogicalRound() == null) {
+            // Simple round without logical-round grouping: just mark as ADVANCED.
+            setState(r, RoundLifecycleState.ADVANCED);
+            return r;
+        }
+        if (promotions == null || definitions == null) {
             throw ApiException.conflict("Logical-round promotion infrastructure is unavailable");
         }
         var source = r.getLogicalRound();

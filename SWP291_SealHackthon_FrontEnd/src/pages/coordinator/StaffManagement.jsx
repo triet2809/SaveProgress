@@ -45,7 +45,8 @@ export default function StaffManagement() {
   const save = async (event) => {
     event.preventDefault(); setError(''); setNotice('');
     try {
-      await inviteEventStaff(eventId, form);
+      const payload = { ...form, temporaryPassword: form.temporaryPassword || null };
+      await inviteEventStaff(eventId, payload);
       setNotice(form.temporaryPassword
         ? 'Staff account approved. The temporary password must be changed during first-login onboarding.'
         : 'Existing staff account assigned without changing its password.');

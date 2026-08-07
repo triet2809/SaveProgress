@@ -76,7 +76,7 @@ public class RoundRankingService {
     @Transactional
     public List<RoundRankingResponse> recalculate(UUID roundId, RecalculateRankingsRequest req) {
         Round round = roundRepository.findById(roundId).orElseThrow(() -> ApiException.notFound("Round not found: " + roundId));
-        boolean applyPromotion = req != null && Boolean.TRUE.equals(req.applyPromotion());
+        boolean applyPromotion = req == null || !Boolean.FALSE.equals(req.applyPromotion());
         if (lifecycleService != null) lifecycleService.requireRankingRecalculationAllowed(round);
         BigDecimal weightSum = criterionRepository.sumWeightByRoundId(roundId);
         if (weightSum.compareTo(new BigDecimal("100")) != 0) {

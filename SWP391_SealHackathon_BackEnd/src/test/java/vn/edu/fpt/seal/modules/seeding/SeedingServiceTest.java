@@ -16,6 +16,7 @@ import vn.edu.fpt.seal.modules.event.repository.EventRepository;
 import vn.edu.fpt.seal.modules.resultversion.entity.*;
 import vn.edu.fpt.seal.modules.resultversion.repository.*;
 import vn.edu.fpt.seal.modules.round.entity.Round;
+import vn.edu.fpt.seal.modules.round.entity.RoundDefinition;
 import vn.edu.fpt.seal.modules.round.repository.RoundRepository;
 import vn.edu.fpt.seal.modules.round.service.CompetitionLifecycleService;
 import vn.edu.fpt.seal.modules.seeding.dto.SeedingDtos;
@@ -261,7 +262,11 @@ class SeedingServiceTest {
         Track track = track(event, "AI");
         TeamProfile profile = profile("Persistent");
         Team team = team(track, profile, "Finalist", TeamStatus.active);
+        RoundDefinition logicalRound = RoundDefinition.builder()
+                .event(event).name("Final").sequenceNumber(2).finalRound(true).build();
+        logicalRound.setId(UUID.randomUUID());
         Round round = Round.builder().track(track).name("Final").sequenceNumber(2)
+                .logicalRound(logicalRound)
                 .lifecycleState(RoundLifecycleState.READY_FOR_AWARDS)
                 .appealDeadline(LocalDateTime.now(clock).minusMinutes(1)).build();
         round.setId(UUID.randomUUID());

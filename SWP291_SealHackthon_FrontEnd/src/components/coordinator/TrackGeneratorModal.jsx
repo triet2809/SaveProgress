@@ -111,8 +111,8 @@ const TrackGeneratorModal = ({ show, onHide, teams, onGenerate }) => {
       </Modal.Body>
       <Modal.Footer className="border-top-0">
         <Button variant="light" onClick={onHide}>Cancel</Button>
-        <Button variant="primary" onClick={handleGenerate} disabled={availableTeams.length === 0}>
-          Generate & Assign Teams
+        <Button variant="primary" onClick={handleGenerate}>
+          Create Tracks
         </Button>
       </Modal.Footer>
     </Modal>

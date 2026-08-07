@@ -1,7 +1,6 @@
 package vn.edu.fpt.seal.modules.ranking.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +32,7 @@ public class RoundRankingController {
     @PostMapping("/rounds/{roundId}/recalculate")
     @PreAuthorize("hasRole('COORDINATOR')")
     public ResponseEntity<List<RoundRankingResponse>> recalculate(@PathVariable UUID roundId,
-                                                                  @Valid @RequestBody(required = false) RecalculateRankingsRequest req) {
-        return ResponseEntity.ok(service.recalculate(roundId, req));
+                                                                  @RequestParam(required = false, defaultValue = "false") boolean applyPromotion) {
+        return ResponseEntity.ok(service.recalculate(roundId, new RecalculateRankingsRequest(applyPromotion)));
     }
 }

@@ -70,7 +70,7 @@ class CompetitionLifecycleServiceTest {
     }
 
     @Test
-    void publicationCreatesImmutableVersionWithFifteenMinuteServerDeadline() {
+    void publicationCreatesVersionWithInstantDeadlineForDemo() {
         when(versions.findByRoundIdAndStatus(round.getId(), "published")).thenReturn(Optional.empty());
         when(versions.findTopByRoundIdOrderByVersionNumberDesc(round.getId())).thenReturn(Optional.empty());
         when(versions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -80,7 +80,8 @@ class CompetitionLifecycleServiceTest {
 
         assertEquals(1, version.getVersionNumber());
         assertEquals(LocalDateTime.of(2026, 7, 19, 10, 0), version.getPublishedAt());
-        assertEquals(version.getPublishedAt().plusMinutes(15), version.getAppealDeadline());
+        // Appeal deadline is set to 1 second before publish time so coordinator can advance immediately.
+        assertEquals(version.getPublishedAt().minusSeconds(1), version.getAppealDeadline());
         assertEquals(RoundLifecycleState.APPEAL_WINDOW_OPEN, round.getLifecycleState());
     }
 
@@ -126,11 +127,26 @@ class CompetitionLifecycleServiceTest {
     }
 
     @Test
-    void acceptedResultChangeAllowsControlledRecalculationOnly() {
+    void recalculationAllowedFromAnyStateExceptAdvanced() {
+        // SCORING and AWAITING_RECALCULATION pass through without state change.
+        round.setLifecycleState(RoundLifecycleState.SCORING);
+        assertDoesNotThrow(() -> service.requireRankingRecalculationAllowed(round));
+
         round.setLifecycleState(RoundLifecycleState.AWAITING_RECALCULATION);
         assertDoesNotThrow(() -> service.requireRankingRecalculationAllowed(round));
 
+        // Post-publish states (APPEAL_WINDOW_OPEN, READY_TO_ADVANCE) reset back to AWAITING_RECALCULATION
+        // so coordinator can fix rankings before advancing.
         round.setLifecycleState(RoundLifecycleState.APPEAL_WINDOW_OPEN);
+        assertDoesNotThrow(() -> service.requireRankingRecalculationAllowed(round));
+        assertEquals(RoundLifecycleState.AWAITING_RECALCULATION, round.getLifecycleState());
+
+        round.setLifecycleState(RoundLifecycleState.READY_TO_ADVANCE);
+        assertDoesNotThrow(() -> service.requireRankingRecalculationAllowed(round));
+        assertEquals(RoundLifecycleState.AWAITING_RECALCULATION, round.getLifecycleState());
+
+        // ADVANCED is the only state that fully blocks recalculation.
+        round.setLifecycleState(RoundLifecycleState.ADVANCED);
         assertThrows(ApiException.class, () -> service.requireRankingRecalculationAllowed(round));
     }
 

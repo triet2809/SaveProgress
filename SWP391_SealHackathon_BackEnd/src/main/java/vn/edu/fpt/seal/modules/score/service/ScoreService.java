@@ -82,7 +82,8 @@ public class ScoreService {
         }
         BigDecimal oldValue = isUpdate ? score.getScore() : null;
         score.setScore(req.score());
-        score.setWeightedScore(req.score().multiply(criterion.getWeight()).setScale(2, RoundingMode.HALF_UP));
+        score.setWeightedScore(req.score().multiply(criterion.getWeight())
+                .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP));
         score.setComment(req.comment() == null ? score.getComment() : req.comment().trim());
         score = scoreRepository.save(score);
 

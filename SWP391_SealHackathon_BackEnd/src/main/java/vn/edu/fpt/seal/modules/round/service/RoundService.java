@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.fpt.seal.common.enums.EventStatus;
+import vn.edu.fpt.seal.common.enums.RoundLifecycleState;
 import vn.edu.fpt.seal.common.exception.ApiException;
 import vn.edu.fpt.seal.modules.audit.entity.AuditLog;
 import vn.edu.fpt.seal.modules.audit.repository.AuditLogRepository;
@@ -88,9 +89,7 @@ public class RoundService {
         if (!round.getTrack().getEvent().getId().equals(eventId)) {
             throw ApiException.badRequest("Round does not belong to the selected event");
         }
-        if (round.getResultPublishedAt() == null
-                || round.getLifecycleState() == vn.edu.fpt.seal.common.enums.RoundLifecycleState.AWAITING_RECALCULATION
-                || (lifecycleService != null && !lifecycleService.hasPublishedVersion(roundId))) {
+        if (round.getLifecycleState() != RoundLifecycleState.ADVANCED) {
             UUID actorId = auth != null && auth.getPrincipal() instanceof CurrentUser c ? c.getId() : null;
             boolean corrected = round.getResultPublishedAt() != null;
             vn.edu.fpt.seal.modules.resultversion.entity.RoundResultVersion version = null;

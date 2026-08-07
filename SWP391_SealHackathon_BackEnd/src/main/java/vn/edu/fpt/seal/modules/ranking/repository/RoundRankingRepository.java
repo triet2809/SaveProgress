@@ -31,14 +31,14 @@ public interface RoundRankingRepository extends JpaRepository<RoundRanking, UUID
     @Query("""
             select
                 sub.team.id as teamId,
-                coalesce(sum(sc.weightedScore), 0) as totalScore,
+                coalesce(sum(sc.score * sc.criterion.weight / 100.0), 0) as totalScore,
                 sub.team.name as teamName,
                 min(sub.submittedAt) as earliestSubmittedAt
             from Submission sub
             left join Score sc on sc.submission.id = sub.id
             where sub.round.id = :roundId
             group by sub.team.id, sub.team.name
-            order by coalesce(sum(sc.weightedScore), 0) desc, sub.team.name asc
+            order by coalesce(sum(sc.score * sc.criterion.weight / 100.0), 0) desc, sub.team.name asc
             """)
     List<RoundScoreRow> calculateRows(@Param("roundId") UUID roundId);
 
@@ -55,7 +55,7 @@ public interface RoundRankingRepository extends JpaRepository<RoundRanking, UUID
                 cr.id as criterionId,
                 cr.name as criterionName,
                 cr.weight as criterionWeight,
-                coalesce(sum(sc.weightedScore), 0) as criterionScore
+                coalesce(sum(sc.score * cr.weight / 100.0), 0) as criterionScore
             from Submission sub
             join Score sc on sc.submission.id = sub.id
             join sc.criterion cr

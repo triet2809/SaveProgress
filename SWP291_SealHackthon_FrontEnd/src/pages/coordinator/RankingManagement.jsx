@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Badge, Form, InputGroup, Spinner, Alert } from 'react-bootstrap';
-import { Eye, Search, RefreshCw, Send } from 'lucide-react';
+import { Eye, Search, RefreshCw, Send, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getRounds, getRoundRankings, getTracks, recalculateRoundRankings, publishRoundResults } from '../../api/hackathonApi';
+import { getRounds, getRoundRankings, getTracks, recalculateRoundRankings, publishRoundResults, advanceRound } from '../../api/hackathonApi';
 import EventSelector from '../../components/coordinator/EventSelector';
 import TeamRecognitionBadge from '../../components/team/TeamRecognitionBadge';
 import { useSearchParams } from 'react-router-dom';
@@ -27,27 +27,35 @@ const RankingManagement = () => {
   const [error, setError] = useState('');
   const [recalculating, setRecalculating] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
   const [notice, setNotice] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
+  const loadRounds = useCallback(async () => {
+    try {
+      const [data, trackData] = await Promise.all([getRounds({ eventId, size: 100 }), getTracks({ eventId, size: 100 })]);
+      const list = data.content || data || [];
+      setRounds(list);
+      setTracks(trackData.content || trackData || []);
+      return list;
+    } catch (err) {
+      setError(err.message);
+      return [];
+    }
+  }, [eventId]);
+
   useEffect(() => {
     (async () => {
-      try {
-        const [data, trackData] = await Promise.all([getRounds({ eventId, size: 100 }), getTracks({ eventId, size: 100 })]);
-        const list = data.content || data || [];
-        setRounds(list);
-        setTracks(trackData.content || trackData || []);
-        if (list.length && !selectedRound) {
-          const next = new URLSearchParams(searchParams); next.set('roundId', list[0].id); setSearchParams(next);
-        }
-        else setLoading(false);
-      } catch (err) {
-        setError(err.message);
+      const list = await loadRounds();
+      if (list.length && !selectedRound) {
+        const next = new URLSearchParams(searchParams); next.set('roundId', list[0].id); setSearchParams(next);
+      } else {
         setLoading(false);
       }
     })();
-  }, [eventId, selectedRound, searchParams, setSearchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId]);
 
   const loadRankings = useCallback(async (roundId) => {
     if (!roundId) return;
@@ -83,7 +91,7 @@ const RankingManagement = () => {
     setRecalculating(true);
     setError('');
     try {
-      await recalculateRoundRankings(selectedRound);
+      await recalculateRoundRankings(selectedRound, { applyPromotion: true });
       await loadRankings(selectedRound);
     } catch (err) {
       setError(err.message);
@@ -92,22 +100,42 @@ const RankingManagement = () => {
     }
   };
 
-  // Công bố kết quả vòng thi -> BE mở cửa sổ khiếu nại 15 phút cho các đội.
   const handlePublish = async () => {
     if (!selectedRound) return;
-    if (!window.confirm('Publish results for this round? This opens a 15-minute appeal window for teams.')) return;
+    if (!window.confirm('Publish results for this round? Teams will be notified.')) return;
     setPublishing(true);
     setError('');
     setNotice('');
     try {
-      const round = await publishRoundResults(eventId, selectedRound);
-      setNotice(`Results published at ${round?.resultPublishedAt || 'now'}.`);
+      await publishRoundResults(eventId, selectedRound);
+      await loadRounds();
+      setNotice('Results published. Wait a moment then click "Advance Round" to promote teams.');
     } catch (err) {
       setError(err.message);
     } finally {
       setPublishing(false);
     }
   };
+
+  const handleAdvance = async () => {
+    if (!selectedRound) return;
+    if (!window.confirm('Advance this round? Promoted teams will be seeded into the next round.')) return;
+    setAdvancing(true);
+    setError('');
+    setNotice('');
+    try {
+      await advanceRound(eventId, selectedRound);
+      setNotice('Round advanced. Promoted teams are now eligible for the next round.');
+      await loadRankings(selectedRound);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setAdvancing(false);
+    }
+  };
+
+  const currentRoundData = rounds.find((r) => r.id === selectedRound);
+  const isPublished = !!currentRoundData?.resultPublishedAt;
 
   return (
     <>
@@ -122,6 +150,11 @@ const RankingManagement = () => {
           <Button variant="outline-primary" className="d-flex align-items-center gap-2" onClick={handlePublish} disabled={publishing || !selectedRound}>
             {publishing ? <Spinner size="sm" animation="border" /> : <Send size={18} />} Publish Results
           </Button>
+          {isPublished && (
+            <Button variant="warning" className="d-flex align-items-center gap-2" onClick={handleAdvance} disabled={advancing || !selectedRound}>
+              {advancing ? <Spinner size="sm" animation="border" /> : <ArrowRight size={18} />} Advance Round
+            </Button>
+          )}
           <Button variant="success" className="d-flex align-items-center gap-2" onClick={handleRecalculate} disabled={recalculating || !selectedRound}>
             {recalculating ? <Spinner size="sm" animation="border" /> : <RefreshCw size={18} />} Recalculate Rankings
           </Button>

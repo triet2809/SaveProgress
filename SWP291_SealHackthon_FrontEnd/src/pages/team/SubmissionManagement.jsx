@@ -43,10 +43,12 @@ const SubmissionManagement = () => {
         const rounds = (roundsRes?.content || roundsRes || [])
           .slice()
           .sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
-        // Current round = earliest with a future deadline, else last round.
+        // Skip ADVANCED rounds — team can no longer submit for them.
+        const active = rounds.filter((r) => r.lifecycleState !== 'ADVANCED');
+        const pool = active.length > 0 ? active : rounds;
         const now = new Date();
-        const upcoming = rounds.find((r) => r.submissionDeadline && new Date(r.submissionDeadline) >= now);
-        const currentRound = upcoming || rounds[rounds.length - 1] || null;
+        const upcoming = pool.find((r) => r.submissionDeadline && new Date(r.submissionDeadline) >= now);
+        const currentRound = upcoming || pool[pool.length - 1] || null;
         if (active) setRound(currentRound);
 
         const subsRes = await getSubmissions({ eventId: current.eventId, teamId: current.id });

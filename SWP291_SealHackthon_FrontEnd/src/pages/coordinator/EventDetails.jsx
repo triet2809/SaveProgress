@@ -24,7 +24,7 @@ const EventDetails = () => {
 
   const [showRoundModal, setShowRoundModal] = useState(false);
   const [savingRound, setSavingRound] = useState(false);
-  const [newRound, setNewRound] = useState({ name: '', trackIds: [], submissionDeadline: '', sequenceNumber: 1, topNToPromote: 5 });
+  const [newRound, setNewRound] = useState({ name: '', trackIds: [], submissionDeadlineDate: '', submissionDeadlineTime: '', sequenceNumber: 1, topNToPromote: 5 });
 
   const [showGeneratorModal, setShowGeneratorModal] = useState(false);
 
@@ -73,10 +73,11 @@ const EventDetails = () => {
    * BE sẽ tạo 1 round logic và các track execution liên quan.
    */
   const handleSaveRound = async () => {
-    if (!newRound.name || !newRound.trackIds.length || !newRound.submissionDeadline) {
-      alert('Please fill round name, select at least one track, and set the submission deadline');
+    if (!newRound.name || !newRound.trackIds.length || !newRound.submissionDeadlineDate || !newRound.submissionDeadlineTime) {
+      alert('Please fill round name, select at least one track, and set the submission deadline (both date and time)');
       return;
     }
+    const combinedDeadline = `${newRound.submissionDeadlineDate}T${newRound.submissionDeadlineTime}:00`;
     try {
       setSavingRound(true);
       setError('');
@@ -84,10 +85,10 @@ const EventDetails = () => {
         trackIds: newRound.trackIds,
         name: newRound.name,
         sequenceNumber: Number(newRound.sequenceNumber) || 1,
-        submissionDeadline: new Date(newRound.submissionDeadline).toISOString().slice(0, 19),
+        submissionDeadline: new Date(combinedDeadline).toISOString().slice(0, 19),
         topNToPromote: Number(newRound.topNToPromote) || 1,
       });
-      setNewRound({ name: '', trackIds: [], submissionDeadline: '', sequenceNumber: 1, topNToPromote: 5 });
+      setNewRound({ name: '', trackIds: [], submissionDeadlineDate: '', submissionDeadlineTime: '', sequenceNumber: 1, topNToPromote: 5 });
       setShowRoundModal(false);
       await loadAll();
     } catch (err) {
@@ -398,10 +399,20 @@ const EventDetails = () => {
                 </Form.Group>
               </Col>
             </Row>
-            <Form.Group className="mb-3">
-              <Form.Label>Submission Deadline</Form.Label>
-              <Form.Control type="datetime-local" value={newRound.submissionDeadline} onChange={(e) => setNewRound({...newRound, submissionDeadline: e.target.value})} />
-            </Form.Group>
+                        <Row>
+              <Col md={7}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Submission Deadline — Date</Form.Label>
+                  <Form.Control type="date" value={newRound.submissionDeadlineDate} onChange={(e) => setNewRound({...newRound, submissionDeadlineDate: e.target.value})} />
+                </Form.Group>
+              </Col>
+              <Col md={5}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Time</Form.Label>
+                  <Form.Control type="time" value={newRound.submissionDeadlineTime} onChange={(e) => setNewRound({...newRound, submissionDeadlineTime: e.target.value})} />
+                </Form.Group>
+              </Col>
+            </Row>
           </Form>
         </Modal.Body>
         <Modal.Footer>
