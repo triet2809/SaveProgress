@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, Button, Form, Row, Col, Alert, Badge, Spinner } from 'react-bootstrap';
 import { Plus, Trash2, Users, Save, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getTracks, createTeam, addTeamMember } from '../../api/hackathonApi';
+import { getEvents, getTracks, createTeam, addTeamMember } from '../../api/hackathonApi';
 
 const RecordTeam = () => {
   const navigate = useNavigate();
@@ -11,12 +11,17 @@ const RecordTeam = () => {
   const [error, setError] = useState('');
   const [memberWarning, setMemberWarning] = useState('');
 
+  // Chỉ event đang mở đăng ký (status=published) mới nhận được team mới.
+  const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+
   const [tracks, setTracks] = useState([]);
-  const [tracksLoading, setTracksLoading] = useState(true);
+  const [tracksLoading, setTracksLoading] = useState(false);
 
   const [teamData, setTeamData] = useState({
     name: '',
     project: '',
+    eventId: '',
     trackId: '',
     description: ''
   });
@@ -25,15 +30,37 @@ const RecordTeam = () => {
     { id: 1, name: '', studentId: '', email: '', major: '' }
   ]);
 
+  // Nạp danh sách event đang mở đăng ký; không nạp track của mọi event nữa
+  // để tránh vô tình chọn track thuộc event draft -> lỗi "Registration is not open".
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const res = await getTracks({ size: 100 });
+        const res = await getEvents({ status: 'published', size: 100 });
+        const list = res?.content || res || [];
+        if (!active) return;
+        setEvents(list);
+      } catch (e) {
+        if (active) setError(e.message || 'Failed to load events');
+      } finally {
+        if (active) setEventsLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  // Khi chọn event, nạp track thuộc đúng event đó.
+  useEffect(() => {
+    let active = true;
+    if (!teamData.eventId) { setTracks([]); return; }
+    (async () => {
+      try {
+        setTracksLoading(true);
+        const res = await getTracks({ eventId: teamData.eventId, size: 100 });
         const list = res?.content || res || [];
         if (!active) return;
         setTracks(list);
-        if (list.length) setTeamData((prev) => ({ ...prev, trackId: prev.trackId || list[0].id }));
+        setTeamData((prev) => ({ ...prev, trackId: list.length ? list[0].id : '' }));
       } catch (e) {
         if (active) setError(e.message || 'Failed to load tracks');
       } finally {
@@ -41,7 +68,7 @@ const RecordTeam = () => {
       }
     })();
     return () => { active = false; };
-  }, []);
+  }, [teamData.eventId]);
 
   const handleTeamChange = (e) => {
     const { name, value } = e.target;
@@ -76,6 +103,10 @@ const RecordTeam = () => {
     e.preventDefault();
     setError('');
     setMemberWarning('');
+    if (!teamData.eventId) {
+      setError('Please select an event that is open for registration.');
+      return;
+    }
     if (!teamData.trackId) {
       setError('Please select a track.');
       return;
@@ -173,16 +204,34 @@ const RecordTeam = () => {
                 </Form.Group>
 
                 <Form.Group className="mb-3">
+                  <Form.Label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--cf-text-secondary)' }}>Event *</Form.Label>
+                  <Form.Select
+                    name="eventId"
+                    value={teamData.eventId}
+                    onChange={handleTeamChange}
+                    disabled={eventsLoading}
+                    required
+                  >
+                    <option value="">{eventsLoading ? 'Loading events...' : 'Select an event open for registration...'}</option>
+                    {events.map((ev) => (
+                      <option key={ev.id} value={ev.id}>{ev.title}</option>
+                    ))}
+                  </Form.Select>
+                  {!eventsLoading && events.length === 0 && (
+                    <Form.Text className="text-danger">There are no events open for registration right now.</Form.Text>
+                  )}
+                </Form.Group>
+
+                <Form.Group className="mb-3">
                   <Form.Label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--cf-text-secondary)' }}>Track *</Form.Label>
-                  <Form.Select 
+                  <Form.Select
                     name="trackId"
                     value={teamData.trackId}
                     onChange={handleTeamChange}
-                    disabled={tracksLoading}
+                    disabled={!teamData.eventId || tracksLoading}
                     required
                   >
-                    {tracksLoading && <option>Loading tracks...</option>}
-                    {!tracksLoading && tracks.length === 0 && <option value="">No tracks available</option>}
+                    <option value="">{!teamData.eventId ? 'Select an event first' : (tracksLoading ? 'Loading tracks...' : (tracks.length === 0 ? 'This event has no tracks' : 'Select a track...'))}</option>
                     {tracks.map((t) => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}

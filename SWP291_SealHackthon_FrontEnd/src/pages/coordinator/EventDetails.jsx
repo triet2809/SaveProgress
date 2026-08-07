@@ -67,6 +67,17 @@ const EventDetails = () => {
   }, [id]);
 
   /*
+   * Mở modal tạo round và tự điền sequence kế tiếp.
+   * Sequence của logical round là duy nhất theo event, nên phải là (max hiện có) + 1,
+   * nếu để cứng = 1 thì round thứ 2 trở đi sẽ bị "Logical round sequence already exists".
+   */
+  const openRoundModal = () => {
+    const nextSequence = rounds.reduce((max, r) => Math.max(max, Number(r.sequenceNumber) || 0), 0) + 1;
+    setNewRound({ name: '', trackIds: [], submissionDeadlineDate: '', submissionDeadlineTime: '', sequenceNumber: nextSequence, topNToPromote: 5 });
+    setShowRoundModal(true);
+  };
+
+  /*
    * Tạo logical round từ modal.
    * FE validate dữ liệu cơ bản trước.
    * Sau đó gọi createLogicalRound() sang BE.
@@ -230,7 +241,7 @@ const EventDetails = () => {
               <Button variant="outline-primary" size="sm" onClick={() => setShowGeneratorModal(true)}>
                 Create Tracks
               </Button>
-              <Button variant="primary" size="sm" className="d-flex align-items-center gap-2" onClick={() => setShowRoundModal(true)} disabled={tracks.length === 0}>
+              <Button variant="primary" size="sm" className="d-flex align-items-center gap-2" onClick={openRoundModal} disabled={tracks.length === 0}>
                 <Plus size={16} /> Add Round
               </Button>
             </div>
