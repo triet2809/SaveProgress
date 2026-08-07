@@ -32,6 +32,7 @@ const EventManagement = () => {
   const [newEvent, setNewEvent] = useState(emptyEvent);
   const [editingEvent, setEditingEvent] = useState(null);
   const [events, setEvents] = useState([]);
+  const [formError, setFormError] = useState('');
 
   // competition setup wizard state
   const [setupEvent, setSetupEvent] = useState(null);
@@ -57,23 +58,54 @@ const EventManagement = () => {
   }, []);
 
   const handleSaveEvent = async () => {
-    if (!newEvent.name) {
-      alert('Event name is required');
+    setFormError('');
+
+    // 1. Required fields
+    if (!newEvent.name || !newEvent.name.trim()) {
+      setFormError('Event name is required.');
+      return;
+    }
+    if (newEvent.name.trim().length > 255) {
+      setFormError('Event name must not exceed 255 characters.');
+      return;
+    }
+    const { registrationStart, registrationEnd, eventStart, eventEnd } = newEvent;
+    if (!registrationStart) {
+      setFormError('Registration Start date is required.');
+      return;
+    }
+    if (!registrationEnd) {
+      setFormError('Registration End date is required.');
+      return;
+    }
+    if (!eventStart) {
+      setFormError('Event Start date is required.');
+      return;
+    }
+    if (!eventEnd) {
+      setFormError('Event End date is required.');
       return;
     }
 
-    // Date-ordering validation: regStart < regEnd <= eventStart < eventEnd
-    const { registrationStart, registrationEnd, eventStart, eventEnd } = newEvent;
-    if (registrationStart && registrationEnd && new Date(registrationStart) >= new Date(registrationEnd)) {
-      alert('Registration Start must be before Registration End');
+    // 2. Past date check (only when creating)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (!editingEvent && new Date(registrationStart) < today) {
+      setFormError('Registration Start date cannot be in the past.');
       return;
     }
-    if (registrationEnd && eventStart && new Date(registrationEnd) > new Date(eventStart)) {
-      alert('Registration End must be before or equal to Event Start');
+
+    // 3. Date-ordering: regStart < regEnd <= eventStart < eventEnd
+    if (new Date(registrationStart) >= new Date(registrationEnd)) {
+      setFormError('Registration Start must be before Registration End.');
       return;
     }
-    if (eventStart && eventEnd && new Date(eventStart) >= new Date(eventEnd)) {
-      alert('Event Start must be before Event End');
+    if (new Date(registrationEnd) > new Date(eventStart)) {
+      setFormError('Registration End must be before or equal to Event Start.');
+      return;
+    }
+    if (new Date(eventStart) >= new Date(eventEnd)) {
+      setFormError('Event Start must be before Event End.');
       return;
     }
 
@@ -81,7 +113,7 @@ const EventManagement = () => {
       setSaving(true);
       setError('');
       const payload = {
-        title: newEvent.name,
+        title: newEvent.name.trim(),
         description: newEvent.description || '',
         term: newEvent.term || '',
         prizePool: newEvent.prizePool || '',
@@ -101,10 +133,11 @@ const EventManagement = () => {
       }
       setEditingEvent(null);
       setNewEvent(emptyEvent);
+      setFormError('');
       setShowModal(false);
       await loadEvents();
     } catch (err) {
-      setError(err.message || 'Failed to save event');
+      setFormError(err.message || 'Failed to save event');
     } finally {
       setSaving(false);
     }
@@ -195,6 +228,7 @@ const EventManagement = () => {
 
   const openEdit = (event) => {
     setEditingEvent(event);
+    setFormError('');
     setNewEvent({
       ...emptyEvent,
       name: event.title || '',
@@ -219,6 +253,7 @@ const EventManagement = () => {
         </div>
         <Button variant="primary" className="d-flex align-items-center gap-2" onClick={() => {
           setEditingEvent(null);
+          setFormError('');
           setNewEvent(emptyEvent);
           setShowModal(true);
         }}>
@@ -306,14 +341,22 @@ const EventManagement = () => {
         </Modal.Header>
 
         <Modal.Body>
+          {formError && (
+            <Alert variant="danger" onClose={() => setFormError('')} dismissible>
+              {formError}
+            </Alert>
+          )}
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Event Name</Form.Label>
+              <Form.Label>Event Name <span className="text-danger">*</span></Form.Label>
               <Form.Control
                 type="text"
+                placeholder="Enter event name"
                 value={newEvent.name}
+                isInvalid={formError && !newEvent.name.trim()}
                 onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })}
               />
+              <Form.Control.Feedback type="invalid">Event name is required.</Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -358,7 +401,7 @@ const EventManagement = () => {
             <div className="row">
               <div className="col-md-6">
                 <Form.Group className="mb-3">
-                  <Form.Label>Registration Start</Form.Label>
+                  <Form.Label>Registration Start <span className="text-danger">*</span></Form.Label>
                   <Form.Control
                     type="date"
                     value={newEvent.registrationStart}
@@ -368,7 +411,7 @@ const EventManagement = () => {
               </div>
               <div className="col-md-6">
                 <Form.Group className="mb-3">
-                  <Form.Label>Registration End</Form.Label>
+                  <Form.Label>Registration End <span className="text-danger">*</span></Form.Label>
                   <Form.Control
                     type="date"
                     value={newEvent.registrationEnd}
@@ -381,7 +424,7 @@ const EventManagement = () => {
             <div className="row">
               <div className="col-md-6">
                 <Form.Group className="mb-3">
-                  <Form.Label>Event Start</Form.Label>
+                  <Form.Label>Event Start <span className="text-danger">*</span></Form.Label>
                   <Form.Control
                     type="date"
                     value={newEvent.eventStart}
@@ -391,7 +434,7 @@ const EventManagement = () => {
               </div>
               <div className="col-md-6">
                 <Form.Group className="mb-3">
-                  <Form.Label>Event End</Form.Label>
+                  <Form.Label>Event End <span className="text-danger">*</span></Form.Label>
                   <Form.Control
                     type="date"
                     value={newEvent.eventEnd}

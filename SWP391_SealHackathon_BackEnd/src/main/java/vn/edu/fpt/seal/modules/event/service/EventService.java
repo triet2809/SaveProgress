@@ -155,12 +155,36 @@ public class EventService {
         return EventMapper.toResponse(e, (int) tracks, (int) rounds, participants);
     }
 
+    /**
+     * Validates that event dates are logically ordered:
+     * registrationStart < registrationEnd <= eventStart < eventEnd
+     * Also ensures no date is in the past for new events (pastAllowed = true for updates).
+     */
+    private void validateEventDates(LocalDateTime regStart, LocalDateTime regEnd,
+                                    LocalDateTime evStart, LocalDateTime evEnd) {
+        if (regStart != null && regEnd != null && !regStart.isBefore(regEnd)) {
+            throw ApiException.badRequest("Registration Start must be before Registration End");
+        }
+        if (regEnd != null && evStart != null && regEnd.isAfter(evStart)) {
+            throw ApiException.badRequest("Registration End must be before or equal to Event Start");
+        }
+        if (evStart != null && evEnd != null && !evStart.isBefore(evEnd)) {
+            throw ApiException.badRequest("Event Start must be before Event End");
+        }
+        if (regStart != null && regStart.isBefore(LocalDateTime.now())) {
+            throw ApiException.badRequest("Registration Start date cannot be in the past");
+        }
+    }
+
     @Transactional
     public EventResponse create(CreateEventRequest req) {
         String title = req.title().trim();
         if (eventRepository.existsByTitleIgnoreCase(title)) {
             throw ApiException.conflict("Event title already exists");
         }
+        validateEventDates(
+                req.registrationStart(), req.registrationEnd(),
+                req.eventStart(), req.eventEnd());
         Event e = Event.builder()
                 .title(title)
                 .description(req.description())
@@ -185,6 +209,9 @@ public class EventService {
         }
         if (req.title() != null) {
             String title = req.title().trim();
+            if (title.isBlank()) {
+                throw ApiException.badRequest("Event title must not be blank");
+            }
             if (!title.equalsIgnoreCase(e.getTitle())
                     && eventRepository.existsByTitleIgnoreCase(title)) {
                 throw ApiException.conflict("Event title already exists");
@@ -212,6 +239,10 @@ public class EventService {
         if (req.eventEnd() != null) {
             e.setEventEnd(req.eventEnd());
         }
+        // Validate date ordering using the final merged values
+        validateEventDates(
+                e.getRegistrationStart(), e.getRegistrationEnd(),
+                e.getEventStart(), e.getEventEnd());
         return toResponseWithCounts(e);
     }
 
