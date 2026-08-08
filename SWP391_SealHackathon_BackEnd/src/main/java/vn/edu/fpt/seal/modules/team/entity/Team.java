@@ -6,6 +6,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import vn.edu.fpt.seal.common.entity.BaseEntity;
 import vn.edu.fpt.seal.common.enums.TeamStatus;
+import vn.edu.fpt.seal.modules.event.entity.Event;
 import vn.edu.fpt.seal.modules.teamprofile.entity.TeamProfile;
 import vn.edu.fpt.seal.modules.track.entity.Track;
 import vn.edu.fpt.seal.modules.user.entity.User;
@@ -28,6 +29,15 @@ public class Team extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "track_id", nullable = false)
     private Track track;
+
+    /**
+     * teams.event_id là NOT NULL + FK tới events(id). Team luôn thuộc 1 track,
+     * mà track đã gắn event, nên cột này là denormalized của track.event.
+     * Không set thủ công ở các service tạo team — {@link #syncEventFromTrack()} tự suy ra.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "event_id", nullable = false)
+    private Event event;
 
     @Column(name = "name", nullable = false, length = 255)
     private String name;
@@ -60,4 +70,16 @@ public class Team extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "roster_confirmed_by")
     private User rosterConfirmedBy;
+
+    /**
+     * Tự điền event_id từ track trước khi lưu, để mọi đường tạo team (create/activate)
+     * đều thỏa ràng buộc NOT NULL mà không phải set event thủ công.
+     */
+    @PrePersist
+    @PreUpdate
+    private void syncEventFromTrack() {
+        if (event == null && track != null) {
+            event = track.getEvent();
+        }
+    }
 }
