@@ -120,12 +120,15 @@ const RecordTeam = () => {
       const teamId = created?.id;
 
       // Add members (each identified by email); collect any failures without aborting.
+      // Thành viên được thêm bằng EMAIL của user đã đăng ký + được duyệt.
+      // Member đầu tiên là leader. Email chưa có tài khoản sẽ báo lỗi từng dòng.
       const failed = [];
       if (teamId) {
-        for (const m of members) {
+        for (let i = 0; i < members.length; i++) {
+          const m = members[i];
           if (!m.email) continue;
           try {
-            await addTeamMember(teamId, { email: m.email, fullName: m.name, studentId: m.studentId, major: m.major });
+            await addTeamMember(teamId, { email: m.email.trim(), role: i === 0 ? 'leader' : 'member' });
           } catch (memErr) {
             failed.push(`${m.email}: ${memErr.message}`);
           }

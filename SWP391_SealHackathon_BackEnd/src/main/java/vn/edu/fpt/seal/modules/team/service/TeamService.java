@@ -229,7 +229,17 @@ public class TeamService {
         ensureEditable(team.getTrack());
         if (teamMemberRepository.countByTeamId(teamId) >= MAX_TEAM_SIZE)
             throw ApiException.badRequest("A team can have at most " + MAX_TEAM_SIZE + " members");
-        addMemberInternal(team, req.userId(), req.role() == null ? TeamMemberRole.member : req.role());
+        // Cho phép thêm theo userId hoặc theo email của user đã đăng ký. Bắt buộc có 1 trong 2.
+        UUID userId = req.userId();
+        if (userId == null) {
+            String email = req.email() == null ? null : req.email().toLowerCase().trim();
+            if (email == null || email.isBlank())
+                throw ApiException.badRequest("Either userId or email is required");
+            userId = userRepository.findByEmail(email)
+                    .orElseThrow(() -> ApiException.badRequest("No registered user with email: " + email))
+                    .getId();
+        }
+        addMemberInternal(team, userId, req.role() == null ? TeamMemberRole.member : req.role());
         return toResponse(team);
     }
 
